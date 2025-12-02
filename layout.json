@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "files": [
+    { "path": "QuickMemoryServer.exe", "category": "binary", "writable": false },
+    { "path": "QuickMemoryServer.toml", "category": "config", "writable": true },
+    { "path": "Models/embeddings.onnx", "category": "model", "writable": false },
+    { "path": "Models/summarizer.onnx", "category": "model", "writable": false },
+    { "path": "MemoryStores/shared/entries.jsonl", "category": "data", "writable": true },
+    { "path": "MemoryStores/projectA/entries.jsonl", "category": "data", "writable": true },
+    { "path": "tools/memoryctl.exe", "category": "tool", "writable": false },
+    { "path": "logs/", "category": "logs", "writable": true },
+    { "path": "Backups/", "category": "backups", "writable": true }
+  ]
+}

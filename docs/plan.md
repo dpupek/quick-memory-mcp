@@ -1,0 +1,54 @@
+# Quick Memory Server Implementation Plan
+
+## Completed Phases
+- [x] **Phase 0 – Foundations**
+  - **Tasks**: Create repo structure, add the solution/projects, configure .NET 9 global.json, enable nullable/context, and draft the installer layout manifest (`layout.json`).
+  - **Deliverables**: `QuickMemoryServer.sln`, a minimal worker in `src/QuickMemoryServer.Worker`, spec-aware README, and manifest-driven layout.
+  - **Acceptance**: Builds locally, service runs under console/Windows service, and layout manifest approved.
+- [x] **Phase 1 – Configuration & Hosting**
+  - **Tasks**: Parse TOML/INI configuration beside the executable, wire `UseWindowsService`, Kestrel, MCP routing stubs, and structured logging via Serilog/EventLog.
+  - **Deliverables**: Running service with stubbed MCP endpoints per store and API-key auth.
+  - **Acceptance**: Console + Windows service start-up succeed and endpoints respond with placeholder payloads.
+- [x] **Phase 2 – Persistence Layer**
+  - **Tasks**: Implement `JsonlRepository` with streaming reads/writes, schema validation, and atomic flushes; create `MemoryEntry` model honoring tier/permanent defaults and embedding shape.
+  - **Deliverables**: Disk-backed stores loading entries into memory safely.
+  - **Acceptance**: CRUD tests pass and JSONL edits trigger reloads.
+- [x] **Phase 3 – Store & Watcher Infrastructure**
+  - **Tasks**: Build `MemoryStore`, `SharedMemoryStore`, factory, `FileWatcher`, and `MemoryService` background loop with caching.
+  - **Deliverables**: RAM-first caches synchronized with disk and reload-on-change logic.
+  - **Acceptance**: Watcher/integration tests ensure reloads/concurrency.
+- [x] **Phase 4 – Search & Graph**
+  - **Tasks**: Implement `SearchEngine` (Lucene + vector), `GraphIndex`, ONNX embedding/summarization pipelines, and ranking influenced by tiers/permanence.
+  - **Deliverables**: Search + related entries flows, ONNX pipeline artifacts, and CLI rebuild helpers.
+  - **Acceptance**: Benchmarks meet latency targets; embeddings and summaries produced/cached.
+- [x] **Phase 5 – MCP Command Surface**
+  - **Tasks**: Wire MCP adapter for search, related, CRUD, project helpers, help blades, and a health report; reuse `MemoryRouter` for access control.
+  - **Deliverables**: Tool definitions (`searchEntries`, `relatedEntries`, `listEntries`, `upsertEntry`, `patchEntry`, `deleteEntry`, etc.) with canonical/permanent enforcement.
+  - **Acceptance**: MCP contract tests pass, canonical/permanent guard rails enforced, `describe`/`getUsageDoc` documents commands.
+- [x] **Phase 6 – Tooling & Ops**
+  - **Tasks**: Harden backups/reloads via admin UI helpers, add EventCounters/Prometheus metrics covering MCP requests, and keep installer/scripts synchronized with ONNX tooling.
+  - **Deliverables**: Admin workflows accessible via HTTP, `/metrics` + `/health` endpoints, documented installation artifacts.
+  - **Acceptance**: Admin operations function via HTTP, telemetry surfaces, deployment instructions updated.
+- [x] **Phase 7 – Observability Baseline**
+  - **Tasks**: Instrument MCP surfaces/backups with Prometheus counters, EventCounters, Serilog traces, and a `HealthReport` endpoint; document the observability surface.
+  - **Deliverables**: Prometheus metrics (`qms_*`), EventCounters, `/health` response, and updated doc coverage.
+  - **Acceptance**: Metrics cover requests/backups/entry counts; `/health` returns a structured report.
+
+-## Next Phase (Phase 8) – Streamable MCP Server Implementation
+- [x] **Task 8.1:** Integrate the Model Context Protocol C# SDK (`ModelContextProtocol` NuGet), host `MapMcp` Streamable HTTP endpoints, and reuse existing services for each MCP tool/tool description.
+- [x] **Task 8.2:** Ensure the streamable transport exposes tools for `searchEntries`, `relatedEntries`, entry/project CRUD, help blades, health, backups, and admin info; reuse `MemoryRouter` + permission tiers.
+- [x] **Task 8.3:** Extend `/mcp/describe` payload to include the runtime schema URL and the latest `agent-usage`/help doc references from `/docs/agent-usage.md`.
+- [x] **Task 8.4:** Cache the generated JSON schema, surface it at `/docs/schema`, emit ETag/Cache-Control headers, and teach MCP clients (via `describe`) where to find it.
+- [x] **Task 8.5:** Update `docs/spec.md`, `docs/agent-usage.md`, and the README with Streamable transport details, tool listings, and configuration samples (TOML + `.codex/config.toml`).
+- [x] **Task 8.6:** Document MCP command recipes (search, entry checks, project changes) within `docs/agent-usage.md`, including payload examples, canonical/permanent behaviors, and curation tier matrix.
+
+## Future Phases
+- [ ] **Phase 9 – Embedded Admin SPA** (vertical BS5 menu with Overview/Projects/Entities/Users/Help blades, login enforced, project/entity CRUD, user tier management, help/agent blades, and configuration guidance with Codex API key sample).
+- [ ] **Phase 10 – Release & Hardening** (installer packaging with WiX, load + failure testing, release notes, ONNX artifacts, final docs, and load test evidence).  
+
+## MCP Command Implementation Checklist
+1. Keep DTOs/validators synced with generated JSON Schema and describe payload.
+2. Route `/mcp/{project}/...` commands through `MemoryRouter`, reusing permission+tier logic.
+3. Add Streamable transport tests (include canonical/permanent coverage).
+4. Revise docs/usage recipes whenever tools change.
+5. Track CRC responsibilities in `docs/spec.md` when services evolve.

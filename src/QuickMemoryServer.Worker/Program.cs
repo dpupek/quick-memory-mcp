@@ -1,0 +1,933 @@
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text.Json;
+using System.Threading.Tasks;
+using ModelContextProtocol.AspNetCore;
+using ModelContextProtocol.Protocol;
+using ModelContextProtocol.Server;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using QuickMemoryServer.Worker.Configuration;
+using QuickMemoryServer.Worker.Diagnostics;
+using QuickMemoryServer.Worker.Embeddings;
+using QuickMemoryServer.Worker.Memory;
+using QuickMemoryServer.Worker.Models;
+using QuickMemoryServer.Worker.Persistence;
+using QuickMemoryServer.Worker.Search;
+using QuickMemoryServer.Worker.Services;
+using QuickMemoryServer.Worker.Validation;
+using Prometheus;
+using Serilog;
+using Serilog.Events;
+using Tomlyn.Extensions.Configuration;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
+    .AddIniFile("QuickMemoryServer.ini", optional: true, reloadOnChange: true)
+    .AddTomlFile("QuickMemoryServer.toml", optional: true, reloadOnChange: true);
+
+builder.Host.UseWindowsService(options =>
+{
+    options.ServiceName = builder.Configuration["global:serviceName"]
+        ?? builder.Configuration["Global:ServiceName"]
+        ?? "QuickMemoryServer";
+});
+
+builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .WriteTo.Console()
+        .WriteTo.File("logs/quick-memory-server-.log", rollingInterval: RollingInterval.Day,
+            restrictedToMinimumLevel: LogEventLevel.Information,
+            retainedFileCountLimit: 7);
+
+    if (OperatingSystem.IsWindows())
+    {
+        var serviceName = context.Configuration["global:serviceName"]
+            ?? context.Configuration["Global:ServiceName"]
+            ?? "QuickMemoryServer";
+
+        loggerConfiguration.WriteTo.EventLog(
+            source: serviceName,
+            manageEventSource: false,
+            restrictedToMinimumLevel: LogEventLevel.Information);
+    }
+});
+
+var httpUrl = builder.Configuration["global:httpUrl"]
+              ?? builder.Configuration["Global:HttpUrl"]
+              ?? "http://localhost:5080";
+
+builder.WebHost.UseUrls(httpUrl);
+
+builder.Services.AddRouting();
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddSingleton<IConfigureOptions<ServerOptions>, ServerOptionsConfigurator>();
+builder.Services.AddSingleton<IOptionsChangeTokenSource<ServerOptions>>(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    return new ConfigurationChangeTokenSource<ServerOptions>(Options.DefaultName, configuration);
+});
+
+builder.Services.AddOptions<ServerOptions>()
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddSingleton<MemoryEntryValidator>();
+builder.Services.AddSingleton<JsonlRepository>();
+
+builder.Services.AddSingleton<IEmbeddingGenerator>(sp =>
+{
+    var options = sp.GetRequiredService<IOptionsMonitor<ServerOptions>>().CurrentValue;
+    var loggerFactory = sp.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<OnnxEmbeddingGenerator>();
+
+    var modelPath = options.Global.EmbeddingModel;
+    var dimension = options.Global.EmbeddingDims > 0 ? options.Global.EmbeddingDims : 384;
+    if (!string.IsNullOrWhiteSpace(modelPath))
+    {
+        var resolved = Path.IsPathRooted(modelPath)
+            ? modelPath
+            : Path.Combine(AppContext.BaseDirectory, modelPath);
+
+        if (File.Exists(resolved))
+        {
+            try
+            {
+                return new OnnxEmbeddingGenerator(resolved, dimension, logger);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Falling back to hash embeddings; failed to load ONNX model at {Path}", resolved);
+            }
+        }
+    }
+
+    return new HashEmbeddingGenerator(dimension);
+});
+
+builder.Services.AddSingleton<EmbeddingService>();
+builder.Services.AddSingleton<SearchEngine>();
+builder.Services.AddSingleton<MemoryStoreFactory>();
+builder.Services.AddSingleton<MemoryRouter>();
+builder.Services.AddSingleton<ApiKeyAuthorizer>();
+builder.Services.AddHostedService<MemoryService>();
+builder.Services.AddSingleton<BackupService>();
+builder.Services.AddHostedService(sp => sp.GetRequiredService<BackupService>());
+
+builder.Services.AddSingleton<ObservabilityMetrics>();
+builder.Services.AddSingleton<IMemoryStoreProvider>(sp => sp.GetRequiredService<MemoryStoreFactory>());
+builder.Services.AddSingleton<HealthReporter>();
+builder.Services.AddSingleton<AdminConfigService>();
+builder.Services.AddSingleton<DocumentService>();
+builder.Services.AddSingleton<SchemaService>();
+builder.Services.AddMcpServer()
+    .WithHttpTransport(options =>
+    {
+        options.ConfigureSessionOptions = (httpContext, serverOptions, cancellationToken) =>
+        {
+            var serviceNameSetting = builder.Configuration["global:serviceName"]
+                ?? builder.Configuration["Global:ServiceName"]
+                ?? "QuickMemoryServer";
+
+            var version = Assembly.GetEntryAssembly()?.GetName()?.Version?.ToString() ?? "1.0.0";
+            serverOptions.ServerInfo = new Implementation
+            {
+                Name = serviceNameSetting,
+                Title = serviceNameSetting,
+                Version = version,
+                WebsiteUrl = httpUrl
+            };
+
+            var schemaService = httpContext.RequestServices.GetRequiredService<SchemaService>();
+            var requestHost = $"{httpContext.Request.Scheme}://{httpContext.Request.Host}{httpContext.Request.PathBase}";
+            var schemaUrl = $"{requestHost}/docs/schema";
+            var agentHelp = $"{requestHost}/admin/help/agent";
+            var userHelp = $"{requestHost}/admin/help/end-user";
+            var codexConfig = $"Codex clients: set `[mcp_servers.quick-memory] url` to \"{requestHost}/mcp\", enable `experimental_use_rmcp_client = true`, and supply your key via `bearer_token_env_var = \"QMS_API_KEY\"`.";
+            serverOptions.ServerInstructions = $"Schema: {schemaUrl}. Agent guide: {agentHelp}. End-user help: {userHelp}. {codexConfig} Schema ETag {schemaService.ETag}.";
+            return Task.CompletedTask;
+        };
+    })
+    .AddCallToolFilter(next =>
+    {
+        return async (context, cancellationToken) =>
+        {
+            var httpContext = context.Services.GetService<IHttpContextAccessor>()?.HttpContext;
+            var apiKey = ExtractApiKey(httpContext);
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                return CreateCallToolError("missing-api-key");
+            }
+
+            if (!TryGetEndpoint(context.Params.Arguments, out var endpoint))
+            {
+                return CreateCallToolError("missing-endpoint");
+            }
+
+            var authorizer = context.Services.GetRequiredService<ApiKeyAuthorizer>();
+            if (!authorizer.TryAuthorize(apiKey, endpoint, out var user, out var tier))
+            {
+                return CreateCallToolError("unauthorized");
+            }
+
+            context.Items[McpAuthorizationContext.ApiKeyItem] = apiKey;
+            context.Items[McpAuthorizationContext.EndpointItem] = endpoint;
+            context.Items[McpAuthorizationContext.TierItem] = tier;
+            context.Items[McpAuthorizationContext.UserItem] = user;
+
+            return await next(context, cancellationToken);
+        };
+    })
+    .WithToolsFromAssembly(typeof(MemoryMcpTools).Assembly);
+
+var app = builder.Build();
+var observabilityMetrics = app.Services.GetRequiredService<ObservabilityMetrics>();
+
+app.UseSerilogRequestLogging();
+app.Use(async (context, next) =>
+    {
+        var stopwatch = Stopwatch.StartNew();
+        await next();
+
+        if (context.Request.Path.StartsWithSegments("/mcp", out var remaining))
+        {
+            var (endpoint, command) = ResolveMcpLabels(remaining);
+            observabilityMetrics.TrackMcpRequest(endpoint, command, context.Response.StatusCode, stopwatch.Elapsed.TotalMilliseconds);
+            ObservabilityEventSource.Log.RecordMcpRequest(stopwatch.Elapsed.TotalMilliseconds);
+        }
+    });
+app.UseDefaultFiles();
+app.UseStaticFiles();
+app.UseRouting();
+app.UseHttpMetrics();
+
+app.MapGet("/health", (HealthReporter healthReporter) =>
+{
+    var report = healthReporter.GetReport();
+    return Results.Ok(report);
+});
+
+app.MapGet("/docs/schema", (HttpContext context, SchemaService schemaService) =>
+{
+    const string cacheControl = "public,max-age=30";
+    context.Response.Headers["Cache-Control"] = cacheControl;
+
+    var etagValue = $"\"{schemaService.ETag}\"";
+    var requestEtag = context.Request.Headers["If-None-Match"].FirstOrDefault();
+    if (!string.IsNullOrEmpty(requestEtag) && string.Equals(requestEtag.Trim(), etagValue, StringComparison.Ordinal))
+    {
+        context.Response.Headers["ETag"] = etagValue;
+        return Results.StatusCode(StatusCodes.Status304NotModified);
+    }
+
+    context.Response.Headers["ETag"] = etagValue;
+    return Results.Content(schemaService.Json, "application/json");
+});
+
+app.MapPost("/mcp/{endpoint}/ping", (string endpoint, HttpContext context, ApiKeyAuthorizer authorizer, MemoryRouter router) =>
+{
+    var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault() ?? string.Empty;
+
+    if (!authorizer.TryAuthorize(apiKey, endpoint, out var user, out var tier))
+    {
+        return Results.Unauthorized();
+    }
+
+    try
+    {
+        var store = router.ResolveStore(endpoint);
+        return Results.Ok(new
+        {
+            endpoint = store.Project,
+            user,
+            tier = tier.ToString(),
+            message = "pong"
+        });
+    }
+    catch (KeyNotFoundException)
+    {
+        return Results.NotFound(new { error = "endpoint-not-found" });
+    }
+});
+
+app.MapGet("/admin/endpoints", (IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    var options = optionsMonitor.CurrentValue;
+    var endpoints = options.Endpoints.Select(kvp => new
+    {
+        key = kvp.Key,
+        kvp.Value.Name,
+        kvp.Value.Slug,
+        kvp.Value.Description,
+        kvp.Value.StoragePath,
+        kvp.Value.InheritShared,
+        kvp.Value.IncludeInSearchByDefault
+    });
+
+    return Results.Ok(new { endpoints });
+});
+
+app.MapPost("/mcp/{endpoint}/searchEntries", async (
+    string endpoint,
+    HttpContext context,
+    ApiKeyAuthorizer authorizer,
+    MemoryRouter router,
+    SearchEngine searchEngine,
+    IOptionsMonitor<ServerOptions> optionsMonitor,
+    CancellationToken cancellationToken) =>
+{
+    var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault() ?? string.Empty;
+    if (!authorizer.TryAuthorize(apiKey, endpoint, out _, out _))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<SearchRequest>(cancellationToken) ?? new SearchRequest();
+    var maxResults = request.MaxResults is > 0 and <= 200 ? request.MaxResults.Value : 20;
+    var includeSharedDefault = optionsMonitor.CurrentValue.Endpoints.TryGetValue(endpoint, out var endpointOptions)
+        ? endpointOptions.IncludeInSearchByDefault
+        : true;
+    var includeShared = request.IncludeShared ?? includeSharedDefault;
+
+    if (router.ResolveStore(endpoint) is not MemoryStore primaryStore)
+    {
+        return Results.Problem($"Endpoint '{endpoint}' is not available.", statusCode: StatusCodes.Status404NotFound);
+    }
+
+    var stores = new List<MemoryStore> { primaryStore };
+    if (includeShared && !string.Equals(endpoint, "shared", StringComparison.OrdinalIgnoreCase))
+    {
+        if (router.ResolveStore("shared") is MemoryStore sharedStore)
+        {
+            stores.Add(sharedStore);
+        }
+    }
+
+    var entryLookup = McpHelpers.BuildEntryLookup(stores);
+    var query = new SearchQuery
+    {
+        Project = endpoint,
+        Text = string.IsNullOrWhiteSpace(request.Text) ? null : request.Text,
+        Embedding = request.Embedding,
+        MaxResults = maxResults,
+        IncludeShared = includeShared,
+        Tags = request.Tags
+    };
+
+    var results = searchEngine
+        .Search(query, id => entryLookup.TryGetValue(id, out var entry) ? entry : null)
+        .ToArray();
+
+    if (request.Tags is { Length: > 0 })
+    {
+        var tagSet = new HashSet<string>(request.Tags.Where(t => !string.IsNullOrWhiteSpace(t)), StringComparer.OrdinalIgnoreCase);
+        results = results
+            .Where(r => entryLookup.TryGetValue(r.EntryId, out var entry) && entry.Tags.Any(tag => tagSet.Contains(tag)))
+            .ToArray();
+    }
+
+    var response = results.Select(r => new
+    {
+        score = r.Score,
+        snippet = r.Snippet,
+        entry = entryLookup[r.EntryId]
+    }).ToArray();
+
+    return Results.Ok(new { results = response });
+});
+
+app.MapPost("/mcp/{endpoint}/relatedEntries", async (
+    string endpoint,
+    HttpContext context,
+    ApiKeyAuthorizer authorizer,
+    MemoryRouter router,
+    CancellationToken cancellationToken) =>
+{
+    var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault() ?? string.Empty;
+    if (!authorizer.TryAuthorize(apiKey, endpoint, out _, out _))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<RelatedRequest>(cancellationToken);
+    if (request is null || string.IsNullOrWhiteSpace(request.Id))
+    {
+        return Results.BadRequest(new { error = "missing-id" });
+    }
+
+    var maxHops = request.MaxHops.GetValueOrDefault(2);
+    if (maxHops < 1)
+    {
+        maxHops = 1;
+    }
+
+    if (router.ResolveStore(endpoint) is not MemoryStore primaryStore)
+    {
+        return Results.Problem($"Endpoint '{endpoint}' is not available.", statusCode: StatusCodes.Status404NotFound);
+    }
+
+    var includeShared = request.IncludeShared ?? true;
+    var stores = new List<MemoryStore> { primaryStore };
+    if (includeShared && !string.Equals(endpoint, "shared", StringComparison.OrdinalIgnoreCase))
+    {
+        if (router.ResolveStore("shared") is MemoryStore sharedStore)
+        {
+            stores.Add(sharedStore);
+        }
+    }
+
+    var relatedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var store in stores)
+    {
+        foreach (var id in store.Related(request.Id, maxHops))
+        {
+            relatedIds.Add(id);
+        }
+    }
+
+    var relatedEntries = relatedIds
+        .Select(id => McpHelpers.ResolveEntry(id, stores, router))
+        .Where(entry => entry is not null)
+        .Select(entry => new
+        {
+            id = entry!.Id,
+            project = entry.Project,
+            title = entry.Title,
+            kind = entry.Kind
+        })
+        .ToArray();
+
+    var edges = relatedIds.Select(id => new { source = request.Id, target = id }).ToArray();
+
+    return Results.Ok(new
+    {
+        nodes = relatedEntries,
+        edges
+    });
+});
+
+app.MapPost("/mcp/{endpoint}/backup", async (
+    string endpoint,
+    HttpContext context,
+    ApiKeyAuthorizer authorizer,
+    BackupService backupService,
+    CancellationToken cancellationToken) =>
+{
+    var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault() ?? string.Empty;
+    if (!authorizer.TryAuthorize(apiKey, endpoint, out _, out var tier) || tier != PermissionTier.Admin)
+    {
+        return Results.Unauthorized();
+    }
+
+    var payload = await context.Request.ReadFromJsonAsync<BackupRequestPayload>(cancellationToken) ?? new BackupRequestPayload();
+    var mode = Enum.TryParse<BackupMode>(payload.Mode ?? "Differential", true, out var parsed) ? parsed : BackupMode.Differential;
+    await backupService.RequestBackupAsync(endpoint, mode, cancellationToken);
+    return Results.Accepted($"/mcp/{endpoint}/backup", new { queued = true, mode = mode.ToString() });
+});
+
+app.MapGet("/mcp/{endpoint}/entries/{id}", (
+    string endpoint,
+    string id,
+    HttpContext context,
+    ApiKeyAuthorizer authorizer,
+    MemoryRouter router) =>
+{
+    var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault() ?? string.Empty;
+    if (!authorizer.TryAuthorize(apiKey, endpoint, out _, out _))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (router.ResolveStore(endpoint) is not MemoryStore store)
+    {
+        return Results.NotFound(new { error = "endpoint-not-found" });
+    }
+
+    var entry = store.FindEntry(id);
+    if (entry is null)
+    {
+        return Results.NotFound(new { error = "not-found" });
+    }
+
+    return Results.Ok(entry);
+});
+
+app.MapGet("/mcp/{endpoint}/entries", (
+    string endpoint,
+    HttpContext context,
+    ApiKeyAuthorizer authorizer,
+    MemoryRouter router) =>
+{
+    var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault() ?? string.Empty;
+    if (!authorizer.TryAuthorize(apiKey, endpoint, out _, out _))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (router.ResolveStore(endpoint) is not MemoryStore store)
+    {
+        return Results.NotFound(new { error = "endpoint-not-found" });
+    }
+
+    return Results.Ok(store.Snapshot());
+});
+
+app.MapPost("/mcp/{endpoint}/entries", async (
+    string endpoint,
+    HttpContext context,
+    ApiKeyAuthorizer authorizer,
+    MemoryRouter router,
+    CancellationToken cancellationToken) =>
+{
+    var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault() ?? string.Empty;
+    if (!authorizer.TryAuthorize(apiKey, endpoint, out _, out var tier))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (router.ResolveStore(endpoint) is not MemoryStore store)
+    {
+        return Results.NotFound(new { error = "endpoint-not-found" });
+    }
+
+    var entry = await context.Request.ReadFromJsonAsync<MemoryEntry>(cancellationToken);
+    if (entry is null)
+    {
+        return Results.BadRequest(new { error = "invalid-entry" });
+    }
+
+    if (entry.IsPermanent && tier != PermissionTier.Admin)
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+
+    await store.UpsertAsync(entry, cancellationToken);
+    return Results.Ok(new { updated = true });
+});
+
+app.MapPatch("/mcp/{endpoint}/entries/{id}", async (
+    string endpoint,
+    string id,
+    HttpContext context,
+    ApiKeyAuthorizer authorizer,
+    MemoryRouter router,
+    CancellationToken cancellationToken) =>
+{
+    var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault() ?? string.Empty;
+    if (!authorizer.TryAuthorize(apiKey, endpoint, out _, out var tier))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (router.ResolveStore(endpoint) is not MemoryStore store)
+    {
+        return Results.NotFound(new { error = "endpoint-not-found" });
+    }
+
+    var existing = store.FindEntry(id);
+    if (existing is null)
+    {
+        return Results.NotFound(new { error = "not-found" });
+    }
+
+    var patch = await context.Request.ReadFromJsonAsync<EntryPatchRequest>(cancellationToken);
+    if (patch is null)
+    {
+        return Results.BadRequest(new { error = "invalid-patch" });
+    }
+
+    var updated = existing with
+    {
+        Title = patch.Title ?? existing.Title,
+        Tags = patch.Tags ?? existing.Tags,
+        CurationTier = patch.CurationTier ?? existing.CurationTier,
+        IsPermanent = patch.IsPermanent ?? existing.IsPermanent,
+        Pinned = patch.Pinned ?? existing.Pinned,
+        Confidence = patch.Confidence ?? existing.Confidence,
+        Body = patch.Body ?? existing.Body
+    };
+
+    if (updated.IsPermanent && tier != PermissionTier.Admin)
+    {
+        return Results.StatusCode(StatusCodes.Status403Forbidden);
+    }
+
+    await store.UpsertAsync(updated, cancellationToken);
+    return Results.Ok(new { updated = true });
+});
+
+app.MapDelete("/mcp/{endpoint}/entries/{id}", async (
+    string endpoint,
+    string id,
+    HttpContext context,
+    ApiKeyAuthorizer authorizer,
+    MemoryRouter router,
+    CancellationToken cancellationToken) =>
+{
+    var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault() ?? string.Empty;
+    if (!authorizer.TryAuthorize(apiKey, endpoint, out _, out var tier))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (router.ResolveStore(endpoint) is not MemoryStore store)
+    {
+        return Results.NotFound(new { error = "endpoint-not-found" });
+    }
+
+    var force = string.Equals(context.Request.Query["force"], "true", StringComparison.OrdinalIgnoreCase) || tier == PermissionTier.Admin;
+
+    try
+    {
+        var deleted = await store.DeleteAsync(id, force, cancellationToken);
+        if (!deleted)
+        {
+            return Results.NotFound(new { error = "not-found" });
+        }
+
+        return Results.Ok(new { deleted = true });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.Json(new { error = ex.Message }, statusCode: StatusCodes.Status403Forbidden);
+    }
+});
+
+app.MapGet("/admin/users", (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var payload = adminService.ListUsers().Select(kvp => new
+    {
+        username = kvp.Key,
+        apiKey = kvp.Value.ApiKey,
+        defaultTier = kvp.Value.DefaultTier.ToString()
+    });
+
+    return Results.Ok(payload);
+});
+
+app.MapPost("/admin/users", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, CancellationToken cancellationToken, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<AdminUserRequest>(cancellationToken);
+    if (request is null || string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.ApiKey))
+    {
+        return Results.BadRequest(new { error = "invalid-request" });
+    }
+
+    if (!Enum.TryParse<PermissionTier>(request.DefaultTier, true, out var tier))
+    {
+        return Results.BadRequest(new { error = "invalid-tier" });
+    }
+
+    await adminService.AddOrUpdateUserAsync(request.Username, new UserOptions
+    {
+        ApiKey = request.ApiKey,
+        DefaultTier = tier
+    }, cancellationToken);
+
+    return Results.Ok(new { saved = true });
+});
+
+app.MapDelete("/admin/users/{username}", async (string username, HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, CancellationToken cancellationToken, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (string.IsNullOrWhiteSpace(username))
+    {
+        return Results.BadRequest(new { error = "missing-username" });
+    }
+
+    await adminService.RemoveUserAsync(username, cancellationToken);
+    return Results.Ok(new { deleted = true });
+});
+
+app.MapGet("/admin/endpoints/manage", (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var payload = adminService.ListEndpoints().Select(kvp => new
+    {
+        key = kvp.Key,
+        kvp.Value.Name,
+        kvp.Value.Slug,
+        kvp.Value.Description,
+        kvp.Value.StoragePath,
+        kvp.Value.IncludeInSearchByDefault,
+        kvp.Value.InheritShared
+    });
+
+    return Results.Ok(payload);
+});
+
+app.MapPost("/admin/endpoints/manage", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, CancellationToken cancellationToken, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<AdminEndpointRequest>(cancellationToken);
+    if (request is null || string.IsNullOrWhiteSpace(request.Key) || string.IsNullOrWhiteSpace(request.Name))
+    {
+        return Results.BadRequest(new { error = "invalid-request" });
+    }
+
+    var endpointOptions = new EndpointOptions
+    {
+        Name = request.Name,
+        Slug = request.Slug,
+        Description = request.Description,
+        StoragePath = request.StoragePath,
+        IncludeInSearchByDefault = request.IncludeInSearchByDefault,
+        InheritShared = request.InheritShared
+    };
+
+    await adminService.AddOrUpdateEndpointAsync(request.Key, endpointOptions, cancellationToken);
+    return Results.Ok(new { saved = true });
+});
+
+app.MapDelete("/admin/endpoints/manage/{endpointKey}", async (string endpointKey, HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, CancellationToken cancellationToken, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (string.IsNullOrWhiteSpace(endpointKey))
+    {
+        return Results.BadRequest(new { error = "missing-endpoint" });
+    }
+
+    await adminService.RemoveEndpointAsync(endpointKey, cancellationToken);
+    return Results.Ok(new { deleted = true });
+});
+
+app.MapGet("/admin/help/end-user", (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor, DocumentService documentService) =>
+{
+    if (!TryAuthorizeAny(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var html = documentService.RenderMarkdown("end-user-help.md");
+    return Results.Content(html, "text/html");
+});
+
+app.MapGet("/admin/help/agent", (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor, DocumentService documentService) =>
+{
+    if (!TryAuthorizeAny(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var html = documentService.RenderMarkdown("agent-usage.md");
+    return Results.Content(html, "text/html");
+});
+
+app.MapGet("/admin/permissions", (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var payload = adminService.ListPermissions()
+        .ToDictionary(
+            entry => entry.Key,
+            entry => entry.Value.ToDictionary(p => p.Key, p => p.Value.ToString()));
+
+    return Results.Ok(payload);
+});
+
+app.MapPost("/admin/permissions/{endpointKey}", async (string endpointKey, HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, CancellationToken cancellationToken, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<PermissionUpdateRequest>(cancellationToken);
+    if (request is null)
+    {
+        return Results.BadRequest(new { error = "invalid-request" });
+    }
+
+    var assignments = new Dictionary<string, PermissionTier>(StringComparer.OrdinalIgnoreCase);
+    foreach (var (user, tierValue) in request.Assignments ?? new Dictionary<string, string>())
+    {
+        if (!Enum.TryParse<PermissionTier>(tierValue, true, out var tier))
+        {
+            return Results.BadRequest(new { error = $"invalid-tier:{tierValue}" });
+        }
+
+        assignments[user] = tier;
+    }
+
+    await adminService.SetPermissionsAsync(endpointKey, assignments, cancellationToken);
+    return Results.Ok(new { saved = true });
+});
+
+app.MapMcp("/mcp");
+app.MapFallbackToFile("index.html");
+app.MapMetrics();
+app.Run();
+
+static bool TryAuthorizeAdmin(HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor)
+{
+    var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault() ?? string.Empty;
+    if (string.IsNullOrWhiteSpace(apiKey))
+    {
+        return false;
+    }
+
+    foreach (var endpointKey in optionsMonitor.CurrentValue.Endpoints.Keys)
+    {
+        if (authorizer.TryAuthorize(apiKey, endpointKey, out _, out var tier) && tier == PermissionTier.Admin)
+        {
+            return true;
+        }
+    }
+
+    return authorizer.TryAuthorize(apiKey, "shared", out _, out var sharedTier) && sharedTier == PermissionTier.Admin;
+}
+
+static bool TryAuthorizeAny(HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor)
+{
+    var apiKey = context.Request.Headers["X-Api-Key"].FirstOrDefault() ?? string.Empty;
+    if (string.IsNullOrWhiteSpace(apiKey))
+    {
+        return false;
+    }
+
+    foreach (var endpointKey in optionsMonitor.CurrentValue.Endpoints.Keys)
+    {
+        if (authorizer.TryAuthorize(apiKey, endpointKey, out _, out _))
+        {
+            return true;
+        }
+    }
+
+    return authorizer.TryAuthorize(apiKey, "shared", out _, out _);
+}
+
+static (string endpoint, string command) ResolveMcpLabels(PathString remaining)
+{
+    var segments = remaining.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+    var endpoint = segments.Length > 0 ? segments[0] : "global";
+    var command = segments.Length > 1 ? segments[1] : (segments.Length == 1 ? "describe" : "describe");
+    return (endpoint, command);
+}
+
+static CallToolResult CreateCallToolError(string message)
+{
+    return new CallToolResult
+    {
+        IsError = true,
+        Content = new List<ContentBlock>
+        {
+            new TextContentBlock
+            {
+                Text = message
+            }
+        }
+    };
+}
+
+static string? ExtractApiKey(HttpContext? httpContext)
+{
+    if (httpContext is null)
+    {
+        return null;
+    }
+
+    if (httpContext.Request.Headers.TryGetValue("Authorization", out var authorization))
+    {
+        var bearer = authorization.FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(bearer) && bearer.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            var token = bearer["Bearer ".Length..].Trim();
+            if (!string.IsNullOrWhiteSpace(token))
+            {
+                return token;
+            }
+        }
+    }
+
+    var apiKeyHeader = httpContext.Request.Headers["X-Api-Key"].FirstOrDefault();
+    if (!string.IsNullOrWhiteSpace(apiKeyHeader))
+    {
+        return apiKeyHeader;
+    }
+
+    if (httpContext.Request.Query.TryGetValue("apiKey", out var queryValue))
+    {
+        var trimmed = queryValue.ToString().Trim();
+        if (!string.IsNullOrWhiteSpace(trimmed))
+        {
+            return trimmed;
+        }
+    }
+
+    return null;
+}
+
+static bool TryGetEndpoint(IReadOnlyDictionary<string, JsonElement>? arguments, out string endpoint)
+{
+    if (arguments is not { Count: > 0 })
+    {
+        endpoint = string.Empty;
+        return false;
+    }
+
+    foreach (var (key, value) in arguments)
+    {
+        if (!string.Equals(key, "endpoint", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(key, "project", StringComparison.OrdinalIgnoreCase))
+        {
+            continue;
+        }
+
+        if (value.ValueKind == JsonValueKind.String)
+        {
+            var candidate = value.GetString()?.Trim();
+            if (!string.IsNullOrWhiteSpace(candidate))
+            {
+                endpoint = candidate;
+                return true;
+            }
+        }
+    }
+
+    endpoint = string.Empty;
+    return false;
+}

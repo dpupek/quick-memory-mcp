@@ -1,0 +1,275 @@
+using System.IO.Compression;
+using System.Reflection;
+using System.Threading.Channels;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using NCrontab;
+using QuickMemoryServer.Worker.Configuration;
+using QuickMemoryServer.Worker.Diagnostics;
+using QuickMemoryServer.Worker.Memory;
+
+namespace QuickMemoryServer.Worker.Services;
+
+public enum BackupMode
+{
+    Differential,
+    Full
+}
+
+public sealed record BackupRequest(string Endpoint, BackupMode Mode);
+
+public sealed class BackupService : BackgroundService
+{
+    private readonly Channel<BackupRequest> _requests = Channel.CreateUnbounded<BackupRequest>();
+    private readonly MemoryStoreFactory _storeFactory;
+    private readonly IOptionsMonitor<ServerOptions> _optionsMonitor;
+    private readonly ObservabilityMetrics _metrics;
+    private readonly ILogger<BackupService> _logger;
+
+    public BackupService(
+        MemoryStoreFactory storeFactory,
+        IOptionsMonitor<ServerOptions> optionsMonitor,
+        ObservabilityMetrics metrics,
+        ILogger<BackupService> logger)
+    {
+        _storeFactory = storeFactory;
+        _optionsMonitor = optionsMonitor;
+        _metrics = metrics;
+        _logger = logger;
+    }
+
+    public ValueTask RequestBackupAsync(string endpoint, BackupMode mode, CancellationToken cancellationToken)
+    {
+        return _requests.Writer.WriteAsync(new BackupRequest(endpoint, mode), cancellationToken);
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var diffSchedule = CreateSchedule(_optionsMonitor.CurrentValue.Global.Backup.DifferentialCron);
+        var fullSchedule = CreateSchedule(_optionsMonitor.CurrentValue.Global.Backup.FullCron);
+
+        var diffTask = RunScheduleAsync(diffSchedule, BackupMode.Differential, stoppingToken);
+        var fullTask = RunScheduleAsync(fullSchedule, BackupMode.Full, stoppingToken);
+        var manualTask = ProcessManualRequestsAsync(stoppingToken);
+
+        await Task.WhenAll(diffTask, fullTask, manualTask);
+    }
+
+    private async Task ProcessManualRequestsAsync(CancellationToken stoppingToken)
+    {
+        await foreach (var request in _requests.Reader.ReadAllAsync(stoppingToken))
+        {
+            await ExecuteBackupAsync(request.Endpoint, request.Mode, stoppingToken);
+        }
+    }
+
+    private async Task RunScheduleAsync(CrontabSchedule? schedule, BackupMode mode, CancellationToken stoppingToken)
+    {
+        if (schedule is null)
+        {
+            return;
+        }
+
+        var next = schedule.GetNextOccurrence(DateTime.UtcNow);
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            var delay = next - DateTime.UtcNow;
+            if (delay > TimeSpan.Zero)
+            {
+                try
+                {
+                    await Task.Delay(delay, stoppingToken);
+                }
+                catch (TaskCanceledException)
+                {
+                    break;
+                }
+            }
+
+            var endpoints = _optionsMonitor.CurrentValue.Endpoints.Keys.ToArray();
+            foreach (var endpoint in endpoints)
+            {
+                try
+                {
+                    await ExecuteBackupAsync(endpoint, mode, stoppingToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Scheduled {Mode} backup failed for {Endpoint}", mode, endpoint);
+                }
+            }
+
+            next = schedule.GetNextOccurrence(DateTime.UtcNow);
+        }
+    }
+
+    private async Task ExecuteBackupAsync(string endpoint, BackupMode mode, CancellationToken cancellationToken)
+    {
+        var success = false;
+        try
+        {
+            var store = _storeFactory.GetOrCreate(endpoint);
+            var basePath = AppContext.BaseDirectory;
+            var backupRoot = Path.Combine(basePath, "Backups");
+
+            Directory.CreateDirectory(backupRoot);
+
+            switch (mode)
+            {
+                case BackupMode.Differential:
+                    var diffRoot = Path.Combine(backupRoot, "diff");
+                    var diffFolder = Path.Combine(diffRoot, DateTime.UtcNow.ToString("yyyyMMdd"), endpoint);
+                    await CreateDifferentialBackupAsync(store, diffFolder, cancellationToken);
+                    await PurgeOldBackupsAsync(diffRoot, _optionsMonitor.CurrentValue.Global.Backup.RetentionDays, mode);
+                    break;
+                case BackupMode.Full:
+                    var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+                    var fullRoot = Path.Combine(backupRoot, "full");
+                    var destFile = Path.Combine(fullRoot, $"{timestamp}-{endpoint}.zip");
+                    await CreateFullBackupAsync(store, destFile, cancellationToken);
+                    await PurgeOldBackupsAsync(fullRoot, _optionsMonitor.CurrentValue.Global.Backup.FullRetentionDays, mode);
+                    break;
+            }
+
+            success = true;
+        }
+        catch
+        {
+            _metrics.BackupFailed(endpoint);
+            ObservabilityEventSource.Log.ReportBackupFailure();
+            throw;
+        }
+        finally
+        {
+            if (success)
+            {
+                _metrics.BackupSucceeded(endpoint);
+                ObservabilityEventSource.Log.ReportBackupSuccess();
+            }
+        }
+    }
+
+    private async Task CreateDifferentialBackupAsync(IMemoryStore store, string destinationDirectory, CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(destinationDirectory);
+
+        var sourceEntries = Path.Combine(store.StoragePath, "entries.jsonl");
+        var destEntries = Path.Combine(destinationDirectory, "entries.jsonl");
+        await CopyFileAsync(sourceEntries, destEntries, cancellationToken);
+
+        var sourceIndexes = Path.Combine(store.StoragePath, "indexes");
+        var destIndexes = Path.Combine(destinationDirectory, "indexes");
+        if (Directory.Exists(sourceIndexes))
+        {
+            CopyDirectory(sourceIndexes, destIndexes, cancellationToken);
+        }
+
+        _logger.LogInformation("Differential backup completed for {Endpoint} => {Destination}", store.Project, destinationDirectory);
+    }
+
+    private Task CreateFullBackupAsync(IMemoryStore store, string destinationZip, CancellationToken cancellationToken)
+    {
+        var destinationDir = Path.GetDirectoryName(destinationZip)!;
+        Directory.CreateDirectory(destinationDir);
+
+        var tempDir = Path.Combine(Path.GetTempPath(), "qms-backup", Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            CopyDirectory(store.StoragePath, tempDir, cancellationToken);
+            ZipFile.CreateFromDirectory(tempDir, destinationZip, CompressionLevel.Fastest, includeBaseDirectory: false);
+            _logger.LogInformation("Full backup completed for {Endpoint} => {Destination}", store.Project, destinationZip);
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir))
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static async Task CopyFileAsync(string source, string destination, CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+        await using var sourceStream = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+        await using var destStream = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None);
+        await sourceStream.CopyToAsync(destStream, cancellationToken);
+    }
+
+    private static void CopyDirectory(string sourceDir, string destinationDir, CancellationToken cancellationToken)
+    {
+        if (Directory.Exists(destinationDir))
+        {
+            Directory.Delete(destinationDir, recursive: true);
+        }
+
+        foreach (var dirPath in Directory.GetDirectories(sourceDir, "*", SearchOption.AllDirectories))
+        {
+            Directory.CreateDirectory(dirPath.Replace(sourceDir, destinationDir));
+        }
+
+        foreach (var filePath in Directory.GetFiles(sourceDir, "*", SearchOption.AllDirectories))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var destPath = filePath.Replace(sourceDir, destinationDir);
+            Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+            File.Copy(filePath, destPath, overwrite: true);
+        }
+    }
+
+    private Task PurgeOldBackupsAsync(string path, int retentionDays, BackupMode mode)
+    {
+        if (retentionDays <= 0 || !Directory.Exists(path))
+        {
+            return Task.CompletedTask;
+        }
+
+        var threshold = DateTime.UtcNow.AddDays(-retentionDays);
+
+        if (mode == BackupMode.Full)
+        {
+            foreach (var file in Directory.GetFiles(path, "*.zip", SearchOption.TopDirectoryOnly))
+            {
+                var info = new FileInfo(file);
+                if (info.CreationTimeUtc < threshold)
+                {
+                    info.Delete();
+                }
+            }
+        }
+        else
+        {
+            foreach (var directory in Directory.GetDirectories(path))
+            {
+                var info = new DirectoryInfo(directory);
+                if (info.CreationTimeUtc < threshold)
+                {
+                    info.Delete(true);
+                }
+            }
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private static CrontabSchedule? CreateSchedule(string cron)
+    {
+        if (string.IsNullOrWhiteSpace(cron))
+        {
+            return null;
+        }
+
+        try
+        {
+            return CrontabSchedule.Parse(cron, new CrontabSchedule.ParseOptions { IncludingSeconds = false });
+        }
+        catch
+        {
+            return null;
+        }
+    }
+}

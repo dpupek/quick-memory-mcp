@@ -1,0 +1,1082 @@
+2025-11-13 00:02:32.218 -06:00 [INF] Quick Memory Server starting. Preloading stores…
+2025-11-13 00:02:32.361 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-13 00:02:32.393 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-13 00:02:32.401 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-13 00:02:32.404 -06:00 [INF] Initialized memory store Project A with 0 entries.
+2025-11-13 00:02:32.412 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-13 00:02:32.416 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-13 00:02:32.418 -06:00 [INF] Memory stores preloaded. Ready to accept MCP requests.
+2025-11-13 00:02:32.471 -06:00 [INF] Now listening on: http://localhost:5080
+2025-11-13 00:02:32.474 -06:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-11-13 00:02:32.475 -06:00 [INF] Hosting environment: Development
+2025-11-13 00:02:32.477 -06:00 [INF] Content root path: E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker
+2025-11-13 00:02:36.747 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/ - null null
+2025-11-13 00:02:36.768 -06:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\index.html'
+2025-11-13 00:02:36.771 -06:00 [INF] HTTP GET /index.html responded 200 in 16.5904 ms
+2025-11-13 00:02:36.776 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/index.html - 200 10893 text/html 29.9236ms
+2025-11-13 00:02:36.826 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - null null
+2025-11-13 00:02:36.839 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/js/app.js - null null
+2025-11-13 00:02:36.839 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/css/app.css - null null
+2025-11-13 00:02:36.851 -06:00 [INF] Sending file. Request path: '/js/app.js'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\js\app.js'
+2025-11-13 00:02:36.851 -06:00 [INF] Sending file. Request path: '/css/app.css'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\css\app.css'
+2025-11-13 00:02:36.854 -06:00 [INF] HTTP GET /js/app.js responded 200 in 9.0959 ms
+2025-11-13 00:02:36.856 -06:00 [INF] HTTP GET /css/app.css responded 200 in 6.2630 ms
+2025-11-13 00:02:36.858 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/js/app.js - 200 26541 text/javascript 19.0583ms
+2025-11-13 00:02:36.860 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/css/app.css - 200 1939 text/css 20.9657ms
+2025-11-13 00:02:36.944 -06:00 [INF] HTTP GET /.well-known/appspecific/com.chrome.devtools.json responded 404 in 103.7659 ms
+2025-11-13 00:02:36.948 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 121.937ms
+2025-11-13 00:02:36.953 -06:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2025-11-13 00:02:37.257 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 00:02:37.265 -06:00 [INF] Executing endpoint 'HTTP: GET /mcp'
+2025-11-13 00:02:37.272 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 00:02:37.286 -06:00 [INF] Writing value of type '<>f__AnonymousType3`1' as Json.
+2025-11-13 00:02:37.298 -06:00 [INF] Executed endpoint 'HTTP: GET /mcp'
+2025-11-13 00:02:37.301 -06:00 [INF] HTTP GET /mcp responded 200 in 39.1737 ms
+2025-11-13 00:02:37.305 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 200 null application/json; charset=utf-8 47.7907ms
+2025-11-13 00:02:49.345 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - null 0
+2025-11-13 00:02:49.350 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 00:02:49.355 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 00:02:49.360 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-13 00:02:49.363 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 00:02:49.365 -06:00 [INF] HTTP POST /mcp/projectA/ping responded 200 in 15.5792 ms
+2025-11-13 00:02:49.369 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - 200 null application/json; charset=utf-8 23.7113ms
+2025-11-13 00:02:49.375 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - null 0
+2025-11-13 00:02:49.381 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 00:02:49.390 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 00:02:49.392 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-13 00:02:49.395 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 00:02:49.397 -06:00 [INF] HTTP POST /mcp/shared/ping responded 200 in 18.2506 ms
+2025-11-13 00:02:49.401 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - 200 null application/json; charset=utf-8 25.7684ms
+2025-11-13 00:02:49.405 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-13 00:02:49.405 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-13 00:02:49.406 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/health - null null
+2025-11-13 00:02:49.410 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-13 00:02:49.414 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 00:02:49.416 -06:00 [INF] Executing endpoint 'HTTP: GET /health'
+2025-11-13 00:02:49.430 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 00:02:49.433 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 00:02:49.433 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-13 00:02:49.435 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-13 00:02:49.437 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:02:49.438 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 00:02:49.440 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 00:02:49.441 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-13 00:02:49.442 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 28.8784 ms
+2025-11-13 00:02:49.445 -06:00 [INF] HTTP GET /admin/users responded 200 in 35.0535 ms
+2025-11-13 00:02:49.447 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 42.7431ms
+2025-11-13 00:02:49.450 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 45.3983ms
+2025-11-13 00:02:49.458 -06:00 [INF] Writing value of type 'HealthReport' as Json.
+2025-11-13 00:02:49.468 -06:00 [INF] Executed endpoint 'HTTP: GET /health'
+2025-11-13 00:02:49.479 -06:00 [INF] HTTP GET /health responded 200 in 62.9087 ms
+2025-11-13 00:02:49.482 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/health - 200 null application/json; charset=utf-8 75.8628ms
+2025-11-13 00:03:32.424 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:04:32.434 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:05:32.435 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:06:32.430 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:07:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:08:32.428 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:09:32.420 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:10:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:11:32.426 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:12:32.428 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:13:32.425 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:14:32.434 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:15:32.421 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:16:32.429 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:17:32.436 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:18:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:19:32.426 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:20:32.441 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:21:32.421 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:22:32.434 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:23:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:24:32.433 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:25:32.427 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:26:32.434 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:27:32.420 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:28:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:29:32.439 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:30:32.433 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:31:32.427 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:32:32.425 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:33:32.420 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:34:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:35:32.419 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:36:32.427 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:37:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:38:32.428 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:39:32.435 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:40:32.429 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:41:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:42:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:43:32.429 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:44:32.427 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:45:32.421 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:46:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:47:32.419 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:48:32.429 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:49:32.420 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:50:32.421 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:51:32.430 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:52:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:53:32.421 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:54:32.434 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:55:32.424 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:56:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:57:32.429 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:58:32.420 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 00:59:32.429 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:00:32.425 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:01:32.420 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:02:32.424 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:03:32.429 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:04:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:05:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:06:32.429 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:07:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:08:32.420 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:09:32.430 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:10:32.425 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:11:32.432 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:12:32.428 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:13:32.434 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:14:32.434 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:15:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:16:32.424 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:17:32.428 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:18:32.425 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:19:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:20:32.437 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:21:32.435 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:22:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:23:32.429 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:24:32.421 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:25:32.437 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:26:32.429 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:27:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:28:32.427 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:29:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:30:32.425 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:31:32.420 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:32:32.427 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:33:32.443 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:34:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:35:32.431 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:36:32.432 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:37:32.433 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:38:32.424 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:39:32.421 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:40:32.426 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:41:32.431 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:42:32.421 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:43:32.421 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:44:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:45:32.425 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:46:32.427 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:47:32.427 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:48:32.432 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:49:32.420 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:50:32.420 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:51:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:52:32.437 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:53:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:54:32.432 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:55:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:56:32.422 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 01:57:32.423 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:23:15.314 -06:00 [INF] Quick Memory Server starting. Preloading stores…
+2025-11-13 02:23:15.510 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-13 02:23:15.566 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-13 02:23:15.576 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-13 02:23:15.579 -06:00 [INF] Initialized memory store Project A with 0 entries.
+2025-11-13 02:23:15.588 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-13 02:23:15.590 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-13 02:23:15.593 -06:00 [INF] Memory stores preloaded. Ready to accept MCP requests.
+2025-11-13 02:23:15.687 -06:00 [INF] Now listening on: http://localhost:5080
+2025-11-13 02:23:15.689 -06:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-11-13 02:23:15.691 -06:00 [INF] Hosting environment: Development
+2025-11-13 02:23:15.692 -06:00 [INF] Content root path: E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker
+2025-11-13 02:23:35.986 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/ - null null
+2025-11-13 02:23:36.014 -06:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\index.html'
+2025-11-13 02:23:36.018 -06:00 [INF] HTTP GET /index.html responded 200 in 23.9129 ms
+2025-11-13 02:23:36.050 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/index.html - 200 10893 text/html 65.5641ms
+2025-11-13 02:23:36.106 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - null null
+2025-11-13 02:23:36.106 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/js/app.js - null null
+2025-11-13 02:23:36.106 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/css/app.css - null null
+2025-11-13 02:23:36.120 -06:00 [INF] Sending file. Request path: '/js/app.js'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\js\app.js'
+2025-11-13 02:23:36.120 -06:00 [INF] Sending file. Request path: '/css/app.css'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\css\app.css'
+2025-11-13 02:23:36.123 -06:00 [INF] HTTP GET /js/app.js responded 200 in 8.3912 ms
+2025-11-13 02:23:36.124 -06:00 [INF] HTTP GET /css/app.css responded 200 in 5.4844 ms
+2025-11-13 02:23:36.128 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/js/app.js - 200 26541 text/javascript 21.4875ms
+2025-11-13 02:23:36.142 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/css/app.css - 200 1939 text/css 36.1606ms
+2025-11-13 02:23:36.231 -06:00 [INF] HTTP GET /.well-known/appspecific/com.chrome.devtools.json responded 404 in 120.3057 ms
+2025-11-13 02:23:36.239 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 132.6544ms
+2025-11-13 02:23:36.244 -06:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2025-11-13 02:23:36.650 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 02:23:36.657 -06:00 [ERR] HTTP GET /mcp responded 500 in 2.9233 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2025-11-13 02:23:36.692 -06:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2025-11-13 02:23:36.716 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 500 null text/plain; charset=utf-8 65.42ms
+2025-11-13 02:23:49.075 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 02:23:49.080 -06:00 [ERR] HTTP GET /mcp responded 500 in 0.7705 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2025-11-13 02:23:49.087 -06:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2025-11-13 02:23:49.106 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 500 null text/plain; charset=utf-8 31.0836ms
+2025-11-13 02:23:53.369 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 02:23:53.374 -06:00 [ERR] HTTP GET /mcp responded 500 in 0.2461 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2025-11-13 02:23:53.382 -06:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2025-11-13 02:23:53.388 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 500 null text/plain; charset=utf-8 18.5535ms
+2025-11-13 02:24:15.610 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:24:43.649 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/ - null null
+2025-11-13 02:24:43.655 -06:00 [INF] The file /index.html was not modified
+2025-11-13 02:24:43.657 -06:00 [INF] HTTP GET /index.html responded 304 in 3.9797 ms
+2025-11-13 02:24:43.661 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/index.html - 304 null text/html 12.0168ms
+2025-11-13 02:24:43.912 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/css/app.css - null null
+2025-11-13 02:24:43.916 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/js/app.js - null null
+2025-11-13 02:24:43.918 -06:00 [INF] The file /css/app.css was not modified
+2025-11-13 02:24:43.972 -06:00 [INF] Sending file. Request path: '/js/app.js'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\js\app.js'
+2025-11-13 02:24:43.973 -06:00 [INF] HTTP GET /css/app.css responded 304 in 55.0267 ms
+2025-11-13 02:24:43.975 -06:00 [INF] HTTP GET /js/app.js responded 200 in 4.7628 ms
+2025-11-13 02:24:43.978 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/css/app.css - 304 null text/css 66.7107ms
+2025-11-13 02:24:43.981 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/js/app.js - 200 26541 text/javascript 64.4445ms
+2025-11-13 02:24:44.171 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 02:24:44.177 -06:00 [ERR] HTTP GET /mcp responded 500 in 0.2680 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2025-11-13 02:24:44.224 -06:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2025-11-13 02:24:44.231 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 500 null text/plain; charset=utf-8 59.1143ms
+2025-11-13 02:25:15.608 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:25:20.755 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 02:25:20.760 -06:00 [ERR] HTTP GET /mcp responded 500 in 0.2595 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2025-11-13 02:25:20.767 -06:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2025-11-13 02:25:20.773 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 500 null text/plain; charset=utf-8 17.5625ms
+2025-11-13 02:26:15.606 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:27:15.603 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:27:34.212 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 02:27:34.233 -06:00 [ERR] HTTP GET /mcp responded 500 in 0.2708 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2025-11-13 02:27:34.249 -06:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2025-11-13 02:27:34.256 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 500 null text/plain; charset=utf-8 43.8422ms
+2025-11-13 02:27:41.416 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/ - null null
+2025-11-13 02:27:41.422 -06:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\index.html'
+2025-11-13 02:27:41.431 -06:00 [INF] HTTP GET /index.html responded 200 in 9.5382 ms
+2025-11-13 02:27:41.434 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/index.html - 200 10893 text/html 18.1775ms
+2025-11-13 02:27:41.487 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/css/app.css - null null
+2025-11-13 02:27:41.489 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/js/app.js - null null
+2025-11-13 02:27:41.493 -06:00 [INF] Sending file. Request path: '/css/app.css'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\css\app.css'
+2025-11-13 02:27:41.497 -06:00 [INF] Sending file. Request path: '/js/app.js'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\js\app.js'
+2025-11-13 02:27:41.499 -06:00 [INF] HTTP GET /css/app.css responded 200 in 6.8769 ms
+2025-11-13 02:27:41.501 -06:00 [INF] HTTP GET /js/app.js responded 200 in 4.8504 ms
+2025-11-13 02:27:41.504 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/css/app.css - 200 1939 text/css 17.7639ms
+2025-11-13 02:27:41.507 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/js/app.js - 200 26541 text/javascript 17.8184ms
+2025-11-13 02:27:41.521 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - null null
+2025-11-13 02:27:41.527 -06:00 [INF] HTTP GET /.well-known/appspecific/com.chrome.devtools.json responded 404 in 2.3551 ms
+2025-11-13 02:27:41.532 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 11.5807ms
+2025-11-13 02:27:41.552 -06:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2025-11-13 02:27:41.880 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 02:27:41.885 -06:00 [ERR] HTTP GET /mcp responded 500 in 0.2659 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2025-11-13 02:27:41.893 -06:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2025-11-13 02:27:41.900 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 500 null text/plain; charset=utf-8 20.1661ms
+2025-11-13 02:27:46.364 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 02:27:46.368 -06:00 [ERR] HTTP GET /mcp responded 500 in 0.2647 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2025-11-13 02:27:46.376 -06:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2025-11-13 02:27:46.382 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 500 null text/plain; charset=utf-8 18.4038ms
+2025-11-13 02:28:15.610 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:28:49.126 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 02:28:49.131 -06:00 [ERR] HTTP GET /mcp responded 500 in 0.3070 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2025-11-13 02:28:49.137 -06:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2025-11-13 02:28:49.144 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 500 null text/plain; charset=utf-8 17.4718ms
+2025-11-13 02:29:12.970 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 02:29:12.976 -06:00 [ERR] HTTP GET /mcp responded 500 in 0.2684 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2025-11-13 02:29:12.984 -06:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2025-11-13 02:29:12.991 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 500 null text/plain; charset=utf-8 20.6902ms
+2025-11-13 02:29:15.618 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:29:55.636 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-13 02:29:55.641 -06:00 [ERR] HTTP GET /mcp responded 500 in 0.2931 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2025-11-13 02:29:55.649 -06:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+HTTP: GET /mcp
+MCP Streamable HTTP | HTTP: GET /mcp/
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Program.<>c__DisplayClass0_0.<<<Main>$>b__8>d.MoveNext() in E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 199
+--- End of stack trace from previous location ---
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2025-11-13 02:29:55.664 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 500 null text/plain; charset=utf-8 28.0861ms
+2025-11-13 02:30:15.605 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:31:15.597 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:32:15.596 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:33:15.608 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:33:53.287 -06:00 [INF] Application is shutting down...
+2025-11-13 02:33:53.305 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:46:57.687 -06:00 [INF] Quick Memory Server starting. Preloading stores…
+2025-11-13 02:46:57.866 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-13 02:46:57.926 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-13 02:46:57.935 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-13 02:46:57.938 -06:00 [INF] Initialized memory store Project A with 0 entries.
+2025-11-13 02:46:57.948 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-13 02:46:57.978 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-13 02:46:57.981 -06:00 [INF] Memory stores preloaded. Ready to accept MCP requests.
+2025-11-13 02:46:58.070 -06:00 [INF] Now listening on: http://localhost:5080
+2025-11-13 02:46:58.076 -06:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-11-13 02:46:58.085 -06:00 [INF] Hosting environment: Development
+2025-11-13 02:46:58.087 -06:00 [INF] Content root path: E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker
+2025-11-13 02:47:07.862 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/ - null null
+2025-11-13 02:47:07.894 -06:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\index.html'
+2025-11-13 02:47:07.899 -06:00 [INF] HTTP GET /index.html responded 200 in 28.1518 ms
+2025-11-13 02:47:07.906 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/index.html - 200 10893 text/html 45.5257ms
+2025-11-13 02:47:07.957 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - null null
+2025-11-13 02:47:07.964 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/css/app.css - null null
+2025-11-13 02:47:07.964 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/js/app.js - null null
+2025-11-13 02:47:07.980 -06:00 [INF] Sending file. Request path: '/css/app.css'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\css\app.css'
+2025-11-13 02:47:07.983 -06:00 [INF] Sending file. Request path: '/js/app.js'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\js\app.js'
+2025-11-13 02:47:07.985 -06:00 [INF] HTTP GET /css/app.css responded 200 in 6.4016 ms
+2025-11-13 02:47:08.006 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/css/app.css - 200 1939 text/css 41.7848ms
+2025-11-13 02:47:07.986 -06:00 [INF] HTTP GET /js/app.js responded 200 in 3.9058 ms
+2025-11-13 02:47:08.026 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/js/app.js - 200 26567 text/javascript 61.6086ms
+2025-11-13 02:47:08.148 -06:00 [INF] HTTP GET /.well-known/appspecific/com.chrome.devtools.json responded 404 in 185.1872 ms
+2025-11-13 02:47:08.154 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 197.3232ms
+2025-11-13 02:47:08.163 -06:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2025-11-13 02:47:08.447 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/endpoints - null null
+2025-11-13 02:47:08.458 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/endpoints'
+2025-11-13 02:47:08.482 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:47:08.492 -06:00 [INF] Writing value of type '<>f__AnonymousType3`1' as Json.
+2025-11-13 02:47:08.502 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/endpoints'
+2025-11-13 02:47:08.505 -06:00 [INF] HTTP GET /admin/endpoints responded 200 in 52.4834 ms
+2025-11-13 02:47:08.511 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/endpoints - 200 null application/json; charset=utf-8 63.9602ms
+2025-11-13 02:47:23.979 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - null 0
+2025-11-13 02:47:23.989 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 02:47:24.054 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:47:24.058 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-13 02:47:24.062 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 02:47:24.075 -06:00 [INF] HTTP POST /mcp/projectA/ping responded 200 in 88.1075 ms
+2025-11-13 02:47:24.080 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - 200 null application/json; charset=utf-8 100.8724ms
+2025-11-13 02:47:24.087 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - null 0
+2025-11-13 02:47:24.099 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 02:47:24.112 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:47:24.131 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-13 02:47:24.134 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 02:47:24.138 -06:00 [INF] HTTP POST /mcp/shared/ping responded 200 in 41.1268 ms
+2025-11-13 02:47:24.142 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - 200 null application/json; charset=utf-8 55.1576ms
+2025-11-13 02:47:24.148 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-13 02:47:24.148 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-13 02:47:24.148 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/health - null null
+2025-11-13 02:47:24.155 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-13 02:47:24.178 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 02:47:24.180 -06:00 [INF] Executing endpoint 'HTTP: GET /health'
+2025-11-13 02:47:24.183 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:47:24.190 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:47:24.210 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-13 02:47:24.210 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-13 02:47:24.214 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:47:24.215 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 02:47:24.219 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 41.8351 ms
+2025-11-13 02:47:24.223 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-13 02:47:24.236 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:47:24.242 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 94.2749ms
+2025-11-13 02:47:24.244 -06:00 [INF] HTTP GET /admin/users responded 200 in 91.1215 ms
+2025-11-13 02:47:24.267 -06:00 [INF] Writing value of type 'HealthReport' as Json.
+2025-11-13 02:47:24.275 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 127.1887ms
+2025-11-13 02:47:24.285 -06:00 [INF] Executed endpoint 'HTTP: GET /health'
+2025-11-13 02:47:24.300 -06:00 [INF] HTTP GET /health responded 200 in 119.8454 ms
+2025-11-13 02:47:24.303 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/health - 200 null application/json; charset=utf-8 155.5155ms
+2025-11-13 02:47:28.770 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/help/end-user - null null
+2025-11-13 02:47:28.788 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/help/end-user'
+2025-11-13 02:47:29.106 -06:00 [INF] Write content with HTTP Response ContentType of text/html
+2025-11-13 02:47:29.158 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/help/end-user'
+2025-11-13 02:47:29.160 -06:00 [INF] HTTP GET /admin/help/end-user responded 200 in 372.9522 ms
+2025-11-13 02:47:29.165 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/help/end-user - 200 3198 text/html 395.2433ms
+2025-11-13 02:47:57.989 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:48:27.145 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-13 02:48:27.145 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-13 02:48:27.150 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 02:48:27.154 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-13 02:48:27.155 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:48:27.157 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:48:27.158 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-13 02:48:27.160 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-13 02:48:27.162 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 02:48:27.163 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-13 02:48:27.165 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 14.9804 ms
+2025-11-13 02:48:27.167 -06:00 [INF] HTTP GET /admin/users responded 200 in 12.6235 ms
+2025-11-13 02:48:27.170 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 24.8251ms
+2025-11-13 02:48:27.172 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 27.0342ms
+2025-11-13 02:48:29.332 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-13 02:48:29.336 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:48:29.358 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:48:29.362 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 02:48:29.365 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:48:29.367 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 31.0708 ms
+2025-11-13 02:48:29.370 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 37.7342ms
+2025-11-13 02:48:57.992 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-13 02:49:05.986 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/entries - application/json 208
+2025-11-13 02:49:06.005 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/entries'
+2025-11-13 02:49:06.268 -06:00 [INF] Lucene index rebuilt with 1 documents.
+2025-11-13 02:49:06.272 -06:00 [INF] Persisted 1 entries for store Project A.
+2025-11-13 02:49:06.274 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:49:06.277 -06:00 [INF] Writing value of type '<>f__AnonymousType10`1' as Json.
+2025-11-13 02:49:06.279 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/entries'
+2025-11-13 02:49:06.282 -06:00 [INF] HTTP POST /mcp/projectA/entries responded 200 in 276.9321 ms
+2025-11-13 02:49:06.284 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-13 02:49:06.285 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/entries - 200 null application/json; charset=utf-8 299.4585ms
+2025-11-13 02:49:06.300 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:49:06.304 -06:00 [INF] Detected change for Project A, reloading from disk.
+2025-11-13 02:49:06.306 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:49:06.308 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 02:49:06.310 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:49:06.313 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 12.6133 ms
+2025-11-13 02:49:06.316 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 31.2838ms
+2025-11-13 02:49:06.363 -06:00 [INF] Lucene index rebuilt with 1 documents.
+2025-11-13 02:49:10.003 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-13 02:49:10.008 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:49:10.010 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:49:10.011 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 02:49:10.013 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:49:10.015 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 7.8494 ms
+2025-11-13 02:49:10.028 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 24.6301ms
+2025-11-13 02:49:18.452 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/shared/searchEntries - application/json 48
+2025-11-13 02:49:18.456 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:49:18.459 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:49:18.461 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 02:49:18.463 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:49:18.465 -06:00 [INF] HTTP POST /mcp/shared/searchEntries responded 200 in 8.5099 ms
+2025-11-13 02:49:18.468 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/shared/searchEntries - 200 null application/json; charset=utf-8 16.0084ms
+2025-11-13 02:49:25.849 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/shared/searchEntries - application/json 52
+2025-11-13 02:49:25.854 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:49:25.908 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:49:25.910 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 02:49:25.913 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:49:25.915 -06:00 [INF] HTTP POST /mcp/shared/searchEntries responded 200 in 61.3389 ms
+2025-11-13 02:49:25.918 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/shared/searchEntries - 200 null application/json; charset=utf-8 69.5525ms
+2025-11-13 02:49:47.910 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/entries - application/json 208
+2025-11-13 02:49:47.926 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/entries'
+2025-11-13 02:49:48.015 -06:00 [INF] Lucene index rebuilt with 2 documents.
+2025-11-13 02:49:48.019 -06:00 [INF] Persisted 2 entries for store Project A.
+2025-11-13 02:49:48.021 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:49:48.023 -06:00 [INF] Writing value of type '<>f__AnonymousType10`1' as Json.
+2025-11-13 02:49:48.025 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/entries'
+2025-11-13 02:49:48.027 -06:00 [INF] HTTP POST /mcp/projectA/entries responded 200 in 101.2922 ms
+2025-11-13 02:49:48.028 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/shared/searchEntries - application/json 52
+2025-11-13 02:49:48.049 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/entries - 200 null application/json; charset=utf-8 138.6222ms
+2025-11-13 02:49:48.053 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:49:48.059 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:49:48.061 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 02:49:48.063 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:49:48.066 -06:00 [INF] HTTP POST /mcp/shared/searchEntries responded 200 in 12.9887 ms
+2025-11-13 02:49:48.068 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/shared/searchEntries - 200 null application/json; charset=utf-8 40.1198ms
+2025-11-13 02:49:48.190 -06:00 [INF] Detected change for Project A, reloading from disk.
+2025-11-13 02:49:48.241 -06:00 [INF] Lucene index rebuilt with 2 documents.
+2025-11-13 02:49:57.985 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 02:50:57.993 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 02:51:03.053 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 52
+2025-11-13 02:51:03.058 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:51:03.180 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 02:51:03.183 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 02:51:03.189 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 02:51:03.192 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 133.4659 ms
+2025-11-13 02:51:03.195 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 142.3081ms
+2025-11-13 02:51:58.004 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 02:52:57.993 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 02:53:57.988 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 02:54:57.991 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 02:55:57.989 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 02:56:57.996 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 02:57:57.985 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 02:58:58.001 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 02:59:57.990 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 03:00:57.991 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 03:01:57.991 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 03:02:58.004 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 03:03:57.992 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 03:04:57.995 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 03:05:57.991 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 03:06:57.991 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 07:10:03.434 -06:00 [INF] Quick Memory Server starting. Preloading stores…
+2025-11-13 07:10:03.592 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-13 07:10:03.620 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-13 07:10:03.709 -06:00 [INF] Now listening on: http://localhost:5080
+2025-11-13 07:10:03.711 -06:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-11-13 07:10:03.713 -06:00 [INF] Hosting environment: Development
+2025-11-13 07:10:03.714 -06:00 [INF] Content root path: E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker
+2025-11-13 07:10:03.837 -06:00 [INF] Lucene index rebuilt with 2 documents.
+2025-11-13 07:10:03.842 -06:00 [INF] Initialized memory store Project A with 2 entries.
+2025-11-13 07:10:03.850 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-13 07:10:03.852 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-13 07:10:03.855 -06:00 [INF] Memory stores preloaded. Ready to accept MCP requests.
+2025-11-13 07:10:18.039 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/ - null null
+2025-11-13 07:10:18.084 -06:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\index.html'
+2025-11-13 07:10:18.088 -06:00 [INF] HTTP GET /index.html responded 200 in 41.6587 ms
+2025-11-13 07:10:18.094 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/index.html - 200 15375 text/html 56.2654ms
+2025-11-13 07:10:18.171 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - null null
+2025-11-13 07:10:18.176 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/css/app.css - null null
+2025-11-13 07:10:18.177 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/js/app.js - null null
+2025-11-13 07:10:18.183 -06:00 [INF] Sending file. Request path: '/css/app.css'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\css\app.css'
+2025-11-13 07:10:18.187 -06:00 [INF] Sending file. Request path: '/js/app.js'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\js\app.js'
+2025-11-13 07:10:18.188 -06:00 [INF] HTTP GET /css/app.css responded 200 in 6.4268 ms
+2025-11-13 07:10:18.190 -06:00 [INF] HTTP GET /js/app.js responded 200 in 4.5322 ms
+2025-11-13 07:10:18.193 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/css/app.css - 200 2538 text/css 16.7827ms
+2025-11-13 07:10:18.196 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/js/app.js - 200 35037 text/javascript 18.9608ms
+2025-11-13 07:10:18.282 -06:00 [INF] HTTP GET /.well-known/appspecific/com.chrome.devtools.json responded 404 in 107.1183 ms
+2025-11-13 07:10:18.287 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 116.6084ms
+2025-11-13 07:10:18.295 -06:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2025-11-13 07:10:18.556 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/endpoints - null null
+2025-11-13 07:10:18.587 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/endpoints'
+2025-11-13 07:10:18.599 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:10:18.606 -06:00 [INF] Writing value of type '<>f__AnonymousType3`1' as Json.
+2025-11-13 07:10:18.612 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/endpoints'
+2025-11-13 07:10:18.615 -06:00 [INF] HTTP GET /admin/endpoints responded 200 in 54.3275 ms
+2025-11-13 07:10:18.619 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/endpoints - 200 null application/json; charset=utf-8 63.0718ms
+2025-11-13 07:10:27.932 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - null 0
+2025-11-13 07:10:27.937 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 07:10:27.942 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:10:27.945 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-13 07:10:27.950 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 07:10:27.954 -06:00 [INF] HTTP POST /mcp/projectA/ping responded 200 in 17.1083 ms
+2025-11-13 07:10:27.961 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - 200 null application/json; charset=utf-8 28.9921ms
+2025-11-13 07:10:27.967 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - null 0
+2025-11-13 07:10:27.973 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 07:10:27.976 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:10:27.978 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-13 07:10:28.008 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 07:10:28.018 -06:00 [INF] HTTP POST /mcp/shared/ping responded 200 in 47.2277 ms
+2025-11-13 07:10:28.021 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - 200 null application/json; charset=utf-8 54.4194ms
+2025-11-13 07:10:28.027 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-13 07:10:28.027 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-13 07:10:28.027 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/health - null null
+2025-11-13 07:10:28.033 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-13 07:10:28.035 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 07:10:28.038 -06:00 [INF] Executing endpoint 'HTTP: GET /health'
+2025-11-13 07:10:28.040 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:10:28.044 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:10:28.045 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-13 07:10:28.047 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-13 07:10:28.047 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 07:10:28.050 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 07:10:28.052 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:10:28.052 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-13 07:10:28.053 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 18.3998 ms
+2025-11-13 07:10:28.056 -06:00 [INF] HTTP GET /admin/users responded 200 in 24.4591 ms
+2025-11-13 07:10:28.057 -06:00 [INF] Writing value of type 'HealthReport' as Json.
+2025-11-13 07:10:28.058 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 31.7462ms
+2025-11-13 07:10:28.100 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 73.5883ms
+2025-11-13 07:10:28.109 -06:00 [INF] Executed endpoint 'HTTP: GET /health'
+2025-11-13 07:10:28.117 -06:00 [INF] HTTP GET /health responded 200 in 79.6890 ms
+2025-11-13 07:10:28.121 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/health - 200 null application/json; charset=utf-8 94.1068ms
+2025-11-13 07:10:45.505 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-13 07:10:45.505 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-13 07:10:45.517 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 07:10:45.520 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-13 07:10:45.521 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:10:45.522 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:10:45.523 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-13 07:10:45.525 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-13 07:10:45.526 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 07:10:45.528 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-13 07:10:45.529 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 13.2682 ms
+2025-11-13 07:10:45.531 -06:00 [INF] HTTP GET /admin/users responded 200 in 11.6213 ms
+2025-11-13 07:10:45.534 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 29.0914ms
+2025-11-13 07:10:45.537 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 32.0098ms
+2025-11-13 07:10:46.473 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/help/end-user - null null
+2025-11-13 07:10:46.478 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/help/end-user'
+2025-11-13 07:10:46.576 -06:00 [INF] Write content with HTTP Response ContentType of text/html
+2025-11-13 07:10:46.580 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/help/end-user'
+2025-11-13 07:10:46.584 -06:00 [INF] HTTP GET /admin/help/end-user responded 200 in 106.4777 ms
+2025-11-13 07:10:46.587 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/help/end-user - 200 3198 text/html 114.405ms
+2025-11-13 07:11:03.866 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 07:11:11.123 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-13 07:11:11.128 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:11:11.153 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:11:11.158 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 07:11:11.161 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:11:11.163 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 35.1297 ms
+2025-11-13 07:11:11.167 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 43.5999ms
+2025-11-13 07:12:03.871 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 07:12:14.019 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/ - null null
+2025-11-13 07:12:14.025 -06:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\index.html'
+2025-11-13 07:12:14.027 -06:00 [INF] HTTP GET /index.html responded 200 in 5.0242 ms
+2025-11-13 07:12:14.031 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/index.html - 200 15375 text/html 11.977ms
+2025-11-13 07:12:14.256 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/css/app.css - null null
+2025-11-13 07:12:14.258 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/js/app.js - null null
+2025-11-13 07:12:14.261 -06:00 [INF] Sending file. Request path: '/css/app.css'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\css\app.css'
+2025-11-13 07:12:14.266 -06:00 [INF] Sending file. Request path: '/js/app.js'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\js\app.js'
+2025-11-13 07:12:14.267 -06:00 [INF] HTTP GET /css/app.css responded 200 in 5.9320 ms
+2025-11-13 07:12:14.268 -06:00 [INF] HTTP GET /js/app.js responded 200 in 3.5314 ms
+2025-11-13 07:12:14.271 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/css/app.css - 200 2538 text/css 14.1731ms
+2025-11-13 07:12:14.273 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/js/app.js - 200 35037 text/javascript 14.6228ms
+2025-11-13 07:12:14.488 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/endpoints - null null
+2025-11-13 07:12:14.504 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/endpoints'
+2025-11-13 07:12:14.506 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:12:14.509 -06:00 [INF] Writing value of type '<>f__AnonymousType3`1' as Json.
+2025-11-13 07:12:14.511 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/endpoints'
+2025-11-13 07:12:14.513 -06:00 [INF] HTTP GET /admin/endpoints responded 200 in 9.3458 ms
+2025-11-13 07:12:14.517 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/endpoints - 200 null application/json; charset=utf-8 28.3961ms
+2025-11-13 07:13:01.508 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - null 0
+2025-11-13 07:13:01.513 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 07:13:01.523 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:13:01.536 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-13 07:13:01.538 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 07:13:01.540 -06:00 [INF] HTTP POST /mcp/projectA/ping responded 200 in 27.7796 ms
+2025-11-13 07:13:01.543 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - 200 null application/json; charset=utf-8 34.5547ms
+2025-11-13 07:13:01.548 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - null 0
+2025-11-13 07:13:01.551 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 07:13:01.553 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:13:01.554 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-13 07:13:01.556 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-13 07:13:01.558 -06:00 [INF] HTTP POST /mcp/shared/ping responded 200 in 6.3395 ms
+2025-11-13 07:13:01.560 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - 200 null application/json; charset=utf-8 12.2386ms
+2025-11-13 07:13:01.570 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/health - null null
+2025-11-13 07:13:01.572 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-13 07:13:01.572 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-13 07:13:01.574 -06:00 [INF] Executing endpoint 'HTTP: GET /health'
+2025-11-13 07:13:01.577 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 07:13:01.580 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-13 07:13:01.581 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 07:13:01.582 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:13:01.584 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:13:01.585 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:13:01.587 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-13 07:13:01.588 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-13 07:13:01.589 -06:00 [INF] Writing value of type 'HealthReport' as Json.
+2025-11-13 07:13:01.591 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-13 07:13:01.592 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-13 07:13:01.594 -06:00 [INF] Executed endpoint 'HTTP: GET /health'
+2025-11-13 07:13:01.596 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 19.1847 ms
+2025-11-13 07:13:01.597 -06:00 [INF] HTTP GET /admin/users responded 200 in 17.4377 ms
+2025-11-13 07:13:01.598 -06:00 [INF] HTTP GET /health responded 200 in 24.6474 ms
+2025-11-13 07:13:01.601 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 28.7995ms
+2025-11-13 07:13:01.612 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 40.4193ms
+2025-11-13 07:13:01.615 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/health - 200 null application/json; charset=utf-8 44.9003ms
+2025-11-13 07:13:03.866 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 07:13:25.875 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-13 07:13:25.880 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:13:25.882 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:13:25.884 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 07:13:25.886 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:13:25.888 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 8.8002 ms
+2025-11-13 07:13:25.891 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 15.9913ms
+2025-11-13 07:14:03.858 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 07:15:03.869 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 07:16:03.864 -06:00 [INF] Health report emitted Healthy with 2 stores and 2 entries.
+2025-11-13 07:16:16.767 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/entries - application/json 315
+2025-11-13 07:16:16.771 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/entries'
+2025-11-13 07:16:16.850 -06:00 [INF] Lucene index rebuilt with 3 documents.
+2025-11-13 07:16:16.852 -06:00 [INF] Persisted 3 entries for store Project A.
+2025-11-13 07:16:16.856 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:16:16.859 -06:00 [INF] Writing value of type '<>f__AnonymousType10`1' as Json.
+2025-11-13 07:16:16.862 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/entries'
+2025-11-13 07:16:16.864 -06:00 [INF] HTTP POST /mcp/projectA/entries responded 200 in 93.2531 ms
+2025-11-13 07:16:16.867 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-13 07:16:16.880 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/entries - 200 null application/json; charset=utf-8 112.882ms
+2025-11-13 07:16:16.883 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:16:16.889 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:16:16.890 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 07:16:16.892 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:16:16.894 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 11.3627 ms
+2025-11-13 07:16:16.897 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 29.664ms
+2025-11-13 07:16:17.060 -06:00 [INF] Detected change for Project A, reloading from disk.
+2025-11-13 07:16:17.102 -06:00 [INF] Lucene index rebuilt with 3 documents.
+2025-11-13 07:16:30.831 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-13 07:16:30.843 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:16:30.846 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:16:30.848 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 07:16:30.850 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:16:30.852 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 9.0406 ms
+2025-11-13 07:16:30.855 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 24.1868ms
+2025-11-13 07:16:55.828 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-13 07:16:55.839 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:16:55.842 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:16:55.843 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 07:16:55.846 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:16:55.848 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 8.7974 ms
+2025-11-13 07:16:55.851 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 23.371ms
+2025-11-13 07:17:03.867 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:17:59.176 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp/projectA/entries - null null
+2025-11-13 07:17:59.189 -06:00 [INF] Executing endpoint 'HTTP: GET /mcp/{endpoint}/entries'
+2025-11-13 07:17:59.191 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:17:59.193 -06:00 [INF] Writing value of type 'ImmutableArray`1' as Json.
+2025-11-13 07:17:59.206 -06:00 [INF] Executed endpoint 'HTTP: GET /mcp/{endpoint}/entries'
+2025-11-13 07:17:59.209 -06:00 [INF] HTTP GET /mcp/projectA/entries responded 200 in 20.1886 ms
+2025-11-13 07:17:59.212 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp/projectA/entries - 200 null application/json; charset=utf-8 35.5582ms
+2025-11-13 07:18:03.859 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:18:34.689 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-13 07:18:34.693 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:18:34.695 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:18:34.697 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-13 07:18:34.699 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-13 07:18:34.701 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 8.5891 ms
+2025-11-13 07:18:34.704 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 15.7634ms
+2025-11-13 07:19:03.863 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:19:07.435 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp/projectA/entries/projectA:create-playwright - null null
+2025-11-13 07:19:07.440 -06:00 [INF] Executing endpoint 'HTTP: GET /mcp/{endpoint}/entries/{id}'
+2025-11-13 07:19:07.443 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:19:07.446 -06:00 [INF] Writing value of type 'MemoryEntry' as Json.
+2025-11-13 07:19:07.449 -06:00 [INF] Executed endpoint 'HTTP: GET /mcp/{endpoint}/entries/{id}'
+2025-11-13 07:19:07.462 -06:00 [INF] HTTP GET /mcp/projectA/entries/projectA:create-playwright responded 200 in 22.6739 ms
+2025-11-13 07:19:07.466 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp/projectA/entries/projectA:create-playwright - 200 null application/json; charset=utf-8 30.9297ms
+2025-11-13 07:20:03.859 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:20:43.873 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp/projectA/entries/projectA:create-playwright - null null
+2025-11-13 07:20:43.877 -06:00 [INF] Executing endpoint 'HTTP: GET /mcp/{endpoint}/entries/{id}'
+2025-11-13 07:20:43.879 -06:00 [INF] Setting HTTP status code 200.
+2025-11-13 07:20:43.881 -06:00 [INF] Writing value of type 'MemoryEntry' as Json.
+2025-11-13 07:20:43.883 -06:00 [INF] Executed endpoint 'HTTP: GET /mcp/{endpoint}/entries/{id}'
+2025-11-13 07:20:43.885 -06:00 [INF] HTTP GET /mcp/projectA/entries/projectA:create-playwright responded 200 in 7.9689 ms
+2025-11-13 07:20:43.888 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp/projectA/entries/projectA:create-playwright - 200 null application/json; charset=utf-8 14.9581ms
+2025-11-13 07:21:03.867 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:22:03.870 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:23:03.865 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:24:03.858 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:25:03.867 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:26:03.868 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:27:03.871 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:28:03.862 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:29:03.864 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:30:03.858 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:31:03.865 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:32:03.856 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:33:03.865 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:34:03.866 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:35:03.868 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:36:03.860 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:37:03.865 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:38:03.881 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:39:03.858 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:40:03.867 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:41:03.861 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:42:03.870 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:43:03.860 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:44:03.867 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:45:03.867 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:46:03.858 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:47:03.868 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:48:03.868 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:49:03.860 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.
+2025-11-13 07:50:00.565 -06:00 [INF] Application is shutting down...
+2025-11-13 07:50:00.588 -06:00 [INF] Health report emitted Healthy with 2 stores and 3 entries.

@@ -1,0 +1,734 @@
+2025-11-12 17:28:42.708 -06:00 [INF] Quick Memory Server starting. Preloading stores…
+2025-11-12 17:28:43.598 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 17:28:43.715 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-12 17:28:43.744 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 17:28:43.746 -06:00 [INF] Initialized memory store Project A with 0 entries.
+2025-11-12 17:28:43.754 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 17:28:43.755 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-12 17:28:43.756 -06:00 [INF] Memory stores preloaded. Ready to accept MCP requests.
+2025-11-12 17:28:43.889 -06:00 [ERR] Hosting failed to start
+System.IO.IOException: Failed to bind to address http://127.0.0.1:5080: address already in use.
+ ---> Microsoft.AspNetCore.Connections.AddressInUseException: Only one usage of each socket address (protocol/network address/port) is normally permitted.
+ ---> System.Net.Sockets.SocketException (10048): Only one usage of each socket address (protocol/network address/port) is normally permitted.
+   at System.Net.Sockets.Socket.UpdateStatusAfterSocketErrorAndThrowException(SocketError error, Boolean disconnectOnFailure, String callerName)
+   at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportOptions.CreateDefaultBoundListenSocket(EndPoint endpoint)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass28_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.LocalhostListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.AddressesStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Hosting.GenericWebHostService.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__14_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+2025-11-12 17:28:43.901 -06:00 [ERR] BackgroundService failed
+System.OperationCanceledException: The operation was canceled.
+   at System.Threading.Channels.AsyncOperation`1.GetResult(Int16 token)
+   at System.Threading.Channels.ChannelReader`1.ReadAllAsync(CancellationToken cancellationToken)+MoveNext()
+   at QuickMemoryServer.Worker.Services.BackupService.ProcessManualRequestsAsync(CancellationToken stoppingToken) in E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Services\BackupService.cs:line 61
+   at QuickMemoryServer.Worker.Services.BackupService.ProcessManualRequestsAsync(CancellationToken stoppingToken) in E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Services\BackupService.cs:line 61
+   at QuickMemoryServer.Worker.Services.BackupService.ExecuteAsync(CancellationToken stoppingToken) in E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Services\BackupService.cs:line 56
+   at Microsoft.Extensions.Hosting.Internal.Host.TryExecuteBackgroundServiceAsync(BackgroundService backgroundService)
+2025-11-12 17:28:43.922 -06:00 [ERR] BackgroundService failed
+System.OperationCanceledException: The operation was canceled.
+   at System.Threading.PeriodicTimer.State.Signal(Boolean stopping, CancellationToken cancellationToken)
+   at System.Threading.CancellationTokenSource.Invoke(Delegate d, Object state, CancellationTokenSource source)
+   at System.Threading.CancellationTokenSource.ExecuteCallbackHandlers(Boolean throwOnFirstException)
+   at Microsoft.Extensions.DependencyInjection.ServiceLookup.ServiceProviderEngineScope.DisposeAsync()
+   at Microsoft.Extensions.Hosting.Internal.Host.<DisposeAsync>g__DisposeAsync|20_0(Object o)
+   at Microsoft.Extensions.Hosting.Internal.Host.DisposeAsync()
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at Microsoft.Extensions.Hosting.Internal.Host.DisposeAsync()
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.Run(IHost host)
+   at Program.<Main>$(String[] args) in E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 630
+--- End of stack trace from previous location ---
+   at System.Threading.PeriodicTimer.State.System.Threading.Tasks.Sources.IValueTaskSource<System.Boolean>.GetResult(Int16 token)
+   at QuickMemoryServer.Worker.Services.MemoryService.ExecuteAsync(CancellationToken stoppingToken) in E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Services\MemoryService.cs:line 28
+   at Microsoft.Extensions.Hosting.Internal.Host.TryExecuteBackgroundServiceAsync(BackgroundService backgroundService)
+2025-11-12 17:28:43.924 -06:00 [FTL] The HostOptions.BackgroundServiceExceptionBehavior is configured to StopHost. A BackgroundService has thrown an unhandled exception, and the IHost instance is stopping. To avoid this behavior, configure this to Ignore; however the BackgroundService will not be restarted.
+System.OperationCanceledException: The operation was canceled.
+   at System.Threading.PeriodicTimer.State.Signal(Boolean stopping, CancellationToken cancellationToken)
+   at System.Threading.CancellationTokenSource.Invoke(Delegate d, Object state, CancellationTokenSource source)
+   at System.Threading.CancellationTokenSource.ExecuteCallbackHandlers(Boolean throwOnFirstException)
+   at Microsoft.Extensions.DependencyInjection.ServiceLookup.ServiceProviderEngineScope.DisposeAsync()
+   at Microsoft.Extensions.Hosting.Internal.Host.<DisposeAsync>g__DisposeAsync|20_0(Object o)
+   at Microsoft.Extensions.Hosting.Internal.Host.DisposeAsync()
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at Microsoft.Extensions.Hosting.Internal.Host.DisposeAsync()
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at System.Runtime.CompilerServices.AsyncMethodBuilderCore.Start[TStateMachine](TStateMachine& stateMachine)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.RunAsync(IHost host, CancellationToken token)
+   at Microsoft.Extensions.Hosting.HostingAbstractionsHostExtensions.Run(IHost host)
+   at Program.<Main>$(String[] args) in E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Program.cs:line 630
+--- End of stack trace from previous location ---
+   at System.Threading.PeriodicTimer.State.System.Threading.Tasks.Sources.IValueTaskSource<System.Boolean>.GetResult(Int16 token)
+   at QuickMemoryServer.Worker.Services.MemoryService.ExecuteAsync(CancellationToken stoppingToken) in E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Services\MemoryService.cs:line 28
+   at Microsoft.Extensions.Hosting.Internal.Host.TryExecuteBackgroundServiceAsync(BackgroundService backgroundService)
+2025-11-12 17:28:43.924 -06:00 [FTL] The HostOptions.BackgroundServiceExceptionBehavior is configured to StopHost. A BackgroundService has thrown an unhandled exception, and the IHost instance is stopping. To avoid this behavior, configure this to Ignore; however the BackgroundService will not be restarted.
+System.OperationCanceledException: The operation was canceled.
+   at System.Threading.Channels.AsyncOperation`1.GetResult(Int16 token)
+   at System.Threading.Channels.ChannelReader`1.ReadAllAsync(CancellationToken cancellationToken)+MoveNext()
+   at QuickMemoryServer.Worker.Services.BackupService.ProcessManualRequestsAsync(CancellationToken stoppingToken) in E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Services\BackupService.cs:line 61
+   at QuickMemoryServer.Worker.Services.BackupService.ProcessManualRequestsAsync(CancellationToken stoppingToken) in E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Services\BackupService.cs:line 61
+   at QuickMemoryServer.Worker.Services.BackupService.ExecuteAsync(CancellationToken stoppingToken) in E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\Services\BackupService.cs:line 56
+   at Microsoft.Extensions.Hosting.Internal.Host.TryExecuteBackgroundServiceAsync(BackgroundService backgroundService)
+2025-11-12 17:28:43.924 -06:00 [INF] Application is shutting down...
+2025-11-12 17:30:14.638 -06:00 [INF] Quick Memory Server starting. Preloading stores…
+2025-11-12 17:30:14.761 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 17:30:14.787 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-12 17:30:14.794 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 17:30:14.795 -06:00 [INF] Initialized memory store Project A with 0 entries.
+2025-11-12 17:30:14.801 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 17:30:14.803 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-12 17:30:14.803 -06:00 [INF] Memory stores preloaded. Ready to accept MCP requests.
+2025-11-12 17:30:14.852 -06:00 [INF] Now listening on: http://localhost:5080
+2025-11-12 17:30:14.853 -06:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-11-12 17:30:14.854 -06:00 [INF] Hosting environment: Development
+2025-11-12 17:30:14.854 -06:00 [INF] Content root path: E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker
+2025-11-12 17:31:14.827 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:32:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:33:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:34:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:35:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:36:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:37:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:38:14.816 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:39:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:40:14.816 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:41:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:42:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:43:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:44:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:45:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:46:14.820 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:47:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:48:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:49:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:50:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:51:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:52:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:53:14.804 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:54:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:55:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:56:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:57:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:58:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 17:59:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:00:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:01:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:02:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:03:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:04:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:05:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:06:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:07:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:08:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:09:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:10:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:11:14.804 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:12:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:13:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:14:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:15:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:16:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:17:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:18:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:19:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:20:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:21:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:22:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:23:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:24:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:25:14.816 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:26:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:27:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:28:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:29:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:30:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:31:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:32:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:33:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:34:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:35:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:36:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:37:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:38:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:39:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:40:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:41:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:42:14.820 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:43:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:44:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:45:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:46:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:47:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:48:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:49:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:50:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:51:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:52:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:53:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:54:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:55:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:56:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:57:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:58:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 18:59:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:00:00.036 -06:00 [INF] Differential backup completed for projectA => E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\bin\Debug\net9.0\Backups\diff\20251113\projectA
+2025-11-12 19:00:00.045 -06:00 [INF] Differential backup completed for shared => E:\sandbox\quick-memory-server\src\QuickMemoryServer.Worker\bin\Debug\net9.0\Backups\diff\20251113\shared
+2025-11-12 19:00:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:01:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:02:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:03:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:04:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:05:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:06:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:07:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:08:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:09:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:10:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:11:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:12:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:13:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:14:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:15:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:16:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:17:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:18:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:19:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:20:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:21:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:22:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:23:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:24:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:25:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:26:14.804 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:27:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:28:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:29:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:30:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:31:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:32:14.820 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:33:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:34:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:35:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:36:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:37:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:38:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:39:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:40:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:41:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:42:14.816 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:43:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:44:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:45:14.804 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:46:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:47:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:48:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:49:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:50:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:51:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:52:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:53:14.804 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:54:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:55:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:56:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:57:14.804 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:58:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 19:59:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:00:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:01:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:02:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:03:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:04:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:05:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:06:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:07:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:08:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:09:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:10:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:11:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:12:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:13:14.816 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:14:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:15:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:16:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:17:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:18:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:19:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:20:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:21:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:22:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:23:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:24:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:25:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:26:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:27:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:28:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:29:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:30:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:31:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:32:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:33:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:34:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:35:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:36:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:37:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:38:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:39:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:40:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:41:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:42:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:43:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:44:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:45:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:46:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:47:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:48:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:49:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:50:14.816 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:51:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:52:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:53:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:54:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:55:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:56:14.808 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:57:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:58:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 20:59:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:00:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:01:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:02:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:03:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:04:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:05:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:06:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:07:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:08:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:09:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:10:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:11:14.816 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:12:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:13:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:14:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:15:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:16:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:17:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:18:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:19:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:20:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:21:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:22:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:23:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:24:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:25:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:26:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:27:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:28:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:29:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:30:14.816 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:31:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:32:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:33:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:34:14.814 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:35:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:36:14.816 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:37:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:38:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:39:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:40:14.804 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:41:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:42:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:43:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:44:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:45:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:46:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:47:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:48:14.816 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:49:14.807 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:50:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:51:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:52:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:53:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:54:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:55:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:56:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:57:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:58:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 21:59:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:00:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:01:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:02:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:03:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:04:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:05:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:06:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:07:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:08:14.816 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:09:14.817 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:10:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:11:14.805 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:12:14.819 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:13:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:14:14.809 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:15:14.818 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:16:14.811 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:17:14.806 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:18:14.813 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:19:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:20:14.812 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:21:14.810 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:22:14.815 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:22:39.672 -06:00 [INF] Quick Memory Server starting. Preloading stores…
+2025-11-12 22:22:40.591 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 22:22:40.717 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-12 22:22:40.750 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 22:22:40.752 -06:00 [INF] Initialized memory store Project A with 0 entries.
+2025-11-12 22:22:40.761 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 22:22:40.764 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-12 22:22:40.766 -06:00 [INF] Memory stores preloaded. Ready to accept MCP requests.
+2025-11-12 22:22:40.888 -06:00 [INF] Now listening on: http://localhost:5080
+2025-11-12 22:22:40.890 -06:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-11-12 22:22:40.892 -06:00 [INF] Hosting environment: Development
+2025-11-12 22:22:40.894 -06:00 [INF] Content root path: E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker
+2025-11-12 22:23:04.182 -06:00 [INF] Application is shutting down...
+2025-11-12 22:23:04.204 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:24:49.267 -06:00 [INF] Quick Memory Server starting. Preloading stores…
+2025-11-12 22:24:50.125 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 22:24:50.251 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-12 22:24:50.295 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 22:24:50.299 -06:00 [INF] Initialized memory store Project A with 0 entries.
+2025-11-12 22:24:50.309 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 22:24:50.313 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-12 22:24:50.316 -06:00 [INF] Memory stores preloaded. Ready to accept MCP requests.
+2025-11-12 22:24:50.429 -06:00 [INF] Now listening on: http://localhost:5080
+2025-11-12 22:24:50.431 -06:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-11-12 22:24:50.432 -06:00 [INF] Hosting environment: Development
+2025-11-12 22:24:50.434 -06:00 [INF] Content root path: E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker
+2025-11-12 22:25:11.080 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/ - null null
+2025-11-12 22:25:11.099 -06:00 [INF] The file /index.html was not modified
+2025-11-12 22:25:11.103 -06:00 [INF] HTTP GET /index.html responded 304 in 15.8330 ms
+2025-11-12 22:25:11.115 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/index.html - 304 null text/html 36.0522ms
+2025-11-12 22:25:11.295 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/css/app.css - null null
+2025-11-12 22:25:11.296 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/js/app.js - null null
+2025-11-12 22:25:11.300 -06:00 [INF] The file /css/app.css was not modified
+2025-11-12 22:25:11.303 -06:00 [INF] The file /js/app.js was not modified
+2025-11-12 22:25:11.304 -06:00 [INF] HTTP GET /css/app.css responded 304 in 4.3837 ms
+2025-11-12 22:25:11.305 -06:00 [INF] HTTP GET /js/app.js responded 304 in 2.5580 ms
+2025-11-12 22:25:11.307 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/css/app.css - 304 null text/css 12.5862ms
+2025-11-12 22:25:11.309 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/js/app.js - 304 null text/javascript 13.2956ms
+2025-11-12 22:25:11.452 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-12 22:25:11.562 -06:00 [INF] Executing endpoint 'HTTP: GET /mcp'
+2025-11-12 22:25:11.588 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:25:11.606 -06:00 [INF] Writing value of type '<>f__AnonymousType3`1' as Json.
+2025-11-12 22:25:11.618 -06:00 [INF] Executed endpoint 'HTTP: GET /mcp'
+2025-11-12 22:25:11.628 -06:00 [INF] HTTP GET /mcp responded 200 in 169.3997 ms
+2025-11-12 22:25:11.633 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 200 null application/json; charset=utf-8 180.9102ms
+2025-11-12 22:25:32.607 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-12 22:25:32.612 -06:00 [INF] Executing endpoint 'HTTP: GET /mcp'
+2025-11-12 22:25:32.615 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:25:32.618 -06:00 [INF] Writing value of type '<>f__AnonymousType3`1' as Json.
+2025-11-12 22:25:32.620 -06:00 [INF] Executed endpoint 'HTTP: GET /mcp'
+2025-11-12 22:25:32.622 -06:00 [INF] HTTP GET /mcp responded 200 in 11.0501 ms
+2025-11-12 22:25:32.625 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 200 null application/json; charset=utf-8 18.3987ms
+2025-11-12 22:25:50.332 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:26:24.341 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - null 0
+2025-11-12 22:26:24.349 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 22:26:24.353 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:26:24.356 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-12 22:26:24.359 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 22:26:24.361 -06:00 [INF] HTTP POST /mcp/projectA/ping responded 200 in 13.2381 ms
+2025-11-12 22:26:24.365 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - 200 null application/json; charset=utf-8 23.2949ms
+2025-11-12 22:26:24.370 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/health - null null
+2025-11-12 22:26:24.371 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-12 22:26:24.372 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-12 22:26:24.374 -06:00 [INF] Executing endpoint 'HTTP: GET /health'
+2025-11-12 22:26:24.378 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-12 22:26:24.381 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 22:26:24.382 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:26:24.384 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:26:24.385 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:26:24.387 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:26:24.387 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-12 22:26:24.389 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-12 22:26:24.392 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 22:26:24.394 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 13.9082 ms
+2025-11-12 22:26:24.397 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 24.8878ms
+2025-11-12 22:26:24.402 -06:00 [INF] Writing value of type 'HealthReport' as Json.
+2025-11-12 22:26:24.403 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-12 22:26:24.406 -06:00 [INF] HTTP GET /admin/users responded 200 in 28.5493 ms
+2025-11-12 22:26:24.409 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 37.9457ms
+2025-11-12 22:26:24.410 -06:00 [INF] Executed endpoint 'HTTP: GET /health'
+2025-11-12 22:26:24.416 -06:00 [INF] HTTP GET /health responded 200 in 41.4041 ms
+2025-11-12 22:26:24.418 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/health - 200 null application/json; charset=utf-8 48.6884ms
+2025-11-12 22:26:32.976 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-12 22:26:32.981 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-12 22:26:33.153 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:26:33.166 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-12 22:26:33.169 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-12 22:26:33.171 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 190.7180 ms
+2025-11-12 22:26:33.174 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 198.4953ms
+2025-11-12 22:26:50.330 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:27:50.327 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:28:50.326 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:29:41.794 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/ - null null
+2025-11-12 22:29:41.801 -06:00 [INF] The file /index.html was not modified
+2025-11-12 22:29:41.803 -06:00 [INF] HTTP GET /index.html responded 304 in 3.5345 ms
+2025-11-12 22:29:41.806 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/index.html - 304 null text/html 12.1087ms
+2025-11-12 22:29:41.932 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/css/app.css - null null
+2025-11-12 22:29:41.934 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/js/app.js - null null
+2025-11-12 22:29:41.936 -06:00 [INF] The file /css/app.css was not modified
+2025-11-12 22:29:41.939 -06:00 [INF] The file /js/app.js was not modified
+2025-11-12 22:29:41.941 -06:00 [INF] HTTP GET /css/app.css responded 304 in 4.3996 ms
+2025-11-12 22:29:41.942 -06:00 [INF] HTTP GET /js/app.js responded 304 in 2.9267 ms
+2025-11-12 22:29:41.945 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/css/app.css - 304 null text/css 13.4874ms
+2025-11-12 22:29:41.948 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/js/app.js - 304 null text/javascript 13.3753ms
+2025-11-12 22:29:42.306 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-12 22:29:42.311 -06:00 [INF] Executing endpoint 'HTTP: GET /mcp'
+2025-11-12 22:29:42.313 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:29:42.315 -06:00 [INF] Writing value of type '<>f__AnonymousType3`1' as Json.
+2025-11-12 22:29:42.318 -06:00 [INF] Executed endpoint 'HTTP: GET /mcp'
+2025-11-12 22:29:42.320 -06:00 [INF] HTTP GET /mcp responded 200 in 9.3875 ms
+2025-11-12 22:29:42.323 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 200 null application/json; charset=utf-8 17.4073ms
+2025-11-12 22:29:50.321 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:30:07.675 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - null 0
+2025-11-12 22:30:07.680 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 22:30:07.683 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:30:07.685 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-12 22:30:07.687 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 22:30:07.690 -06:00 [INF] HTTP POST /mcp/projectA/ping responded 200 in 10.1904 ms
+2025-11-12 22:30:07.694 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - 200 null application/json; charset=utf-8 18.5326ms
+2025-11-12 22:30:07.699 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-12 22:30:07.699 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-12 22:30:07.700 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/health - null null
+2025-11-12 22:30:07.704 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-12 22:30:07.708 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 22:30:07.711 -06:00 [INF] Executing endpoint 'HTTP: GET /health'
+2025-11-12 22:30:07.713 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:30:07.714 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:30:07.715 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:30:07.717 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-12 22:30:07.718 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-12 22:30:07.721 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:30:07.723 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-12 22:30:07.725 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 22:30:07.726 -06:00 [INF] Writing value of type 'HealthReport' as Json.
+2025-11-12 22:30:07.728 -06:00 [INF] HTTP GET /admin/users responded 200 in 24.0854 ms
+2025-11-12 22:30:07.729 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 21.7447 ms
+2025-11-12 22:30:07.731 -06:00 [INF] Executed endpoint 'HTTP: GET /health'
+2025-11-12 22:30:07.733 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 34.0032ms
+2025-11-12 22:30:07.736 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 36.4075ms
+2025-11-12 22:30:07.737 -06:00 [INF] HTTP GET /health responded 200 in 26.3173 ms
+2025-11-12 22:30:07.748 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/health - 200 null application/json; charset=utf-8 48.6871ms
+2025-11-12 22:30:12.426 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/metrics - null null
+2025-11-12 22:30:12.431 -06:00 [INF] Executing endpoint 'Prometheus metrics'
+2025-11-12 22:30:12.579 -06:00 [INF] Executed endpoint 'Prometheus metrics'
+2025-11-12 22:30:12.582 -06:00 [INF] HTTP GET /metrics responded 200 in 150.9119 ms
+2025-11-12 22:30:12.585 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/metrics - 200 null text/plain; version=0.0.4; charset=utf-8 159.2184ms
+2025-11-12 22:30:29.730 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-12 22:30:29.730 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-12 22:30:29.735 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 22:30:29.738 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-12 22:30:29.740 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:30:29.741 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:30:29.743 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-12 22:30:29.745 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-12 22:30:29.746 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 22:30:29.748 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-12 22:30:29.750 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 16.0674 ms
+2025-11-12 22:30:29.752 -06:00 [INF] HTTP GET /admin/users responded 200 in 13.9305 ms
+2025-11-12 22:30:29.755 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 27.8766ms
+2025-11-12 22:30:29.757 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 31.0092ms
+2025-11-12 22:30:50.329 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:31:50.328 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:32:50.332 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:33:50.327 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:34:50.319 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:35:03.039 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-12 22:35:03.043 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-12 22:35:03.046 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:35:03.048 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-12 22:35:03.050 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-12 22:35:03.052 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 9.2252 ms
+2025-11-12 22:35:03.055 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 16.5267ms
+2025-11-12 22:35:45.346 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-12 22:35:45.346 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-12 22:35:45.351 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-12 22:35:45.355 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 22:35:45.356 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:35:45.358 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:35:45.360 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-12 22:35:45.361 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-12 22:35:45.363 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-12 22:35:45.364 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 22:35:45.366 -06:00 [INF] HTTP GET /admin/users responded 200 in 15.0653 ms
+2025-11-12 22:35:45.367 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 12.7192 ms
+2025-11-12 22:35:45.370 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 24.1506ms
+2025-11-12 22:35:45.373 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 26.9341ms
+2025-11-12 22:35:50.327 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:36:00.057 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-12 22:36:00.058 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-12 22:36:00.062 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-12 22:36:00.066 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 22:36:00.068 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:36:00.070 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 22:36:00.071 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-12 22:36:00.073 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-12 22:36:00.074 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-12 22:36:00.076 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 22:36:00.078 -06:00 [INF] HTTP GET /admin/users responded 200 in 15.9820 ms
+2025-11-12 22:36:00.082 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 16.4232 ms
+2025-11-12 22:36:00.082 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 25.1616ms
+2025-11-12 22:36:00.086 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 28.0351ms
+2025-11-12 22:36:50.329 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:37:50.323 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 22:37:54.088 -06:00 [INF] Application is shutting down...
+2025-11-12 22:37:54.099 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 23:52:12.488 -06:00 [INF] Quick Memory Server starting. Preloading stores…
+2025-11-12 23:52:12.638 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 23:52:12.665 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-12 23:52:12.674 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 23:52:12.688 -06:00 [INF] Initialized memory store Project A with 0 entries.
+2025-11-12 23:52:12.696 -06:00 [INF] Lucene index rebuilt with 0 documents.
+2025-11-12 23:52:12.699 -06:00 [INF] Initialized memory store Shared Memory with 0 entries.
+2025-11-12 23:52:12.701 -06:00 [INF] Memory stores preloaded. Ready to accept MCP requests.
+2025-11-12 23:52:12.753 -06:00 [INF] Now listening on: http://localhost:5080
+2025-11-12 23:52:12.762 -06:00 [INF] Application started. Press Ctrl+C to shut down.
+2025-11-12 23:52:12.764 -06:00 [INF] Hosting environment: Development
+2025-11-12 23:52:12.765 -06:00 [INF] Content root path: E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker
+2025-11-12 23:52:18.576 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/ - null null
+2025-11-12 23:52:18.617 -06:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\index.html'
+2025-11-12 23:52:18.621 -06:00 [INF] HTTP GET /index.html responded 200 in 37.2295 ms
+2025-11-12 23:52:18.627 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/index.html - 200 10893 text/html 52.4323ms
+2025-11-12 23:52:18.695 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/css/app.css - null null
+2025-11-12 23:52:18.695 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/js/app.js - null null
+2025-11-12 23:52:18.702 -06:00 [INF] The file /css/app.css was not modified
+2025-11-12 23:52:18.706 -06:00 [INF] HTTP GET /css/app.css responded 304 in 5.1157 ms
+2025-11-12 23:52:18.708 -06:00 [INF] Sending file. Request path: '/js/app.js'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\js\app.js'
+2025-11-12 23:52:18.710 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/css/app.css - 304 null text/css 14.6053ms
+2025-11-12 23:52:18.712 -06:00 [INF] HTTP GET /js/app.js responded 200 in 8.1552 ms
+2025-11-12 23:52:18.721 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/js/app.js - 200 26519 text/javascript 26.2441ms
+2025-11-12 23:52:19.010 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-12 23:52:19.115 -06:00 [INF] Executing endpoint 'HTTP: GET /mcp'
+2025-11-12 23:52:19.125 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 23:52:19.139 -06:00 [INF] Writing value of type '<>f__AnonymousType3`1' as Json.
+2025-11-12 23:52:19.166 -06:00 [INF] Executed endpoint 'HTTP: GET /mcp'
+2025-11-12 23:52:19.174 -06:00 [INF] HTTP GET /mcp responded 200 in 160.1027 ms
+2025-11-12 23:52:19.178 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 200 null application/json; charset=utf-8 168.0197ms
+2025-11-12 23:52:38.414 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - null 0
+2025-11-12 23:52:38.420 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 23:52:38.424 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 23:52:38.429 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-12 23:52:38.432 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 23:52:38.435 -06:00 [INF] HTTP POST /mcp/projectA/ping responded 200 in 16.2983 ms
+2025-11-12 23:52:38.440 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - 200 null application/json; charset=utf-8 25.5957ms
+2025-11-12 23:52:38.447 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - null 0
+2025-11-12 23:52:38.454 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 23:52:38.481 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 23:52:38.483 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-12 23:52:38.485 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 23:52:38.488 -06:00 [INF] HTTP POST /mcp/shared/ping responded 200 in 36.0388 ms
+2025-11-12 23:52:38.491 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - 200 null application/json; charset=utf-8 43.6682ms
+2025-11-12 23:52:51.044 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - null null
+2025-11-12 23:52:51.050 -06:00 [INF] HTTP GET /.well-known/appspecific/com.chrome.devtools.json responded 404 in 1.7407 ms
+2025-11-12 23:52:51.053 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json - 404 0 null 9.4533ms
+2025-11-12 23:52:51.059 -06:00 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET http://localhost:5080/.well-known/appspecific/com.chrome.devtools.json, Response status code: 404
+2025-11-12 23:53:12.710 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 23:53:15.938 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-12 23:53:15.944 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-12 23:53:15.975 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 23:53:16.003 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-12 23:53:16.006 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-12 23:53:16.009 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 66.0792 ms
+2025-11-12 23:53:16.012 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 74.2151ms
+2025-11-12 23:53:29.951 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/users - null null
+2025-11-12 23:53:29.951 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/permissions - null null
+2025-11-12 23:53:29.956 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/users'
+2025-11-12 23:53:29.960 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 23:53:29.961 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 23:53:29.963 -06:00 [INF] Writing value of type 'IEnumerableSelectIterator`2' as Json.
+2025-11-12 23:53:29.965 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 23:53:29.967 -06:00 [INF] Writing value of type 'Dictionary`2' as Json.
+2025-11-12 23:53:29.970 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/permissions'
+2025-11-12 23:53:29.970 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/users'
+2025-11-12 23:53:29.972 -06:00 [INF] HTTP GET /admin/permissions responded 200 in 13.3626 ms
+2025-11-12 23:53:29.973 -06:00 [INF] HTTP GET /admin/users responded 200 in 18.0088 ms
+2025-11-12 23:53:29.976 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/permissions - 200 null application/json; charset=utf-8 25.3389ms
+2025-11-12 23:53:29.979 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/users - 200 null application/json; charset=utf-8 28.2909ms
+2025-11-12 23:53:31.692 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/help/end-user - null null
+2025-11-12 23:53:31.697 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/help/end-user'
+2025-11-12 23:53:31.872 -06:00 [INF] Write content with HTTP Response ContentType of text/html
+2025-11-12 23:53:31.875 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/help/end-user'
+2025-11-12 23:53:31.878 -06:00 [INF] HTTP GET /admin/help/end-user responded 200 in 181.2488 ms
+2025-11-12 23:53:31.881 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/help/end-user - 200 2364 text/html 189.4354ms
+2025-11-12 23:53:32.419 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - application/json 48
+2025-11-12 23:53:32.424 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-12 23:53:32.427 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 23:53:32.429 -06:00 [INF] Writing value of type '<>f__AnonymousType5`1' as Json.
+2025-11-12 23:53:32.431 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/searchEntries'
+2025-11-12 23:53:32.434 -06:00 [INF] HTTP POST /mcp/projectA/searchEntries responded 200 in 9.8840 ms
+2025-11-12 23:53:32.438 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/searchEntries - 200 null application/json; charset=utf-8 19.2788ms
+2025-11-12 23:53:54.625 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/help/end-user - null null
+2025-11-12 23:53:54.631 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/help/end-user'
+2025-11-12 23:53:54.634 -06:00 [INF] Write content with HTTP Response ContentType of text/html
+2025-11-12 23:53:54.636 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/help/end-user'
+2025-11-12 23:53:54.638 -06:00 [INF] HTTP GET /admin/help/end-user responded 200 in 8.0943 ms
+2025-11-12 23:53:54.641 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/help/end-user - 200 2364 text/html 16.4809ms
+2025-11-12 23:54:08.425 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/admin/help/agent - null null
+2025-11-12 23:54:08.431 -06:00 [INF] Executing endpoint 'HTTP: GET /admin/help/agent'
+2025-11-12 23:54:08.453 -06:00 [INF] Write content with HTTP Response ContentType of text/html
+2025-11-12 23:54:08.456 -06:00 [INF] Executed endpoint 'HTTP: GET /admin/help/agent'
+2025-11-12 23:54:08.458 -06:00 [INF] HTTP GET /admin/help/agent responded 200 in 27.1005 ms
+2025-11-12 23:54:08.461 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/admin/help/agent - 200 13324 text/html 36.5156ms
+2025-11-12 23:54:12.708 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 23:55:12.710 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 23:55:42.713 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/ - null null
+2025-11-12 23:55:42.719 -06:00 [INF] Sending file. Request path: '/index.html'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\index.html'
+2025-11-12 23:55:42.721 -06:00 [INF] HTTP GET /index.html responded 200 in 3.6865 ms
+2025-11-12 23:55:42.724 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/index.html - 200 10893 text/html 10.5548ms
+2025-11-12 23:55:42.851 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/css/app.css - null null
+2025-11-12 23:55:42.852 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/js/app.js - null null
+2025-11-12 23:55:42.855 -06:00 [INF] The file /css/app.css was not modified
+2025-11-12 23:55:42.867 -06:00 [INF] Sending file. Request path: '/js/app.js'. Physical path: 'E:\Sandbox\quick-memory-server\src\QuickMemoryServer.Worker\wwwroot\js\app.js'
+2025-11-12 23:55:42.867 -06:00 [INF] HTTP GET /css/app.css responded 304 in 12.2187 ms
+2025-11-12 23:55:42.870 -06:00 [INF] HTTP GET /js/app.js responded 200 in 3.5624 ms
+2025-11-12 23:55:42.872 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/css/app.css - 304 null text/css 21.6799ms
+2025-11-12 23:55:42.875 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/js/app.js - 200 26519 text/javascript 22.8368ms
+2025-11-12 23:55:42.978 -06:00 [INF] Request starting HTTP/1.1 GET http://localhost:5080/mcp - null null
+2025-11-12 23:55:42.983 -06:00 [INF] Executing endpoint 'HTTP: GET /mcp'
+2025-11-12 23:55:42.985 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 23:55:42.987 -06:00 [INF] Writing value of type '<>f__AnonymousType3`1' as Json.
+2025-11-12 23:55:42.989 -06:00 [INF] Executed endpoint 'HTTP: GET /mcp'
+2025-11-12 23:55:42.991 -06:00 [INF] HTTP GET /mcp responded 200 in 8.8264 ms
+2025-11-12 23:55:42.995 -06:00 [INF] Request finished HTTP/1.1 GET http://localhost:5080/mcp - 200 null application/json; charset=utf-8 16.8615ms
+2025-11-12 23:56:12.709 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 23:56:31.468 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - null 0
+2025-11-12 23:56:31.472 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 23:56:31.474 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 23:56:31.476 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-12 23:56:31.478 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 23:56:31.479 -06:00 [INF] HTTP POST /mcp/projectA/ping responded 200 in 7.5685 ms
+2025-11-12 23:56:31.483 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/projectA/ping - 200 null application/json; charset=utf-8 14.8256ms
+2025-11-12 23:56:31.488 -06:00 [INF] Request starting HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - null 0
+2025-11-12 23:56:31.500 -06:00 [INF] Executing endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 23:56:31.502 -06:00 [INF] Setting HTTP status code 200.
+2025-11-12 23:56:31.504 -06:00 [INF] Writing value of type '<>f__AnonymousType0`4' as Json.
+2025-11-12 23:56:31.506 -06:00 [INF] Executed endpoint 'HTTP: POST /mcp/{endpoint}/ping'
+2025-11-12 23:56:31.508 -06:00 [INF] HTTP POST /mcp/shared/ping responded 200 in 8.0751 ms
+2025-11-12 23:56:31.511 -06:00 [INF] Request finished HTTP/1.1 POST http://localhost:5080/mcp/shared/ping - 200 null application/json; charset=utf-8 22.8906ms
+2025-11-12 23:57:12.713 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.
+2025-11-12 23:57:36.548 -06:00 [INF] Application is shutting down...
+2025-11-12 23:57:36.566 -06:00 [INF] Health report emitted Healthy with 2 stores and 0 entries.

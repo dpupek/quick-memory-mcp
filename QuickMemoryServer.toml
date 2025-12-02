@@ -1,0 +1,51 @@
+[global]
+serviceName = "QuickMemoryServer"
+httpUrl = "http://localhost:5080"
+embeddingModel = "sentence-transformers/all-MiniLM-L6-v2"
+embeddingDims = 384
+summaryModel = "philschmid/bart-large-cnn-samsum"
+installLayoutManifest = "layout.json"
+
+[global.backup]
+differentialCron = "0 1 * * *"
+fullCron = "0 3 * * Sun"
+retentionDays = 30
+fullRetentionDays = 90
+
+[endpoint.shared]
+slug = "shared"
+name = "Shared Memory"
+description = "Cross-project reference memories"
+storagePath = "MemoryStores/shared"
+includeInSearchByDefault = true
+inheritShared = false
+
+[endpoint.projectA]
+slug = "proj-a"
+name = "Project A"
+description = "Primary store"
+storagePath = "MemoryStores/projectA"
+includeInSearchByDefault = true
+inheritShared = true
+
+[users.alice]
+apiKey = "gsk_replace_me"
+defaultTier = "Admin"
+
+[users.bob]
+apiKey = "gsk_replace_me"
+defaultTier = "Reader"
+
+[users.dpupek]
+apiKey = "gsk_dpupek_admin"
+defaultTier = "Admin"
+
+[permissions.projectA]
+alice = "Admin"
+bob = "Curator"
+dpupek = "Admin"
+
+[permissions.shared]
+alice = "Admin"
+bob = "Reader"
+dpupek = "Admin"
