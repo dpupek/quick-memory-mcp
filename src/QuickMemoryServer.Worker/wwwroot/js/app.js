@@ -912,10 +912,10 @@ async function saveEntryDetail() {
   if (relationsText) {
     try {
       const parsed = JSON.parse(relationsText);
-      if (Array.isArray(parsed)) {
+      if (Array.isArray(parsed) && parsed.every((r) => r && typeof r === 'object' && r.type && r.targetId)) {
         payload.relations = parsed;
       } else {
-        setStatus('Relations must be a JSON array', 'danger');
+        setStatus('Relations must be an array of { "type": "ref", "targetId": "project:key" }', 'danger');
         return;
       }
     } catch {
@@ -926,7 +926,13 @@ async function saveEntryDetail() {
 
   if (sourceText) {
     try {
-      payload.source = JSON.parse(sourceText);
+      const parsed = JSON.parse(sourceText);
+      if (parsed && typeof parsed === 'object') {
+        payload.source = parsed;
+      } else {
+        setStatus('Source must be a JSON object (e.g., { "type": "api", "url": "https://..." })', 'danger');
+        return;
+      }
     } catch {
       setStatus('Source metadata must be valid JSON', 'danger');
       return;
