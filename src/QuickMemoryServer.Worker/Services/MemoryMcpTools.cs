@@ -434,19 +434,43 @@ public static HealthReport GetHealth(HealthReporter healthReporter)
         [property: JsonPropertyName("inheritShared")] bool InheritShared,
         [property: JsonPropertyName("includeInSearchByDefault")] bool IncludeInSearchByDefault);
 
-private static string? ValidateRelations(JsonElement? relations)
+private static string? ValidateRelations(object? relations)
 {
-    if (relations is null || relations.Value.ValueKind == JsonValueKind.Undefined || relations.Value.ValueKind == JsonValueKind.Null)
+    switch (relations)
+    {
+        case null:
+            return null;
+        case JsonElement je:
+            return ValidateRelationsElement(je);
+        case JsonNode jn:
+            return ValidateRelationsElement(JsonDocument.Parse(jn.ToJsonString()).RootElement);
+        case IEnumerable<MemoryRelation> list:
+            foreach (var rel in list)
+            {
+                if (rel is null || string.IsNullOrWhiteSpace(rel.Type) || string.IsNullOrWhiteSpace(rel.TargetId))
+                {
+                    return "invalid-relations: each relation needs non-empty type and targetId";
+                }
+            }
+            return null;
+        default:
+            return "invalid-relations: must be an array of { type, targetId }";
+    }
+}
+
+private static string? ValidateRelationsElement(JsonElement relations)
+{
+    if (relations.ValueKind == JsonValueKind.Undefined || relations.ValueKind == JsonValueKind.Null)
     {
         return null;
     }
 
-    if (relations.Value.ValueKind != JsonValueKind.Array)
+    if (relations.ValueKind != JsonValueKind.Array)
     {
         return "invalid-relations: must be an array of { type, targetId }";
     }
 
-    foreach (var rel in relations.Value.EnumerateArray())
+    foreach (var rel in relations.EnumerateArray())
     {
         if (rel.ValueKind != JsonValueKind.Object)
         {
@@ -467,19 +491,36 @@ private static string? ValidateRelations(JsonElement? relations)
     return null;
 }
 
-private static string? ValidateSource(JsonElement? source)
+private static string? ValidateSource(object? source)
 {
-    if (source is null || source.Value.ValueKind == JsonValueKind.Undefined || source.Value.ValueKind == JsonValueKind.Null)
+    switch (source)
+    {
+        case null:
+            return null;
+        case JsonElement je:
+            return ValidateSourceElement(je);
+        case JsonNode jn:
+            return ValidateSourceElement(JsonDocument.Parse(jn.ToJsonString()).RootElement);
+        case MemorySource ms:
+            return ValidateSourceFields(ms.Type, ms.Url, ms.Path, ms.Shard);
+        default:
+            return "invalid-source: must be an object with type/url/path/shard";
+    }
+}
+
+private static string? ValidateSourceElement(JsonElement source)
+{
+    if (source.ValueKind == JsonValueKind.Undefined || source.ValueKind == JsonValueKind.Null)
     {
         return null;
     }
 
-    if (source.Value.ValueKind != JsonValueKind.Object)
+    if (source.ValueKind != JsonValueKind.Object)
     {
         return "invalid-source: must be a JSON object (type/url/path/shard)";
     }
 
-    foreach (var prop in source.Value.EnumerateObject())
+    foreach (var prop in source.EnumerateObject())
     {
         var name = prop.Name;
         if (name is not "type" and not "url" and not "path" and not "shard")
@@ -488,6 +529,12 @@ private static string? ValidateSource(JsonElement? source)
         }
     }
 
+    return null;
+}
+
+private static string? ValidateSourceFields(string? type, string? url, string? path, string? shard)
+{
+    // All optional; just ensure no unexpected structure
     return null;
 }
 
