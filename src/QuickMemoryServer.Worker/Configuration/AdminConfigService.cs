@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using Tomlyn;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -96,6 +97,42 @@ public sealed class AdminConfigService
 
             options.Permissions[endpoint] = new Dictionary<string, PermissionTier>(assignments, StringComparer.OrdinalIgnoreCase);
         }, cancellationToken);
+    }
+
+    public Task<string> ReadRawAsync(CancellationToken cancellationToken = default)
+    {
+        return File.ReadAllTextAsync(_configPath, cancellationToken);
+    }
+
+    public Task<ConfigValidationResult> ValidateRawAsync(string content, CancellationToken cancellationToken = default)
+    {
+        if (content is null)
+        {
+            return Task.FromResult(new ConfigValidationResult(false, new[] { "content-null" }));
+        }
+
+        var model = Toml.Parse(content);
+        if (!model.HasErrors)
+        {
+            return Task.FromResult(new ConfigValidationResult(true, Array.Empty<string>()));
+        }
+
+        var errors = model.Diagnostics.Select(d => d.ToString()).ToArray();
+        return Task.FromResult(new ConfigValidationResult(false, errors));
+    }
+
+    public async Task<ConfigValidationResult> SaveRawAsync(string content, CancellationToken cancellationToken = default)
+    {
+        var validation = await ValidateRawAsync(content, cancellationToken);
+        if (!validation.IsValid)
+        {
+            return validation;
+        }
+
+        await File.WriteAllTextAsync(_configPath, content, Encoding.UTF8, cancellationToken);
+        _configurationRoot.Reload();
+        _logger.LogInformation("Persisted raw configuration to {Path}", _configPath);
+        return validation;
     }
 
     private async Task MutateAsync(Action<ServerOptions> mutation, CancellationToken cancellationToken)
@@ -224,3 +261,5 @@ public sealed class AdminConfigService
         return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
     }
 }
+
+public sealed record ConfigValidationResult(bool IsValid, IReadOnlyList<string> Errors);

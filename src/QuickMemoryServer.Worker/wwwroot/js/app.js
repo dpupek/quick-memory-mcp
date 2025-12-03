@@ -6,7 +6,9 @@ const state = {
   allowedEndpoints: [],
   entries: [],
   permissions: {},
-  lastDetailEntry: null
+  lastDetailEntry: null,
+  configEditor: null,
+  monacoReady: null
 };
 
 const KIND_SUGGESTIONS = [
@@ -106,6 +108,9 @@ document.addEventListener('DOMContentLoaded', () => {
       closeEntryModal();
     }
   });
+  document.getElementById('config-reload')?.addEventListener('click', () => loadConfig());
+  document.getElementById('config-validate')?.addEventListener('click', () => validateConfig(false));
+  document.getElementById('config-save')?.addEventListener('click', () => validateConfig(true));
   stopModalClickBubble();
   selectors.loginOverlay.classList.remove('hidden');
   (async () => {
@@ -146,6 +151,9 @@ function setActiveTab(tab) {
   }
   if (tab === 'agent-help') {
     loadAgentHelp();
+  }
+  if (tab === 'config') {
+    loadConfig();
   }
 }
 
@@ -448,6 +456,113 @@ async function loadHelpContent() {
 
   const html = await response.text();
   document.getElementById('help-content').innerHTML = html;
+}
+
+async function ensureMonaco() {
+  if (state.monacoReady) {
+    return state.monacoReady;
+  }
+
+  state.monacoReady = new Promise((resolve, reject) => {
+    if (window.monaco) {
+      resolve(window.monaco);
+      return;
+    }
+
+    if (typeof window.require !== 'function') {
+      reject(new Error('Monaco loader not available'));
+      return;
+    }
+
+    window.require(['vs/editor/editor.main'], () => resolve(window.monaco), reject);
+  });
+
+  return state.monacoReady;
+}
+
+async function loadConfig() {
+  if (!ensureAuth()) {
+    return;
+  }
+
+  setConfigStatus('Loading...', 'info');
+  try {
+    const monaco = await ensureMonaco();
+    if (!state.configEditor) {
+      const container = document.getElementById('config-editor');
+      state.configEditor = monaco.editor.create(container, {
+        value: '',
+        language: 'toml',
+        theme: 'vs-dark',
+        automaticLayout: true,
+        minimap: { enabled: false }
+      });
+    }
+
+    const response = await fetch('/admin/config/raw', { headers: authHeaders(false), credentials: 'same-origin' });
+    if (!response.ok) {
+      setConfigStatus('Failed to load config', 'danger');
+      return;
+    }
+
+    const text = await response.text();
+    state.configEditor.setValue(text);
+    clearConfigErrors();
+    setConfigStatus('Loaded', 'success');
+  } catch (error) {
+    console.error('config load failed', error);
+    setConfigStatus('Config load failed', 'danger');
+  }
+}
+
+async function validateConfig(applyChanges) {
+  if (!state.configEditor) {
+    await loadConfig();
+    if (!state.configEditor) return;
+  }
+
+  const content = state.configEditor.getValue();
+  const url = applyChanges ? '/admin/config/raw/apply' : '/admin/config/raw/validate';
+  setConfigStatus(applyChanges ? 'Saving...' : 'Validating...', 'info');
+  clearConfigErrors();
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { ...authHeaders(true), 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({ content })
+  });
+
+  if (response.ok) {
+    setConfigStatus(applyChanges ? 'Saved successfully' : 'Valid TOML', 'success');
+    return;
+  }
+
+  const payload = await response.json().catch(() => ({}));
+  const errors = payload.errors || ['Validation failed'];
+  showConfigErrors(errors);
+  setConfigStatus('Invalid TOML', 'danger');
+}
+
+function showConfigErrors(errors) {
+  const box = document.getElementById('config-errors');
+  if (!box) return;
+  box.style.display = 'block';
+  box.textContent = errors.join('\n');
+}
+
+function clearConfigErrors() {
+  const box = document.getElementById('config-errors');
+  if (!box) return;
+  box.style.display = 'none';
+  box.textContent = '';
+}
+
+function setConfigStatus(message, tone) {
+  const el = document.getElementById('config-status');
+  if (!el) return;
+  el.textContent = message || '';
+  el.className = `text-${tone || 'muted'} small ms-2`;
 }
 
 async function loadAgentHelp() {

@@ -30,6 +30,7 @@ using Serilog.Events;
 using Tomlyn.Extensions.Configuration;
 
 internal record LoginRequest([property: JsonPropertyName("apiKey")] string? ApiKey);
+internal record RawConfigRequest([property: JsonPropertyName("content")] string? Content);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -333,6 +334,53 @@ app.MapPost("/admin/logout", (HttpContext context) =>
 {
     context.Session.Clear();
     return Results.Ok();
+});
+
+app.MapGet("/admin/config/raw", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var content = await adminService.ReadRawAsync();
+    return Results.Content(content, "text/plain");
+});
+
+app.MapPost("/admin/config/raw/validate", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, CancellationToken cancellationToken, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<RawConfigRequest>(cancellationToken);
+    var content = request?.Content ?? string.Empty;
+    var result = await adminService.ValidateRawAsync(content, cancellationToken);
+    if (!result.IsValid)
+    {
+        return Results.BadRequest(new { errors = result.Errors });
+    }
+
+    return Results.Ok(new { valid = true });
+});
+
+app.MapPost("/admin/config/raw/apply", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, CancellationToken cancellationToken, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<RawConfigRequest>(cancellationToken);
+    var content = request?.Content ?? string.Empty;
+    var result = await adminService.SaveRawAsync(content, cancellationToken);
+    if (!result.IsValid)
+    {
+        return Results.BadRequest(new { errors = result.Errors });
+    }
+
+    return Results.Ok(new { saved = true });
 });
 
 app.MapGet("/docs/schema", (HttpContext context, SchemaService schemaService) =>
