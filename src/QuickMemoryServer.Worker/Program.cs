@@ -977,6 +977,17 @@ app.MapGet("/admin/help/agent", (HttpContext context, ApiKeyAuthorizer authorize
     return Results.Content(html, "text/html");
 });
 
+app.MapGet("/admin/help/admin-ui", (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor, DocumentService documentService) =>
+{
+    if (!TryAuthorizeAny(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var html = documentService.RenderMarkdown("admin-ui-help.md");
+    return Results.Content(html, "text/html");
+});
+
 app.MapGet("/admin/permissions", (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor) =>
 {
     if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))

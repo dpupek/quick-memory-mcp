@@ -156,6 +156,9 @@ function setActiveTab(tab) {
   if (tab === 'agent-help') {
     loadAgentHelp();
   }
+  if (tab === 'admin-ui-help') {
+    loadAdminUiHelp();
+  }
   if (tab === 'config') {
     loadConfig();
   }
@@ -707,6 +710,21 @@ async function loadAgentHelp() {
 
   const html = await response.text();
   document.getElementById('agent-help-content').innerHTML = html;
+}
+
+async function loadAdminUiHelp() {
+  if (!ensureAuth()) {
+    return;
+  }
+
+  const response = await fetch('/admin/help/admin-ui', { headers: authHeaders(false) });
+  if (!response.ok) {
+    setStatus('Unable to load admin UI help', 'danger');
+    return;
+  }
+
+  const html = await response.text();
+  document.getElementById('admin-ui-help-content').innerHTML = html;
 }
 
 function renderEntryDetail(entry) {
