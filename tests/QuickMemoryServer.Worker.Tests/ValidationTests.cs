@@ -32,7 +32,7 @@ public class ValidationTests
         var method = GetMethod("ValidateRelations");
         var json = JsonDocument.Parse("[{}]").RootElement;
         var result = method.Invoke(null, new object?[] { json }) as string;
-        Assert.Contains("targetId", result);
+        Assert.Contains("targetId", result ?? string.Empty);
     }
 
     [Fact]
