@@ -108,6 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
       closeEntryModal();
     }
   });
+  document.getElementById('health-refresh')?.addEventListener('click', loadHealthBlade);
+  document.getElementById('health-download-logs')?.addEventListener('click', downloadLogs);
   document.getElementById('config-reload')?.addEventListener('click', () => loadConfig());
   document.getElementById('config-validate')?.addEventListener('click', () => validateConfig(false));
   document.getElementById('config-save')?.addEventListener('click', () => validateConfig(true));
@@ -154,6 +156,9 @@ function setActiveTab(tab) {
   }
   if (tab === 'config') {
     loadConfig();
+  }
+  if (tab === 'health') {
+    loadHealthBlade();
   }
 }
 
@@ -563,6 +568,101 @@ function setConfigStatus(message, tone) {
   if (!el) return;
   el.textContent = message || '';
   el.className = `text-${tone || 'muted'} small ms-2`;
+}
+
+async function loadHealthBlade() {
+  if (!ensureAuth()) {
+    return;
+  }
+
+  setHealthStatus('Loading...', 'info');
+  try {
+    const response = await fetch('/health', { headers: authHeaders(false), credentials: 'same-origin' });
+    if (!response.ok) {
+      setHealthStatus('Failed to load health', 'danger');
+      return;
+    }
+    const report = await response.json();
+    renderHealthBlade(report);
+    setHealthStatus('Updated', 'success');
+  } catch (error) {
+    console.error('health load failed', error);
+    setHealthStatus('Health load failed', 'danger');
+  }
+}
+
+function renderHealthBlade(report) {
+  const summary = document.getElementById('health-summary');
+  const issues = document.getElementById('health-issues');
+  if (!summary || !issues) {
+    return;
+  }
+
+  const status = report.status || 'unknown';
+  const time = report.generatedUtc || new Date().toISOString();
+  summary.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-1">Status: <span class="badge bg-${status === 'Healthy' ? 'success' : status === 'Degraded' ? 'warning' : 'danger'}">${escapeHtml(status)}</span></h5>
+        <div class="text-muted small">Generated: ${escapeHtml(time)}</div>
+      </div>
+      <div class="text-end">
+        <div class="small text-muted">Stores: ${report.stores?.length ?? 0}</div>
+      </div>
+    </div>
+  `;
+
+  const list = Array.isArray(report.issues) ? report.issues : [];
+  if (!list.length) {
+    issues.innerHTML = '<div class="text-success">No issues reported.</div>';
+    return;
+  }
+
+  const content = list
+    .map((item) => {
+      const severity = escapeHtml(item.severity || 'info');
+      const message = escapeHtml(item.message || '');
+      return `<div class="border rounded p-2 mb-2"><span class="badge bg-${severity === 'error' ? 'danger' : severity === 'warning' ? 'warning' : 'info'} me-2">${severity}</span>${message}</div>`;
+    })
+    .join('');
+
+  issues.innerHTML = content;
+}
+
+function setHealthStatus(message, tone) {
+  const el = document.getElementById('health-status');
+  if (!el) return;
+  el.textContent = message || '';
+  el.className = `text-${tone || 'muted'} small`;
+}
+
+async function downloadLogs() {
+  if (!ensureAuth()) {
+    return;
+  }
+
+  setHealthStatus('Preparing logs...', 'info');
+  try {
+    const response = await fetch('/admin/logs', { headers: authHeaders(false), credentials: 'same-origin' });
+    if (!response.ok) {
+      setHealthStatus('Failed to download logs', 'danger');
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'quick-memory-logs.zip';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+    setHealthStatus('Logs downloaded', 'success');
+  } catch (error) {
+    console.error('log download failed', error);
+    setHealthStatus('Log download failed', 'danger');
+  }
 }
 
 async function loadAgentHelp() {

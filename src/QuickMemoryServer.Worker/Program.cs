@@ -48,12 +48,16 @@ builder.Host.UseWindowsService(options =>
 
 builder.Host.UseSerilog((context, services, loggerConfiguration) =>
 {
+    var baseDir = AppContext.BaseDirectory;
+    var logDir = Path.Combine(baseDir, "logs");
+    Directory.CreateDirectory(logDir);
+
     loggerConfiguration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
         .WriteTo.Console()
-        .WriteTo.File("logs/quick-memory-server-.log", rollingInterval: RollingInterval.Day,
+        .WriteTo.File(Path.Combine(logDir, "quick-memory-server-.log"), rollingInterval: RollingInterval.Day,
             restrictedToMinimumLevel: LogEventLevel.Information,
             retainedFileCountLimit: 7);
 
@@ -381,6 +385,46 @@ app.MapPost("/admin/config/raw/apply", async (HttpContext context, ApiKeyAuthori
     }
 
     return Results.Ok(new { saved = true });
+});
+
+app.MapGet("/admin/logs", (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var baseDir = AppContext.BaseDirectory;
+    var logDir = Path.Combine(baseDir, "logs");
+    if (!Directory.Exists(logDir))
+    {
+        return Results.NotFound(new { error = "log-directory-missing" });
+    }
+
+    var files = Directory.GetFiles(logDir, "quick-memory-server-*.log")
+        .OrderByDescending(File.GetCreationTimeUtc)
+        .Take(5)
+        .ToArray();
+
+    if (files.Length == 0)
+    {
+        return Results.NotFound(new { error = "no-logs" });
+    }
+
+    var boundary = "qmslogboundary";
+    context.Response.ContentType = "application/zip";
+    context.Response.Headers["Content-Disposition"] = "attachment; filename=quick-memory-logs.zip";
+
+    using var archive = new System.IO.Compression.ZipArchive(context.Response.Body, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true);
+    foreach (var file in files)
+    {
+        var entry = archive.CreateEntry(Path.GetFileName(file));
+        await using var entryStream = entry.Open();
+        await using var fileStream = File.OpenRead(file);
+        await fileStream.CopyToAsync(entryStream, context.RequestAborted);
+    }
+
+    return Results.Empty;
 });
 
 app.MapGet("/docs/schema", (HttpContext context, SchemaService schemaService) =>
