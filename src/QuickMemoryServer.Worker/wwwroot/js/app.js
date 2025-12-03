@@ -429,24 +429,16 @@ function renderConfigInstructions() {
     return;
   }
 
-  const user = state.user || 'your-user';
-  const apiKey = state.apiKey || 'your-api-key';
-  const tier = state.tier || 'Reader';
-  const snippet = `
-[users.${user}]
-apiKey = "${apiKey}"
-defaultTier = "${tier}"
-`;
   const endpoints = state.allowedEndpoints.map((endpoint) => endpoint.key).join(', ') || 'none';
+  const helpLinks = `
+    <a href="/admin/help/end-user" target="_blank">End-user help</a>
+    · <a href="/admin/help/agent" target="_blank">Agent help</a>
+  `;
 
   container.innerHTML = `
-    <h4>Connecting Codex</h4>
-    <p class="text-muted small">
-      Point Codex at <code>http://localhost:5080</code>, add your API key, and let it use the MCP endpoints (see <code>/mcp</code> and <code>/mcp/{endpoint}/searchEntries</code>).
-    </p>
-    <p class="small mb-1">Add this to <code>QuickMemoryServer.toml</code> and restart (or use the SPA Users tab):</p>
-    <pre class="bg-dark text-white rounded p-3" style="font-size:0.85rem;line-height:1.4;">${escapeHtml(snippet)}</pre>
-    <p class="small mb-0 text-muted">Authorized endpoints: ${escapeHtml(endpoints)}</p>
+    <h4>Welcome${state.user ? ', ' + escapeHtml(state.user) : ''}!</h4>
+    <p class="text-muted small mb-1">Tier: ${escapeHtml(state.tier || 'Reader')} · Authorized endpoints: ${escapeHtml(endpoints)}</p>
+    <p class="mb-0">Need a refresher? ${helpLinks}</p>
   `;
 }
 
