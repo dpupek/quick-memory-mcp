@@ -61,4 +61,29 @@ The latest recipes live in `docs/agent-usage.md` (copied alongside the binaries 
 
         return Task.FromResult(header);
     }
+
+    [McpServerResource(
+        Name = "end-user-help",
+        Title = "Quick Memory End-User Help",
+        MimeType = "text/markdown",
+        UriTemplate = "resource://quick-memory/end-user-help")]
+    public static Task<string> GetEndUserHelpAsync()
+    {
+        var header = "# Quick Memory End-User Help\n\nSee the admin SPA Help tab for the rendered version.";
+        var path = Path.Combine(AppContext.BaseDirectory, "docs", "end-user-help.md");
+        if (File.Exists(path))
+        {
+            try
+            {
+                var content = File.ReadAllText(path);
+                return Task.FromResult(content);
+            }
+            catch
+            {
+                // fall through to header
+            }
+        }
+
+        return Task.FromResult(header);
+    }
 }
