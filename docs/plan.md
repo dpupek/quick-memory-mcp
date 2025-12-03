@@ -45,6 +45,7 @@
 ## Future Phases
 - [ ] **Phase 9 – Embedded Admin SPA** (vertical BS5 menu with Overview/Projects/Entities/Users/Help blades, login enforced, project/entity CRUD, user tier management, help/agent blades, and configuration guidance with Codex API key sample).
 - [ ] **Phase 10 – Release & Hardening** (installer packaging with WiX, load + failure testing, release notes, ONNX artifacts, final docs, and load test evidence).  
+- [x] PowerShell installer/updater helper for manual Windows deployments (`tools/install-service.ps1`).
 
 ## MCP Command Implementation Checklist
 1. Keep DTOs/validators synced with generated JSON Schema and describe payload.

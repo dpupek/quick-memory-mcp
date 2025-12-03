@@ -136,6 +136,14 @@ builder.Services.AddSingleton<AdminConfigService>();
 builder.Services.AddSingleton<DocumentService>();
 builder.Services.AddSingleton<SchemaService>();
 builder.Services.AddMcpServer()
+    .WithResourcesFromAssembly(typeof(HelpResources).Assembly)
+    .WithListResourceTemplatesHandler((_, _) =>
+    {
+        return ValueTask.FromResult(new ListResourceTemplatesResult
+        {
+            ResourceTemplates = Array.Empty<ResourceTemplate>()
+        });
+    })
     .WithHttpTransport(options =>
     {
         options.ConfigureSessionOptions = (httpContext, serverOptions, cancellationToken) =>
@@ -167,6 +175,11 @@ builder.Services.AddMcpServer()
     {
         return async (context, cancellationToken) =>
         {
+            static bool IsGlobalTool(string? toolName) =>
+                toolName is not null &&
+                (toolName.Equals("listProjects", StringComparison.OrdinalIgnoreCase)
+                 || toolName.Equals("health", StringComparison.OrdinalIgnoreCase));
+
             var httpContext = context.Services.GetService<IHttpContextAccessor>()?.HttpContext;
             var apiKey = ExtractApiKey(httpContext);
             if (string.IsNullOrWhiteSpace(apiKey))
@@ -174,21 +187,63 @@ builder.Services.AddMcpServer()
                 return CreateCallToolError("missing-api-key");
             }
 
-            if (!TryGetEndpoint(context.Params.Arguments, out var endpoint))
+            var toolName = context.Params.Name;
+            var authorizer = context.Services.GetRequiredService<ApiKeyAuthorizer>();
+
+            if (!IsGlobalTool(toolName) && !TryGetEndpoint(context.Params.Arguments, out var endpoint))
             {
                 return CreateCallToolError("missing-endpoint");
             }
 
-            var authorizer = context.Services.GetRequiredService<ApiKeyAuthorizer>();
-            if (!authorizer.TryAuthorize(apiKey, endpoint, out var user, out var tier))
+            if (IsGlobalTool(toolName))
+            {
+                var optionsMonitor = context.Services.GetRequiredService<IOptionsMonitor<ServerOptions>>();
+                string? authorizedEndpoint = null;
+                PermissionTier tier = default;
+                string? user = null;
+
+                foreach (var endpointKey in optionsMonitor.CurrentValue.Endpoints.Keys)
+                {
+                    if (authorizer.TryAuthorize(apiKey, endpointKey, out user, out tier))
+                    {
+                        authorizedEndpoint = endpointKey;
+                        break;
+                    }
+                }
+
+                if (authorizedEndpoint is null &&
+                    authorizer.TryAuthorize(apiKey, "shared", out user, out tier))
+                {
+                    authorizedEndpoint = "shared";
+                }
+
+                if (authorizedEndpoint is null)
+                {
+                    return CreateCallToolError("unauthorized");
+                }
+
+                context.Items[McpAuthorizationContext.ApiKeyItem] = apiKey;
+                context.Items[McpAuthorizationContext.EndpointItem] = authorizedEndpoint;
+                context.Items[McpAuthorizationContext.TierItem] = tier;
+                context.Items[McpAuthorizationContext.UserItem] = user;
+
+                return await next(context, cancellationToken);
+            }
+
+            if (!TryGetEndpoint(context.Params.Arguments, out var projectEndpoint))
+            {
+                return CreateCallToolError("missing-endpoint");
+            }
+
+            if (!authorizer.TryAuthorize(apiKey, projectEndpoint, out var userScoped, out var tierScoped))
             {
                 return CreateCallToolError("unauthorized");
             }
 
             context.Items[McpAuthorizationContext.ApiKeyItem] = apiKey;
-            context.Items[McpAuthorizationContext.EndpointItem] = endpoint;
-            context.Items[McpAuthorizationContext.TierItem] = tier;
-            context.Items[McpAuthorizationContext.UserItem] = user;
+            context.Items[McpAuthorizationContext.EndpointItem] = projectEndpoint;
+            context.Items[McpAuthorizationContext.TierItem] = tierScoped;
+            context.Items[McpAuthorizationContext.UserItem] = userScoped;
 
             return await next(context, cancellationToken);
         };

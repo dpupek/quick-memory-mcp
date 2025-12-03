@@ -14,7 +14,15 @@ public sealed class DocumentService
     public DocumentService(IHostEnvironment environment, ILogger<DocumentService> logger)
     {
         _logger = logger;
-        _docsRoot = Path.GetFullPath(Path.Combine(environment.ContentRootPath, "..", "..", "docs"));
+        var defaultRoot = Path.Combine(environment.ContentRootPath, "docs");
+        if (Directory.Exists(defaultRoot))
+        {
+            _docsRoot = defaultRoot;
+        }
+        else
+        {
+            _docsRoot = Path.GetFullPath(Path.Combine(environment.ContentRootPath, "..", "..", "docs"));
+        }
     }
 
     public string RenderMarkdown(string relativePath)

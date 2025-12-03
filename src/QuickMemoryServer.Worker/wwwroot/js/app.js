@@ -214,7 +214,7 @@ function renderProjectsList() {
             <div>
               <strong>${escapeHtml(endpoint.name || endpoint.key)}</strong>
               <div class="text-muted small">Slug: ${escapeHtml(endpoint.slug)}</div>
-              <div class="text-muted small">Storage: ${escapeHtml(endpoint.storagePath)}</div>
+              <div class="text-muted small">Storage: ${escapeHtml(formatStoragePath(endpoint.storagePath))}</div>
             </div>
             <div>
               <button type="button" class="btn btn-sm btn-outline-primary me-2" data-action="save-project" data-endpoint="${endpoint.key}">Save</button>
@@ -236,7 +236,7 @@ function renderProjectsList() {
             </div>
             <div>
               <label class="form-label">Storage</label>
-              <input name="storagePath" class="form-control" value="${escapeHtml(endpoint.storagePath)}" />
+              <input name="storagePath" class="form-control" value="${escapeHtml(formatStoragePath(endpoint.storagePath))}" />
             </div>
             <div class="form-check mt-2">
               <input name="includeShared" class="form-check-input" type="checkbox" ${endpoint.includeInSearchByDefault ? 'checked' : ''} />
@@ -262,7 +262,7 @@ async function createProject() {
   const name = document.getElementById('project-name').value.trim();
   const slug = document.getElementById('project-slug').value.trim();
   const description = document.getElementById('project-description').value.trim();
-  const storagePath = document.getElementById('project-storage').value.trim();
+  const storagePath = normalizeStoragePath(document.getElementById('project-storage').value);
   const includeInSearch = document.getElementById('project-include-search').checked;
   const inheritShared = document.getElementById('project-inherit-shared').checked;
 
@@ -340,7 +340,7 @@ async function saveProjectMetadata(endpointKey) {
       name: form.querySelector('[name="name"]').value,
       slug: form.querySelector('[name="slug"]').value,
       description: form.querySelector('[name="description"]').value,
-      storagePath: form.querySelector('[name="storagePath"]').value,
+      storagePath: normalizeStoragePath(form.querySelector('[name="storagePath"]').value),
       includeShared: form.querySelector('[name="includeShared"]').checked,
       lastSavedUtc: new Date().toISOString()
     }
@@ -1163,4 +1163,17 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function normalizeStoragePath(value) {
+  if (!value) {
+    return '';
+  }
+
+  const trimmed = value.trim();
+  return trimmed.replace(/\\\\/g, '\\');
+}
+
+function formatStoragePath(value) {
+  return normalizeStoragePath(value);
 }

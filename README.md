@@ -24,6 +24,19 @@ This repository contains the Windows-service-based MCP memory server described i
 8. The runtime JSON Schema for the exposed structs lives at `http://localhost:5080/docs/schema` (ETag + short cache).
 8. Optional: run k6 scenarios in `load-tests/` to stress MCP endpoints (requires `QMS_API_KEY`).
 
+## Windows installer/updater
+
+For Windows deployments use the PowerShell helper `tools/install-service.ps1` (run in an elevated prompt):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/install-service.ps1
+```
+
+- Publishes the worker + MemoryCtl, rewrites `QuickMemoryServer.toml`, copies payloads to `C:\Program Files\q-memory-mcp` by default, and (re)creates the `QuickMemoryServer` Windows service (display name: Quick Memory MCP).
+- Prompts for machine/local install, install/data dirs, port, service account, and API keys; you can pre-supply args (`-InstallDirectory`, `-DataDirectory`, `-Port`, `-ServiceAccount`, `-SkipStart`, `-SkipFirewall`, `-NoRollback`).
+- If `QuickMemoryServer.toml` already exists, it asks before overwriting; data files are never overwritten.
+- Stops the service before copy to avoid file locks; restarts it unless `-SkipStart` is used. Copies `docs/` so admin/agent help render.
+
 The service is pre-configured to run as a Windows service (`AddWindowsService`) when published and installed with WiX (see `docs/plan.md`).
 
 ## Repository Layout

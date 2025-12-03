@@ -1,0 +1,12 @@
+# Build artifacts
+bin/
+obj/
+**/bin/
+**/obj/
+
+# VS/JetBrains
+*.user
+*.swp
+*.suo
+*.userprefs
+.vs/

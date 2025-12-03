@@ -10,6 +10,7 @@
 - For git operations under WSL, prefer `"/mnt/c/Program Files/Git/bin/git.exe" status` (note timeline slowdowns on native Linux Git).
 - `"$NEXPORT_WINDOTNETdotnet.exe" build QuickMemoryServer.sln` compiles everything with the required .NET 9 preview.
 - `"$NEXPORT_WINDOTNETdotnet.exe" test` runs all xUnit suites; `run --project src/QuickMemoryServer.Worker` launches the worker for manual validation (watch logs for `Listening on http://localhost:5080`).
+- Windows installs/updates: use `tools/install-service.ps1` (run elevated). It publishes the worker + MemoryCtl, copies to `C:\Program Files\q-memory-mcp` by default, prompts for install/data dirs, port, service account, and API keys, stops the service before copy to avoid file locks, and restarts unless `-SkipStart` is set. `QuickMemoryServer.toml` is only overwritten if confirmed; data files are never overwritten. Flags: `-SkipFirewall`, `-ValidateOnly`, `-NoRollback`, `-Uninstall`.
 
 ## Coding Style & Naming Conventions
 - C# 12, file-scoped namespaces, nullable enabled, `var` for obvious declarations, PascalCase for types/methods, camelCase for locals/parameters; `*Service` suffix on services.
@@ -36,3 +37,11 @@
 - Monitor MCP ops via Serilog/EventCounters (`qms_*` metrics) and expose `/health` plus Prometheus instrumentation.
 - Use the Roslyn MCP help resource (`resource://roslyn/help`) and the `roslyn_code_navigator` tools (`SearchSymbols`, `FindReferences`, etc.) for complex lookups.
 - Document new MCP commands, config samples (TOML + `.codex/config.toml`), and Tier matrices before shipping.
+- When using `mcp-remote` as a proxy to Quick Memory MCP, a workable config is:
+  ```toml
+  [mcp_servers.quick-memory]
+  command = "npx"
+  args = ["mcp-remote@latest","http://localhost:5080/mcp","--header","X-Api-Key:$AUTH_TOKEN","--allow-http","--debug"]
+  env = { AUTH_TOKEN = "/K/XodEPueCMorpZV8qKP47svleB0FQ9jmMVtIXO+Lw=" }
+  ```
+  Notes: `mcp-remote` caches auth under `~/.mcp-auth`; if keys change, delete that folder. Prefer `X-Api-Key` header for Quick Memory; bearer also works. Ensure `global.httpUrl` binds to `0.0.0.0:5080` and Windows firewall allows 5080 so WSL → Windows works.
