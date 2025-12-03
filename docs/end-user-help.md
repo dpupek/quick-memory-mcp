@@ -22,16 +22,19 @@ Use these steps when accessing the MCP memory server or the embedded admin SPA.
 
 ## Installing in Codex
 - Copy the `QuickMemoryServer.sample.toml` snippet, fill in your API key, and paste it into `QuickMemoryServer.toml` (same directory as the service exe). Restart the worker when you edit the file directly; the SPA Users tab writes this file for you after CRUD operations and each change is reloaded automatically.
-- Set up the client-side Codex configuration in `~/.codex/config.toml` (or the workspace-level config) with the MCP streamable transport:
+- Codex currently accesses HTTP MCP servers through the `mcp-remote` bridge. Add this block to `~/.codex/config.toml` (or your workspace-level config):
   ```toml
   [mcp_servers.quick-memory]
-  url = "http://localhost:5080/mcp"
-  experimental_use_rmcp_client = true
-  bearer_token_env_var = "QMS_API_KEY"
+  command = "npx"
+  args = [
+    "mcp-remote@latest",
+    "http://localhost:5080/mcp",
+    "--header","X-Api-Key:$AUTH_TOKEN",
+    "--allow-http",
+    "--debug"
+  ]
+  env = { AUTH_TOKEN = "${env:AUTH_TOKEN}" }
   ```
-  Export the API key you want to use before launching Codex:
-  ```powershell
-  $env:QMS_API_KEY = "your-api-key-here"
-  ```
-  On Linux/macOS: `export QMS_API_KEY=your-api-key-here`.
-- Use the Overview tab in the admin SPA to verify `/health`, copy the user-specific snippet, and ensure the listed endpoints match the ones you configured for Codex. This page also contains the current API key snippet so you can paste it directly into `.codex/config.toml` or the TOML service config when rotating keys.
+  - Export `AUTH_TOKEN` before launching Codex (`$env:AUTH_TOKEN="your-api-key"` on PowerShell, `export AUTH_TOKEN=your-api-key` on Bash/Zsh).
+  - `mcp-remote` stores auth metadata under `~/.mcp-auth`. Delete the corresponding folder if you rotate keys and need the bridge to prompt for the new value.
+- Use the Overview tab in the admin SPA to verify `/health`, copy the user-specific snippet, and ensure the listed endpoints match the ones you configured for Codex. This page also contains the current API key snippet so you can rehydrate `.codex/config.toml` or `QuickMemoryServer.toml` when rotating keys.

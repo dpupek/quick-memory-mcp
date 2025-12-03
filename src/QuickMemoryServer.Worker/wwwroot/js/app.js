@@ -108,7 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   stopModalClickBubble();
   selectors.loginOverlay.classList.remove('hidden');
-  fetchEndpoints();
+  (async () => {
+    await fetchEndpoints();
+    await tryResumeSession();
+  })();
 });
 
 function setupNavigation() {
@@ -126,6 +129,12 @@ function setActiveTab(tab) {
   selectors.navButtons.forEach((button) => {
     button.classList.toggle('active', button.dataset.tab === tab);
   });
+  if (tab === 'overview') {
+    loadOverview();
+  }
+  if (tab === 'projects') {
+    refreshAuthState();
+  }
   if (tab === 'entities') {
     loadEntities();
   }
@@ -291,9 +300,7 @@ async function createProject() {
   }
 
   setStatus('Project created', 'success');
-  await fetchEndpoints();
-  updateEntityProjectSelect();
-  updatePermissionsEndpointSelect();
+  await refreshAuthState();
 }
 
 async function deleteProject(endpointKey) {
@@ -312,10 +319,7 @@ async function deleteProject(endpointKey) {
   }
 
   setStatus('Project removed', 'info');
-  state.allowedEndpoints = state.allowedEndpoints.filter((ep) => ep.key !== endpointKey);
-  await fetchEndpoints();
-  updateEntityProjectSelect();
-  updatePermissionsEndpointSelect();
+  await refreshAuthState();
 }
 
 async function saveProjectMetadata(endpointKey) {
@@ -999,13 +1003,41 @@ async function handleLogin(event) {
     return;
   }
 
+  state.apiKey = apiKey;
+  const auth = await rebuildAccessForKey(apiKey);
+  if (!auth.ok) {
+    setStatus(auth.message || 'No endpoints accept that API key', 'danger');
+    state.apiKey = null;
+    return;
+  }
+  await persistSessionLogin(apiKey);
+  selectors.loginOverlay.classList.add('hidden');
+  setStatus(`Welcome ${state.user} (${state.tier})`, 'success');
+  renderProjectsList();
+  updateEntityProjectSelect();
+  updatePermissionsEndpointSelect();
+  renderConfigInstructions();
+  loadOverview();
+  loadAdminData();
+}
+
+function logout() {
+  state.apiKey = null;
+  state.user = null;
+  state.tier = null;
+  state.allowedEndpoints = [];
+  selectors.loginOverlay.classList.remove('hidden');
+  setStatus('Logged out', 'info');
+  fetch('/admin/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
+}
+
+async function rebuildAccessForKey(apiKey) {
   if (!state.endpoints.length) {
     await fetchEndpoints();
   }
 
   if (!state.endpoints.length) {
-    setStatus('No endpoints available to validate the key', 'danger');
-    return;
+    return { ok: false, message: 'No endpoints available to validate the key' };
   }
 
   setStatus('Validating API key...', 'info');
@@ -1034,31 +1066,76 @@ async function handleLogin(event) {
   }
 
   if (!accessible.length) {
-    setStatus('No endpoints accept that API key', 'danger');
-    return;
+    return { ok: false, message: 'No endpoints accept that API key' };
   }
 
   state.allowedEndpoints = accessible;
-  state.apiKey = apiKey;
   state.user = payload?.user ?? 'unknown';
   state.tier = payload?.tier ?? 'Reader';
-  selectors.loginOverlay.classList.add('hidden');
-  setStatus(`Welcome ${state.user} (${state.tier})`, 'success');
+  return { ok: true };
+}
+
+async function refreshAuthState() {
+  if (!state.apiKey) {
+    await fetchEndpoints();
+    renderProjectsList();
+    return;
+  }
+
+  await fetchEndpoints();
+  const result = await rebuildAccessForKey(state.apiKey);
+  if (!result.ok) {
+    setStatus(result.message || 'Unable to refresh access', 'danger');
+    return;
+  }
   renderProjectsList();
   updateEntityProjectSelect();
   updatePermissionsEndpointSelect();
   renderConfigInstructions();
-  loadOverview();
-  loadAdminData();
 }
 
-function logout() {
-  state.apiKey = null;
-  state.user = null;
-  state.tier = null;
-  state.allowedEndpoints = [];
-  selectors.loginOverlay.classList.remove('hidden');
-  setStatus('Logged out', 'info');
+async function persistSessionLogin(apiKey) {
+  try {
+    await fetch('/admin/login', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ apiKey })
+    });
+  } catch (error) {
+    console.warn('Session login persist failed', error);
+  }
+}
+
+async function tryResumeSession() {
+  try {
+    const response = await fetch('/admin/session', { credentials: 'same-origin' });
+    if (!response.ok || response.status === 204) {
+      return;
+    }
+    const data = await response.json();
+    if (!data.apiKey) {
+      return;
+    }
+
+    state.apiKey = data.apiKey;
+    const auth = await rebuildAccessForKey(state.apiKey);
+    if (!auth.ok) {
+      state.apiKey = null;
+      return;
+    }
+
+    selectors.loginOverlay.classList.add('hidden');
+    setStatus(`Welcome back ${state.user} (${state.tier})`, 'success');
+    renderProjectsList();
+    updateEntityProjectSelect();
+    updatePermissionsEndpointSelect();
+    renderConfigInstructions();
+    loadOverview();
+    loadAdminData();
+  } catch (error) {
+    console.warn('Session resume failed', error);
+  }
 }
 
 async function loadOverview() {

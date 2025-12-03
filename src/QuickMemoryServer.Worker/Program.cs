@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text.Json.Serialization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -27,6 +28,8 @@ using Prometheus;
 using Serilog;
 using Serilog.Events;
 using Tomlyn.Extensions.Configuration;
+
+internal record LoginRequest([property: JsonPropertyName("apiKey")] string? ApiKey);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,6 +78,13 @@ builder.WebHost.UseUrls(httpUrl);
 builder.Services.AddRouting();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
 
 builder.Services.AddSingleton<IConfigureOptions<ServerOptions>, ServerOptionsConfigurator>();
 builder.Services.AddSingleton<IOptionsChangeTokenSource<ServerOptions>>(sp =>
@@ -254,6 +264,25 @@ var app = builder.Build();
 var observabilityMetrics = app.Services.GetRequiredService<ObservabilityMetrics>();
 
 app.UseSerilogRequestLogging();
+app.UseSession();
+app.Use(async (context, next) =>
+{
+    var sessionKey = context.Session.GetString("ApiKey");
+    if (!string.IsNullOrWhiteSpace(sessionKey))
+    {
+        if (!context.Request.Headers.ContainsKey("X-Api-Key"))
+        {
+            context.Request.Headers["X-Api-Key"] = sessionKey;
+        }
+
+        if (!context.Request.Headers.ContainsKey("Authorization"))
+        {
+            context.Request.Headers["Authorization"] = $"Bearer {sessionKey}";
+        }
+    }
+
+    await next();
+});
 app.Use(async (context, next) =>
     {
         var stopwatch = Stopwatch.StartNew();
@@ -275,6 +304,35 @@ app.MapGet("/health", (HealthReporter healthReporter) =>
 {
     var report = healthReporter.GetReport();
     return Results.Ok(report);
+});
+
+app.MapPost("/admin/login", async (HttpContext context) =>
+{
+    var payload = await context.Request.ReadFromJsonAsync<LoginRequest>();
+    if (payload is null || string.IsNullOrWhiteSpace(payload.ApiKey))
+    {
+        return Results.BadRequest(new { error = "missing-api-key" });
+    }
+
+    context.Session.SetString("ApiKey", payload.ApiKey.Trim());
+    return Results.Ok(new { stored = true });
+});
+
+app.MapGet("/admin/session", (HttpContext context) =>
+{
+    var apiKey = context.Session.GetString("ApiKey");
+    if (string.IsNullOrWhiteSpace(apiKey))
+    {
+        return Results.NoContent();
+    }
+
+    return Results.Ok(new { apiKey });
+});
+
+app.MapPost("/admin/logout", (HttpContext context) =>
+{
+    context.Session.Clear();
+    return Results.Ok();
 });
 
 app.MapGet("/docs/schema", (HttpContext context, SchemaService schemaService) =>
@@ -923,6 +981,12 @@ static string? ExtractApiKey(HttpContext? httpContext)
     if (httpContext is null)
     {
         return null;
+    }
+
+    var sessionKey = httpContext.Session.GetString("ApiKey");
+    if (!string.IsNullOrWhiteSpace(sessionKey))
+    {
+        return sessionKey;
     }
 
     if (httpContext.Request.Headers.TryGetValue("Authorization", out var authorization))
