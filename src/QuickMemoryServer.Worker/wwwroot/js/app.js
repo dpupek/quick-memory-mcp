@@ -898,7 +898,8 @@ async function loadEntities() {
     setStatus('No accessible project to query', 'danger');
     return;
   }
-  const text = document.getElementById('entity-text').value.trim();
+  const rawText = document.getElementById('entity-text').value.trim();
+  const text = rawText || '*';
   const response = await fetch(`/mcp/${project}/searchEntries`, {
     method: 'POST',
     headers: authHeaders(true),
