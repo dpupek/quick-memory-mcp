@@ -18,18 +18,19 @@ internal static class HelpResources
         var header = """
 # Quick Memory MCP Help
 
+## Quick start
+- listProjects → pick an endpoint you’re allowed to use.
+- listRecentEntries (endpoint) → browse the latest updates without a query.
+- searchEntries (endpoint, text, includeShared) → focused retrieval.
+- getEntry / listEntries → fetch specific/all entries.
+- relatedEntries (id) → explore graph links.
+- upsertEntry / patchEntry / deleteEntry → mutate (permanent requires Admin).
+- requestBackup (Admin) → queue backup.
+- health → server status.
+
 ## Configure the client
 - Set `[mcp_servers.quick-memory] url = "http://localhost:5080/mcp"` and `experimental_use_rmcp_client = true` in your Codex config.
 - Provide an API key via `bearer_token_env_var = "QMS_API_KEY"` (export QMS_API_KEY before launching Codex).
-
-## Tools
-- `listProjects` – lists endpoints/projects you can access.
-- `searchEntries` – text/vector search within a project (optionally include shared).
-- `getEntry` / `listEntries` – fetch one or all entries.
-- `upsertEntry` / `patchEntry` / `deleteEntry` – mutate entries (requires sufficient tier; permanent entries need Admin).
-- `relatedEntries` – walk the related graph.
-- `requestBackup` – queue a backup for a project (Admin only).
-- `health` – returns server health report.
 
 ## API key tiers
 - Reader: read-only tools.

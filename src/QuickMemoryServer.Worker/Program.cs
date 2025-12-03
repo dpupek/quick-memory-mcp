@@ -179,8 +179,9 @@ builder.Services.AddMcpServer()
             var schemaUrl = $"{requestHost}/docs/schema";
             var agentHelp = $"{requestHost}/admin/help/agent";
             var userHelp = $"{requestHost}/admin/help/end-user";
-            var codexConfig = $"Codex clients: set `[mcp_servers.quick-memory] url` to \"{requestHost}/mcp\", enable `experimental_use_rmcp_client = true`, and supply your key via `bearer_token_env_var = \"QMS_API_KEY\"`.";
-            serverOptions.ServerInstructions = $"Schema: {schemaUrl}. Agent guide: {agentHelp}. End-user help: {userHelp}. {codexConfig} Schema ETag {schemaService.ETag}.";
+            var codexConfig = $"Codex: `[mcp_servers.quick-memory] url=\"{requestHost}/mcp\" experimental_use_rmcp_client=true bearer_token_env_var=\"QMS_API_KEY\"`.";
+            var quickStart = "Next steps: listProjects → pick endpoint → listRecentEntries(endpoint) for a browse; use searchEntries(endpoint, text, includeShared) for focus.";
+            serverOptions.ServerInstructions = $"Schema: {schemaUrl}. Agent guide: {agentHelp}. End-user help: {userHelp}. {codexConfig} {quickStart} Schema ETag {schemaService.ETag}.";
             return Task.CompletedTask;
         };
     })
