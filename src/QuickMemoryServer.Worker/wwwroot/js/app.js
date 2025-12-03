@@ -1324,6 +1324,7 @@ async function rebuildAccessForKey(apiKey) {
   state.allowedEndpoints = accessible;
   state.user = payload?.user ?? 'unknown';
   state.tier = payload?.tier ?? 'Reader';
+  setStatus(`Welcome ${state.user} (${state.tier})`, 'success');
   return { ok: true };
 }
 
