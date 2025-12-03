@@ -8,7 +8,8 @@ const state = {
   permissions: {},
   lastDetailEntry: null,
   configEditor: null,
-  monacoReady: null
+  monacoReady: null,
+  lastConfigText: null
 };
 
 const KIND_SUGGESTIONS = [
@@ -512,6 +513,7 @@ async function loadConfig() {
     }
 
     const text = await response.text();
+    state.lastConfigText = text;
     state.configEditor.setValue(text);
     clearConfigErrors();
     setConfigStatus('Loaded', 'success');
@@ -531,6 +533,7 @@ async function validateConfig(applyChanges) {
   const url = applyChanges ? '/admin/config/raw/apply' : '/admin/config/raw/validate';
   setConfigStatus(applyChanges ? 'Saving...' : 'Validating...', 'info');
   clearConfigErrors();
+  renderConfigDiff();
 
   const response = await fetch(url, {
     method: 'POST',
@@ -540,7 +543,9 @@ async function validateConfig(applyChanges) {
   });
 
   if (response.ok) {
+    state.lastConfigText = content;
     setConfigStatus(applyChanges ? 'Saved successfully' : 'Valid TOML', 'success');
+    renderConfigDiff(null);
     return;
   }
 
@@ -569,6 +574,37 @@ function setConfigStatus(message, tone) {
   if (!el) return;
   el.textContent = message || '';
   el.className = `text-${tone || 'muted'} small ms-2`;
+}
+
+function renderConfigDiff() {
+  const container = document.getElementById('config-diff');
+  if (!container || !state.configEditor || !state.monacoReady) return;
+
+  Promise.resolve(state.monacoReady).then((monaco) => {
+    const original = state.lastConfigText ?? '';
+    const modified = state.configEditor.getValue();
+    if (original === modified) {
+      container.style.display = 'none';
+      container.textContent = '';
+      return;
+    }
+
+    container.style.display = 'block';
+    container.innerHTML = '';
+    const diffNode = document.createElement('div');
+    diffNode.style.height = '240px';
+    container.appendChild(diffNode);
+
+    monaco.editor.createDiffEditor(diffNode, {
+      automaticLayout: true,
+      readOnly: true,
+      theme: 'vs-dark',
+      minimap: { enabled: false }
+    }).setModel({
+      original: monaco.editor.createModel(original, 'toml'),
+      modified: monaco.editor.createModel(modified, 'toml')
+    });
+  });
 }
 
 async function loadHealthBlade() {
