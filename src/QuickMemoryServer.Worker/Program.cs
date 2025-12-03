@@ -782,7 +782,11 @@ app.MapPatch("/mcp/{endpoint}/entries/{id}", async (
         IsPermanent = patch.IsPermanent ?? existing.IsPermanent,
         Pinned = patch.Pinned ?? existing.Pinned,
         Confidence = patch.Confidence ?? existing.Confidence,
-        Body = patch.Body ?? existing.Body
+        Body = patch.Body ?? existing.Body,
+        EpicSlug = patch.EpicSlug ?? existing.EpicSlug,
+        EpicCase = patch.EpicCase ?? existing.EpicCase,
+        Relations = patch.Relations is null ? existing.Relations : patch.Relations.Deserialize<MemoryRelation[]>(new System.Text.Json.JsonSerializerOptions()),
+        Source = patch.Source is null ? existing.Source : patch.Source.Deserialize<MemorySource>(new System.Text.Json.JsonSerializerOptions())
     };
 
     if (updated.IsPermanent && tier != PermissionTier.Admin)

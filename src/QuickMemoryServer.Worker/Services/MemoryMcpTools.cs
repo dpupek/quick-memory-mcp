@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
@@ -263,7 +264,11 @@ public static async Task<object> PatchEntry(
             IsPermanent = patch.IsPermanent ?? existing.IsPermanent,
             Pinned = patch.Pinned ?? existing.Pinned,
             Confidence = patch.Confidence ?? existing.Confidence,
-            Body = patch.Body ?? existing.Body
+            Body = patch.Body ?? existing.Body,
+            EpicSlug = patch.EpicSlug ?? existing.EpicSlug,
+            EpicCase = patch.EpicCase ?? existing.EpicCase,
+            Relations = patch.Relations is null ? existing.Relations : patch.Relations.Deserialize<MemoryRelation[]>(new System.Text.Json.JsonSerializerOptions()),
+            Source = patch.Source is null ? existing.Source : patch.Source.Deserialize<MemorySource>(new System.Text.Json.JsonSerializerOptions())
         };
 
         var tier = McpAuthorizationContext.GetTier(context);
