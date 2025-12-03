@@ -108,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
       closeEntryModal();
     }
   });
+  document.getElementById('entity-project').addEventListener('change', () => loadEntities());
   document.getElementById('health-refresh')?.addEventListener('click', loadHealthBlade);
   document.getElementById('health-download-logs')?.addEventListener('click', downloadLogs);
   document.getElementById('config-reload')?.addEventListener('click', () => loadConfig());
