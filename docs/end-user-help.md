@@ -37,4 +37,5 @@ Use these steps when accessing the MCP memory server or the embedded admin SPA.
   ```
   - Export `AUTH_TOKEN` before launching Codex (`$env:AUTH_TOKEN="your-api-key"` on PowerShell, `export AUTH_TOKEN=your-api-key` on Bash/Zsh).
   - `mcp-remote` stores auth metadata under `~/.mcp-auth`. Delete the corresponding folder if you rotate keys and need the bridge to prompt for the new value.
+- To scope an agent to a single project, issue it an API key that only has permissions on that project (configure via SPA Users/Permissions). The MCP base URL stays the same (`http://localhost:5080/mcp`); disallowed projects will be filtered by `listProjects` and blocked on use.
 - Use the Overview tab in the admin SPA to verify `/health`, copy the user-specific snippet, and ensure the listed endpoints match the ones you configured for Codex. This page also contains the current API key snippet so you can rehydrate `.codex/config.toml` or `QuickMemoryServer.toml` when rotating keys.
