@@ -521,6 +521,26 @@ app.MapPost("/mcp/{endpoint}/searchEntries", async (
     }
 
     var entryLookup = McpHelpers.BuildEntryLookup(stores);
+
+    // If no query text/tags/embedding provided, return latest entries as a browse view
+    var noQuery = string.IsNullOrWhiteSpace(request.Text) && (request.Tags is null || request.Tags.Length == 0) && request.Embedding is null;
+    if (noQuery)
+    {
+        var browse = entryLookup.Values
+            .OrderByDescending(e => e.Timestamps?.UpdatedUtc ?? e.Timestamps?.CreatedUtc ?? DateTimeOffset.MinValue)
+            .ThenBy(e => e.Id)
+            .Take(maxResults)
+            .Select(e => new
+            {
+                score = 1.0,
+                snippet = e.Title ?? e.Id,
+                entry = e
+            })
+            .ToArray();
+
+        return Results.Ok(new { results = browse });
+    }
+
     var query = new SearchQuery
     {
         Project = endpoint,
