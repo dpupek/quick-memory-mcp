@@ -110,6 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
       closeEntryModal();
     }
   });
+  renderRelationsControl(document.getElementById('entry-relations'), []);
+  renderSourceControl(document.getElementById('entry-source'), null);
   document.getElementById('entity-project').addEventListener('change', () => loadEntities());
   document.getElementById('health-refresh')?.addEventListener('click', loadHealthBlade);
   document.getElementById('health-download-logs')?.addEventListener('click', downloadLogs);
@@ -518,7 +520,7 @@ async function loadConfig() {
       });
     }
 
-    const response = await fetch('/admin/config/raw', { headers: authHeaders(false), credentials: 'same-origin' });
+  const response = await fetch('/admin/config/raw', { headers: authHeaders(false), credentials: 'same-origin' });
     if (!response.ok) {
       setConfigStatus('Failed to load config', 'danger');
       return;
@@ -533,6 +535,104 @@ async function loadConfig() {
     console.error('config load failed', error);
     setConfigStatus('Config load failed', 'danger');
   }
+}
+
+function renderRelationsControl(container, relations) {
+  if (!container) return;
+  container.innerHTML = '';
+
+  const list = document.createElement('div');
+  list.className = 'relations-list';
+  container.appendChild(list);
+
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.className = 'btn btn-sm btn-outline-primary mt-2';
+  addBtn.textContent = 'Add relation';
+  addBtn.addEventListener('click', () => addRelationRow(list, { type: 'ref', targetId: '' }));
+  container.appendChild(addBtn);
+
+  (relations && relations.length ? relations : [{ type: 'ref', targetId: '' }]).forEach((rel) => addRelationRow(list, rel));
+}
+
+function addRelationRow(list, rel) {
+  const row = document.createElement('div');
+  row.className = 'd-flex gap-2 mb-2 align-items-center';
+
+  const type = document.createElement('select');
+  type.className = 'form-select form-select-sm';
+  ['ref', 'see-also', 'dependency', 'custom'].forEach((opt) => {
+    const o = document.createElement('option');
+    o.value = opt;
+    o.textContent = opt;
+    if (rel.type === opt) o.selected = true;
+    type.appendChild(o);
+  });
+
+  const target = document.createElement('input');
+  target.className = 'form-control form-control-sm';
+  target.placeholder = 'project:key';
+  target.value = rel.targetId || '';
+
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'btn btn-sm btn-outline-danger';
+  remove.textContent = '×';
+  remove.addEventListener('click', () => row.remove());
+
+  row.append(type, target, remove);
+  list.appendChild(row);
+}
+
+function collectRelations(container) {
+  if (!container) return [];
+  const rows = Array.from(container.querySelectorAll('.relations-list > div'));
+  const result = [];
+  for (const row of rows) {
+    const type = row.querySelector('select')?.value?.trim();
+    const targetId = row.querySelector('input')?.value?.trim();
+    if (!type || !targetId) {
+      continue;
+    }
+    result.push({ type, targetId });
+  }
+  return result;
+}
+
+function renderSourceControl(container, source) {
+  if (!container) return;
+  container.innerHTML = '';
+
+  const fields = [
+    { key: 'type', placeholder: 'api/file/manual' },
+    { key: 'url', placeholder: 'https://...' },
+    { key: 'path', placeholder: 'C:/path/to/file' },
+    { key: 'shard', placeholder: 'shard-id (optional)' }
+  ];
+
+  fields.forEach((f) => {
+    const group = document.createElement('div');
+    group.className = 'mb-2';
+    const input = document.createElement('input');
+    input.className = 'form-control form-control-sm';
+    input.placeholder = f.placeholder;
+    input.dataset.field = f.key;
+    input.value = source && source[f.key] ? source[f.key] : '';
+    group.appendChild(input);
+    container.appendChild(group);
+  });
+}
+
+function collectSource(container) {
+  if (!container) return null;
+  const inputs = Array.from(container.querySelectorAll('input[data-field]'));
+  const src = {};
+  inputs.forEach((i) => {
+    if (i.value.trim()) {
+      src[i.dataset.field] = i.value.trim();
+    }
+  });
+  return Object.keys(src).length ? src : null;
 }
 
 async function validateConfig(applyChanges) {
