@@ -433,7 +433,6 @@ public static HealthReport GetHealth(HealthReporter healthReporter)
         [property: JsonPropertyName("storagePath")] string StoragePath,
         [property: JsonPropertyName("inheritShared")] bool InheritShared,
         [property: JsonPropertyName("includeInSearchByDefault")] bool IncludeInSearchByDefault);
-}
 
 private static string? ValidateRelations(JsonElement? relations)
 {
@@ -491,4 +490,3 @@ private static string? ValidateSource(JsonElement? source)
 
     return null;
 }
-
