@@ -19,6 +19,8 @@ namespace QuickMemoryServer.Worker.Services;
 [McpServerToolType]
 public static class MemoryMcpTools
 {
+    private static readonly JsonSerializerOptions JsonOptions = new();
+
 [McpServerTool(Name = "searchEntries", Title = "Search memory entries", ReadOnly = true)]
 [McpMeta("description", "Hybrid text + vector search across the endpoint (optionally including shared memory).")]
 [McpMeta("tier", "reader")]
@@ -209,15 +211,27 @@ public static async Task<object> UpsertEntry(
         RequestContext<CallToolRequestParams> context,
         CancellationToken cancellationToken)
     {
-        if (entry is null)
-        {
-            return ErrorResult("invalid-entry");
-        }
+    if (entry is null)
+    {
+        return ErrorResult("invalid-entry");
+    }
 
-        if (!string.Equals(entry.Project, endpoint, StringComparison.OrdinalIgnoreCase))
-        {
-            return ErrorResult("project-mismatch: set entry.project to the endpoint you are calling");
-        }
+    if (!string.Equals(entry.Project, endpoint, StringComparison.OrdinalIgnoreCase))
+    {
+        return ErrorResult("project-mismatch: set entry.project to the endpoint you are calling");
+    }
+
+    var relationsError = ValidateRelations(entry.Relations);
+    if (relationsError is not null)
+    {
+        return ErrorResult(relationsError);
+    }
+
+    var sourceError = ValidateSource(entry.Source);
+    if (sourceError is not null)
+    {
+        return ErrorResult(sourceError);
+    }
 
         var tier = McpAuthorizationContext.GetTier(context);
         if (entry.IsPermanent && tier != PermissionTier.Admin)
@@ -237,7 +251,7 @@ public static async Task<object> UpsertEntry(
 [McpServerTool(Name = "patchEntry", Title = "Patch entry")]
 [McpMeta("description", "Update metadata fields (tags, tier, confidence, body, epic context) without full payload.")]
 [McpMeta("tier", "editor")]
-public static async Task<object> PatchEntry(
+    public static async Task<object> PatchEntry(
         string endpoint,
         string id,
         EntryPatchRequest patch,
@@ -245,31 +259,43 @@ public static async Task<object> PatchEntry(
         RequestContext<CallToolRequestParams> context,
         CancellationToken cancellationToken)
     {
-        if (router.ResolveStore(endpoint) is not MemoryStore store)
-        {
-            return ErrorResult($"Endpoint '{endpoint}' is not available.");
-        }
+    if (router.ResolveStore(endpoint) is not MemoryStore store)
+    {
+        return ErrorResult($"Endpoint '{endpoint}' is not available.");
+    }
 
-        var existing = store.FindEntry(id);
-        if (existing is null)
-        {
-            return ErrorResult("not-found");
-        }
+    var existing = store.FindEntry(id);
+    if (existing is null)
+    {
+        return ErrorResult("not-found");
+    }
 
-        var updated = existing with
-        {
-            Title = patch.Title ?? existing.Title,
-            Tags = patch.Tags ?? existing.Tags,
-            CurationTier = patch.CurationTier ?? existing.CurationTier,
-            IsPermanent = patch.IsPermanent ?? existing.IsPermanent,
-            Pinned = patch.Pinned ?? existing.Pinned,
-            Confidence = patch.Confidence ?? existing.Confidence,
-            Body = patch.Body ?? existing.Body,
-            EpicSlug = patch.EpicSlug ?? existing.EpicSlug,
-            EpicCase = patch.EpicCase ?? existing.EpicCase,
-            Relations = patch.Relations is null ? existing.Relations : patch.Relations.Deserialize<MemoryRelation[]>(new System.Text.Json.JsonSerializerOptions()),
-            Source = patch.Source is null ? existing.Source : patch.Source.Deserialize<MemorySource>(new System.Text.Json.JsonSerializerOptions())
-        };
+    var relationsError = ValidateRelations(patch.Relations);
+    if (relationsError is not null)
+    {
+        return ErrorResult(relationsError);
+    }
+
+    var sourceError = ValidateSource(patch.Source);
+    if (sourceError is not null)
+    {
+        return ErrorResult(sourceError);
+    }
+
+    var updated = existing with
+    {
+        Title = patch.Title ?? existing.Title,
+        Tags = patch.Tags ?? existing.Tags,
+        CurationTier = patch.CurationTier ?? existing.CurationTier,
+        IsPermanent = patch.IsPermanent ?? existing.IsPermanent,
+        Pinned = patch.Pinned ?? existing.Pinned,
+        Confidence = patch.Confidence ?? existing.Confidence,
+        Body = patch.Body ?? existing.Body,
+        EpicSlug = patch.EpicSlug ?? existing.EpicSlug,
+        EpicCase = patch.EpicCase ?? existing.EpicCase,
+        Relations = patch.Relations is null ? existing.Relations : patch.Relations.Deserialize<MemoryRelation[]>(JsonOptions),
+        Source = patch.Source is null ? existing.Source : patch.Source.Deserialize<MemorySource>(JsonOptions)
+    };
 
         var tier = McpAuthorizationContext.GetTier(context);
         if (updated.IsPermanent && tier != PermissionTier.Admin)
@@ -408,3 +434,61 @@ public static HealthReport GetHealth(HealthReporter healthReporter)
         [property: JsonPropertyName("inheritShared")] bool InheritShared,
         [property: JsonPropertyName("includeInSearchByDefault")] bool IncludeInSearchByDefault);
 }
+
+private static string? ValidateRelations(JsonElement? relations)
+{
+    if (relations is null || relations.Value.ValueKind == JsonValueKind.Undefined || relations.Value.ValueKind == JsonValueKind.Null)
+    {
+        return null;
+    }
+
+    if (relations.Value.ValueKind != JsonValueKind.Array)
+    {
+        return "invalid-relations: must be an array of { type, targetId }";
+    }
+
+    foreach (var rel in relations.Value.EnumerateArray())
+    {
+        if (rel.ValueKind != JsonValueKind.Object)
+        {
+            return "invalid-relations: each relation must be an object";
+        }
+
+        if (!rel.TryGetProperty("type", out var typeProp) || typeProp.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(typeProp.GetString()))
+        {
+            return "invalid-relations: each relation needs a non-empty 'type'";
+        }
+
+        if (!rel.TryGetProperty("targetId", out var targetProp) || targetProp.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(targetProp.GetString()))
+        {
+            return "invalid-relations: each relation needs a non-empty 'targetId' (e.g., project:key)";
+        }
+    }
+
+    return null;
+}
+
+private static string? ValidateSource(JsonElement? source)
+{
+    if (source is null || source.Value.ValueKind == JsonValueKind.Undefined || source.Value.ValueKind == JsonValueKind.Null)
+    {
+        return null;
+    }
+
+    if (source.Value.ValueKind != JsonValueKind.Object)
+    {
+        return "invalid-source: must be a JSON object (type/url/path/shard)";
+    }
+
+    foreach (var prop in source.Value.EnumerateObject())
+    {
+        var name = prop.Name;
+        if (name is not "type" and not "url" and not "path" and not "shard")
+        {
+            return "invalid-source: allowed fields are type, url, path, shard";
+        }
+    }
+
+    return null;
+}
+
