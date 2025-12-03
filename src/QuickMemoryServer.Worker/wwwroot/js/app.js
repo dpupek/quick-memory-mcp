@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('entity-refresh').addEventListener('click', () => loadEntities());
   document.getElementById('projects-list').addEventListener('click', handleProjectButton);
   document.getElementById('entities-body').addEventListener('click', handleEntityActions);
+  document.getElementById('entity-detail').addEventListener('click', handleEntryDetailActions);
   document.getElementById('user-save').addEventListener('click', saveUser);
   document.getElementById('user-form').addEventListener('submit', (event) => event.preventDefault());
   document.getElementById('permissions-endpoint').addEventListener('change', populatePermissionsPayload);
@@ -200,6 +201,22 @@ function handleEntityActions(event) {
 
   if (event.target.closest('[data-action="delete-entry"]')) {
     const entryId = event.target.closest('[data-entry-id]')?.dataset.entryId;
+    if (entryId) {
+      deleteEntry(entryId);
+    }
+  }
+}
+
+function handleEntryDetailActions(event) {
+  const save = event.target.closest('[data-action="update-entry"]');
+  if (save) {
+    saveEntryDetail();
+    return;
+  }
+
+  const del = event.target.closest('[data-action="delete-entry"]');
+  if (del) {
+    const entryId = del.dataset.entryId || state.lastDetailEntry?.id;
     if (entryId) {
       deleteEntry(entryId);
     }
@@ -828,6 +845,8 @@ async function saveEntryDetail() {
     return;
   }
 
+  setStatus('Saving entry...', 'info');
+
   const form = document.getElementById('entry-detail-form');
   const title = form.querySelector('[name="title"]').value.trim();
   const tags = form
@@ -926,7 +945,8 @@ async function saveEntryDetail() {
   });
 
   if (!response.ok) {
-    setStatus('Failed to update entry', 'danger');
+    const err = await response.text().catch(() => '');
+    setStatus(`Failed to update entry (${response.status}) ${err}`, 'danger');
     return;
   }
 
