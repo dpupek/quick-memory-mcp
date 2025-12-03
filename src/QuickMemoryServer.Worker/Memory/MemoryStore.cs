@@ -69,7 +69,14 @@ public class MemoryStore : IMemoryStore, IDisposable
         }
 
         var entries = await _repository.LoadAsync(EntryFilePath, _embeddingDimensions, cancellationToken);
-        var enriched = await EnsureEmbeddingsAsync(entries, cancellationToken);
+        var filtered = entries.Where(e => string.Equals(e.Project, Project, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        if (filtered.Count != entries.Count)
+        {
+            _logger.LogWarning("Store {Store} skipping {Skipped} entries that belong to other projects.", Name, entries.Count - filtered.Count);
+        }
+
+        var enriched = await EnsureEmbeddingsAsync(filtered, cancellationToken);
         lock (_sync)
         {
             _entries = enriched.ToImmutableArray();
