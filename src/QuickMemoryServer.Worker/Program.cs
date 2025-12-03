@@ -29,8 +29,6 @@ using Serilog;
 using Serilog.Events;
 using Tomlyn.Extensions.Configuration;
 
-internal record LoginRequest([property: JsonPropertyName("apiKey")] string? ApiKey);
-internal record RawConfigRequest([property: JsonPropertyName("content")] string? Content);
 
 var builder = WebApplication.CreateBuilder(args);
 
