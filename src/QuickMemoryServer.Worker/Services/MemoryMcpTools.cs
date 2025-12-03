@@ -187,6 +187,11 @@ public static async Task<object> UpsertEntry(
             return ErrorResult("invalid-entry");
         }
 
+        if (!string.Equals(entry.Project, endpoint, StringComparison.OrdinalIgnoreCase))
+        {
+            return ErrorResult("project-mismatch: set entry.project to the endpoint you are calling");
+        }
+
         var tier = McpAuthorizationContext.GetTier(context);
         if (entry.IsPermanent && tier != PermissionTier.Admin)
         {
