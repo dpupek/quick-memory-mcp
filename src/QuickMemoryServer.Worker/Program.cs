@@ -385,7 +385,7 @@ app.MapPost("/admin/config/raw/apply", async (HttpContext context, ApiKeyAuthori
     return Results.Ok(new { saved = true });
 });
 
-app.MapGet("/admin/logs", (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+app.MapGet("/admin/logs", async (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor) =>
 {
     if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
     {
@@ -409,7 +409,6 @@ app.MapGet("/admin/logs", (HttpContext context, ApiKeyAuthorizer authorizer, IOp
         return Results.NotFound(new { error = "no-logs" });
     }
 
-    var boundary = "qmslogboundary";
     context.Response.ContentType = "application/zip";
     context.Response.Headers["Content-Disposition"] = "attachment; filename=quick-memory-logs.zip";
 
