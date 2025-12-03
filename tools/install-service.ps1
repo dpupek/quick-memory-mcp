@@ -512,10 +512,10 @@ try {
             # Stop service before copying to avoid file-locks
             Invoke-Command -Session $session -ScriptBlock { param($svc) $s = Get-Service -Name $svc -ErrorAction SilentlyContinue; if ($s -and $s.Status -ne 'Stopped') { Stop-Service $svc -Force } } -ArgumentList $serviceName
             Ensure-TargetStructure -BaseDir $InstallDirectory -DataDir $DataDirectory -IsRemote $true -Session $session
-            Write-Note "Copying payload to ${targetName}:${InstallDirectory}"
-            $copyParams = @{ Path = Join-Path $publishRoot '*'; Destination = $InstallDirectory; Recurse = $true; Force = $true; ToSession = $session }
-            if (-not $overwriteConfig) { $copyParams.Exclude = 'QuickMemoryServer.toml' }
-            Copy-Item @copyParams
+        Write-Note "Copying payload to ${targetName}:${InstallDirectory}"
+        $copyParams = @{ Path = Join-Path $publishRoot '*'; Destination = $InstallDirectory; Recurse = $true; Force = $true; ToSession = $session; Exclude = @('logs','logs/*','logs/**') }
+        if (-not $overwriteConfig) { $copyParams.Exclude = 'QuickMemoryServer.toml' }
+        Copy-Item @copyParams
             Install-Or-UpdateServiceRemote -Session $session -Target $targetName -ServiceName $serviceName -BinPath $serviceExe -DisplayName $displayName -Account $acct -Password $acctPassword -SkipStart:$SkipStart
             if (-not $SkipFirewall) { Set-FirewallAndUrlAcl -Port $Port -Account $acct -IsRemote $true -Session $session }
             if ($GrantLogonRight -and $acct -and $acct -ne 'LocalSystem') { Invoke-Command -Session $session -ScriptBlock ${function:Grant-ServiceLogonRight} -ArgumentList $acct }
@@ -526,10 +526,10 @@ try {
             $existingLocal = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
             if ($existingLocal -and $existingLocal.Status -ne 'Stopped') { Write-Note "Stopping $serviceName"; Stop-Service $serviceName -Force }
             Ensure-TargetStructure -BaseDir $InstallDirectory -DataDir $DataDirectory -IsRemote $false
-            Write-Note "Copying payload to $InstallDirectory"
-            $copyParams = @{ Path = Join-Path $publishRoot '*'; Destination = $InstallDirectory; Recurse = $true; Force = $true }
-            if (-not $overwriteConfig) { $copyParams.Exclude = 'QuickMemoryServer.toml' }
-            Copy-Item @copyParams
+        Write-Note "Copying payload to $InstallDirectory"
+        $copyParams = @{ Path = Join-Path $publishRoot '*'; Destination = $InstallDirectory; Recurse = $true; Force = $true; Exclude = @('logs','logs/*','logs/**') }
+        if (-not $overwriteConfig) { $copyParams.Exclude = 'QuickMemoryServer.toml' }
+        Copy-Item @copyParams
             Install-Or-UpdateServiceLocal -ServiceName $serviceName -BinPath $serviceExe -DisplayName $displayName -Account $acct -Password $acctPassword -SkipStart:$SkipStart
             if (-not $SkipFirewall) { Set-FirewallAndUrlAcl -Port $Port -Account $acct -IsRemote $false -Session $null }
             if ($GrantLogonRight -and $acct -and $acct -ne 'LocalSystem') { Grant-ServiceLogonRight -Account $acct }
