@@ -171,6 +171,32 @@ public static object ListEntries(string endpoint, MemoryRouter router)
         return store.Snapshot();
     }
 
+[McpServerTool(Name = "listRecentEntries", Title = "List recent entries", ReadOnly = true)]
+[McpMeta("description", "Browse the most recently updated entries without specifying a query.")]
+[McpMeta("tier", "reader")]
+public static object ListRecentEntries(string endpoint, int? maxResults, MemoryRouter router)
+    {
+        if (router.ResolveStore(endpoint) is not MemoryStore store)
+        {
+            return ErrorResult($"Endpoint '{endpoint}' is not available.");
+        }
+
+        var take = maxResults is > 0 and <= 200 ? maxResults.Value : 20;
+        var recent = store.Snapshot()
+            .OrderByDescending(e => e.Timestamps?.UpdatedUtc ?? e.Timestamps?.CreatedUtc ?? DateTimeOffset.MinValue)
+            .ThenBy(e => e.Id)
+            .Take(take)
+            .Select(e => new
+            {
+                score = 1.0,
+                snippet = e.Title ?? e.Id,
+                entry = e
+            })
+            .ToArray();
+
+        return new { results = recent };
+    }
+
 [McpServerTool(Name = "upsertEntry", Title = "Upsert entry")]
 [McpMeta("description", "Insert/update entries, including tags, relations, epic context, and tier information.")]
 [McpMeta("tier", "editor")]

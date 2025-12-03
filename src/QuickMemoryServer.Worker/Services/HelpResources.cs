@@ -86,4 +86,28 @@ The latest recipes live in `docs/agent-usage.md` (copied alongside the binaries 
 
         return Task.FromResult(header);
     }
+
+    [McpServerResource(
+        Name = "cheatsheet",
+        Title = "Quick Memory MCP Cheatsheet",
+        MimeType = "text/markdown",
+        UriTemplate = "resource://quick-memory/cheatsheet")]
+    public static Task<string> GetCheatsheetAsync()
+    {
+        var text = """
+# Quick Memory MCP Cheatsheet
+
+- Base URL: http://localhost:5080/mcp (header: X-Api-Key)
+- Discover scope: call `listProjects` (projects returned = allowed endpoints).
+- Cold start browse: `listRecentEntries` (top N by updated time).
+- Search text/vector: `searchEntries` with { text, maxResults, includeShared }.
+- Fetch one/all: `getEntry`, `listEntries`.
+- Mutate: `upsertEntry`, `patchEntry` (permanent requires Admin).
+- Graph: `relatedEntries` with { id, maxHops }.
+- Backup: `requestBackup` (Admin, mode: differential|full).
+- Health: `health` for overall/server issues.
+- Config snippets + recipes live in `resource://quick-memory/help` and `resource://quick-memory/end-user-help`.
+""";
+        return Task.FromResult(text);
+    }
 }

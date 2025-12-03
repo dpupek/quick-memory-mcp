@@ -49,6 +49,8 @@
   - [ ] Persist login across page refreshes (e.g., durable token or local storage) so users do not have to re-enter the API key on reload.
   - [ ] Add a Config blade for viewing/editing the raw TOML configuration with validation and a safe-apply flow.
   - [ ] Add a Health blade that surfaces `/health` details and exposes one-click log download from the server.
+  - [ ] Add MCP usage cheatsheet resource (`resource://quick-memory/cheatsheet`) with concise “do X → call Y” guidance.
+  - [ ] Add MCP `listRecentEntries` tool to browse recent updates without a query.
 - [ ] **Phase 10 – Release & Hardening** (installer packaging with WiX, load + failure testing, release notes, ONNX artifacts, final docs, and load test evidence).  
 - [x] PowerShell installer/updater helper for manual Windows deployments (`tools/install-service.ps1`).
 
