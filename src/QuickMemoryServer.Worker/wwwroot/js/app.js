@@ -33,6 +33,18 @@ const selectors = {
   tabs: Array.from(document.querySelectorAll('.tab-pane'))
 };
 
+const ICONS = {
+  overview: 'bi-speedometer2',
+  projects: 'bi-folder2',
+  entities: 'bi-journal-text',
+  users: 'bi-people',
+  config: 'bi-gear',
+  health: 'bi-heart-pulse',
+  help: 'bi-book',
+  'agent-help': 'bi-robot',
+  'admin-ui-help': 'bi-ui-checks'
+};
+
 function showEntryModal() {
   if (!state.allowedEndpoints.length) {
     setStatus('No accessible project to create entries', 'danger');
@@ -70,6 +82,7 @@ function resetEntryForm() {
   }
 
   document.getElementById('entry-kind').value = 'note';
+  enhanceTagsInput('entry-tags');
   document.getElementById('entry-tier').value = 'provisional';
   document.getElementById('entry-confidence').value = '0.5';
   document.getElementById('entry-tags').value = '';
@@ -1141,11 +1154,7 @@ async function createEntry() {
   const kind = document.getElementById('entry-kind').value.trim() || 'note';
   const title = document.getElementById('entry-title').value.trim();
   const tier = document.getElementById('entry-tier').value || 'provisional';
-  const tags = document
-    .getElementById('entry-tags')
-    .value.split(',')
-    .map((part) => part.trim())
-    .filter(Boolean);
+  const tags = getTagValues('entry-tags');
   const rawBody = document.getElementById('entry-body').value.trim();
   let body;
   if (rawBody) {
@@ -1588,6 +1597,20 @@ function renderHealthReport(report) {
 function setStatus(message, variant = 'info') {
   selectors.status.textContent = message;
   selectors.status.className = `status-bar ${variant}`;
+  if (variant === 'danger') { toast(message, 'error'); }
+}
+
+function toast(message, icon = 'success') {
+  if (!window.Swal) return;
+  Swal.fire({
+    toast: true,
+    position: 'top-end',
+    icon,
+    title: message,
+    showConfirmButton: false,
+    timer: 2000,
+    timerProgressBar: true
+  });
 }
 
 function promptLogin(message) {
@@ -1646,4 +1669,27 @@ function normalizeStoragePath(value) {
 
 function formatStoragePath(value) {
   return normalizeStoragePath(value);
+}
+
+function enhanceTagsInput(id) {
+  const el = document.getElementById(id);
+  if (!el || !window.Choices) return el;
+  if (el._choices) return el;
+  el._choices = new Choices(el, {
+    removeItemButton: true,
+    duplicateItemsAllowed: false,
+    delimiter: ',',
+    placeholder: true,
+    placeholderValue: 'tags'
+  });
+  return el;
+}
+
+function getTagValues(id) {
+  const el = document.getElementById(id);
+  if (!el) return [];
+  if (el._choices) {
+    return el._choices.getValue(true) || [];
+  }
+  return el.value.split(',').map((p) => p.trim()).filter(Boolean);
 }

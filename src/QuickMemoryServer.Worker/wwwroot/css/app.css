@@ -160,3 +160,6 @@ body {
 .modal-body {
   padding: 1.25rem;
 }
+
+.relations-editor .form-select,.relations-editor .form-control,.source-editor .form-control{min-width:0;}
+.relations-editor .btn{padding:0.35rem 0.6rem;}
