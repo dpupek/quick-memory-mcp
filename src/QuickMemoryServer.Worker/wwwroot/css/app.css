@@ -171,3 +171,7 @@ body {
   background: #fefefe;
   overflow: hidden;
 }
+
+.body-mode-select {
+  width: auto;
+}

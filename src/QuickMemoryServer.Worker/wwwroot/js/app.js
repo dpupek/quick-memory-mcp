@@ -139,6 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('config-reload')?.addEventListener('click', () => loadConfig());
   document.getElementById('config-validate')?.addEventListener('click', () => validateConfig(false));
   document.getElementById('config-save')?.addEventListener('click', () => validateConfig(true));
+  document.getElementById('entry-body-mode')?.addEventListener('change', (event) => {
+    const mode = event.target.value === 'text' ? 'plaintext' : 'json';
+    mountMonacoField('entryBodyEditor', 'entry-body-editor', 'entry-body', readMonacoField('entryBodyEditor', 'entry-body'), mode);
+  });
   stopModalClickBubble();
   selectors.loginOverlay.classList.remove('hidden');
   (async () => {
@@ -927,7 +931,13 @@ function renderEntryDetail(entry) {
           />
         </div>
         <div class="col-md-6">
-          <label class="form-label">Body (JSON or text)</label>
+          <div class="d-flex justify-content-between align-items-center">
+            <label class="form-label mb-0">Body</label>
+            <select id="detail-body-mode" class="form-select form-select-sm body-mode-select">
+              <option value="json" selected>JSON</option>
+              <option value="text">Plain text</option>
+            </select>
+          </div>
           <div id="detail-body-editor" class="monaco-field"></div>
           <textarea id="detail-body" name="body" class="form-control d-none" rows="4">${escapeHtml(bodyValue)}</textarea>
         </div>
@@ -985,6 +995,14 @@ function renderEntryDetail(entry) {
   renderSourceControl(document.getElementById('detail-source'), entry.source || null);
   enhanceTagsInput('detail-tags');
   mountMonacoField('detailBodyEditor', 'detail-body-editor', 'detail-body', bodyValue);
+
+  const modeSelect = document.getElementById('detail-body-mode');
+  if (modeSelect) {
+    modeSelect.addEventListener('change', (event) => {
+      const mode = event.target.value === 'text' ? 'plaintext' : 'json';
+      mountMonacoField('detailBodyEditor', 'detail-body-editor', 'detail-body', readMonacoField('detailBodyEditor', 'detail-body'), mode);
+    });
+  }
 }
 
 

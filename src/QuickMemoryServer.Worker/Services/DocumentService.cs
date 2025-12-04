@@ -10,6 +10,9 @@ public sealed class DocumentService
 {
     private readonly ILogger<DocumentService> _logger;
     private readonly string _docsRoot;
+    private static readonly MarkdownPipeline Pipeline = new MarkdownPipelineBuilder()
+        .UseAdvancedExtensions()
+        .Build();
 
     public DocumentService(IHostEnvironment environment, ILogger<DocumentService> logger)
     {
@@ -37,7 +40,7 @@ public sealed class DocumentService
         try
         {
             var markdown = File.ReadAllText(path);
-            return Markdown.ToHtml(markdown);
+            return Markdown.ToHtml(markdown, Pipeline);
         }
         catch (Exception ex)
         {

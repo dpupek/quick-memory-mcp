@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using System.Text.Json;
+using QuickMemoryServer.Worker.Models;
 using QuickMemoryServer.Worker.Services;
 using Xunit;
 
@@ -77,5 +78,25 @@ public class ValidationTests
         var json = JsonDocument.Parse("{\"type\":\"api\",\"url\":\"https://x\"}").RootElement;
         var result = method.Invoke(null, new object?[] { json }) as string;
         Assert.Null(result);
+    }
+
+    [Fact]
+    public void TryPrepareEntry_AssignsProjectAndId()
+    {
+        var entry = new MemoryEntry { Project = string.Empty, Id = string.Empty, Kind = "note" };
+        var success = MemoryMcpTools.TryPrepareEntry("projectA", entry, out var prepared, out var error);
+        Assert.True(success);
+        Assert.Null(error);
+        Assert.Equal("projectA", prepared.Project);
+        Assert.StartsWith("projectA:", prepared.Id, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void TryPrepareEntry_RejectsMismatchedProject()
+    {
+        var entry = new MemoryEntry { Project = "other", Id = "other:1", Kind = "note" };
+        var success = MemoryMcpTools.TryPrepareEntry("projectA", entry, out _, out var error);
+        Assert.False(success);
+        Assert.Contains("project-mismatch", error);
     }
 }
