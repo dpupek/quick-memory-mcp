@@ -951,6 +951,9 @@ function renderEntryDetail(entry) {
         <button type="button" class="btn btn-outline-danger" data-action="delete-entry" data-entry-id="${entry.id}">Delete entry</button>
       </div>
     </form>
+
+  renderRelationsControl(document.getElementById("detail-relations"), entry.relations || []);
+  renderSourceControl(document.getElementById("detail-source"), entry.source || null);
   `;
   enhanceTagsInput('entry-tags');
 }
