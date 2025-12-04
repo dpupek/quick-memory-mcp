@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('entry-form').addEventListener('submit', handleEntryFormSubmit);
   document.getElementById('entry-modal').addEventListener('click', (event) => {
     const dialog = document.querySelector('#entry-modal .modal-dialog');
-    if (event.target === document.getElementById('entry-modal') && dialog && !dialog.contains(event.target)) {
+    if (event.currentTarget === event.target && dialog && !dialog.contains(event.target)) {
       closeEntryModal();
     }
   });
