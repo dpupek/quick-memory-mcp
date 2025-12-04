@@ -52,6 +52,11 @@
   - [ ] Add MCP usage cheatsheet resource (`resource://quick-memory/cheatsheet`) with concise “do X → call Y” guidance.
   - [ ] Add MCP `listRecentEntries` tool to browse recent updates without a query.
   - [ ] UI polish: integrate Bootstrap Icons for nav/buttons and SweetAlert2 for confirmations/toasts; enhance tags input with Choices.js.
+  - [x] Rename “Endpoint permissions” to “Project permissions” across nav labels, API payloads, and docs to match user vocabulary.
+  - [x] Build a dedicated Project-permissions editor: left pane lists projects, right pane shows per-user overrides with dropdown tiers, add/remove user controls, and inherit-shared indicator.
+  - [x] Support bulk updates (apply the same tier override to multiple projects) and warn when a project has no Admin tier after edits.
+  - [x] Expose GET/PATCH endpoints (`/admin/projects/{key}/permissions`) so the SPA doesn’t rewrite the full TOML on each change.
+  - [x] Surface an audit trail of permission changes (who/when/what) for future troubleshooting.
 - [ ] **Phase 10 – Release & Hardening** (installer packaging with WiX, load + failure testing, release notes, ONNX artifacts, final docs, and load test evidence).  
 - [x] PowerShell installer/updater helper for manual Windows deployments (`tools/install-service.ps1`).
 

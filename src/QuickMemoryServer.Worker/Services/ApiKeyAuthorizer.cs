@@ -1,3 +1,6 @@
+using System;
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QuickMemoryServer.Worker.Configuration;
@@ -22,9 +25,11 @@ public sealed class ApiKeyAuthorizer
 
         if (string.IsNullOrWhiteSpace(apiKey))
         {
+            _logger.LogWarning("API key missing for endpoint {Endpoint}", endpointKey);
             return false;
         }
 
+        var fingerprint = CreateFingerprint(apiKey);
         var options = _optionsMonitor.CurrentValue;
 
         foreach (var (userId, userOptions) in options.Users)
@@ -36,17 +41,35 @@ public sealed class ApiKeyAuthorizer
 
             userKey = userId;
             tier = userOptions.DefaultTier;
+            _logger.LogDebug("API key {ApiKeyFingerprint} matched user {User} with default tier {Tier}", fingerprint, userId, tier);
 
             if (options.Permissions.TryGetValue(endpointKey, out var endpointPermissions) &&
                 endpointPermissions.TryGetValue(userId, out var overrideTier))
             {
                 tier = overrideTier;
+                _logger.LogDebug("Applying endpoint override tier {Tier} for user {User} on {Endpoint}", overrideTier, userId, endpointKey);
+            }
+            else
+            {
+                _logger.LogDebug("Using default tier {Tier} for user {User} on {Endpoint}", tier, userId, endpointKey);
             }
 
             return true;
         }
 
-        _logger.LogWarning("API key authentication failed for endpoint {Endpoint}", endpointKey);
+        _logger.LogWarning("API key authentication failed for endpoint {Endpoint} (fingerprint {ApiKeyFingerprint})", endpointKey, fingerprint);
         return false;
+    }
+
+    private static string CreateFingerprint(string apiKey)
+    {
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            return "empty";
+        }
+
+        using var sha256 = SHA256.Create();
+        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(apiKey));
+        return Convert.ToHexString(hash.AsSpan(0, 8));
     }
 }

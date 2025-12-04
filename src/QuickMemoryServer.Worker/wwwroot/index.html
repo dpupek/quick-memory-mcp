@@ -43,6 +43,7 @@
           <button class="nav-link" data-tab="help">End User Help</button>
           <button class="nav-link" data-tab="agent-help"><i class='bi bi-robot me-1'></i> Agent Help</button>
           <button class="nav-link" data-tab="admin-ui-help">Admin UI Help</button>
+          <button class="nav-link" data-tab="codex-workspace"><i class='bi bi-laptop me-1'></i> Codex Workspace</button>
         </div>
         <div class="mt-auto sidebar-footer">
           <div id="current-user" class="small text-white-50"></div>
@@ -165,10 +166,11 @@
                       <label class="form-label">Tags (comma separated)</label>
                       <input id="entry-tags" class="form-control" />
                     </div>
-                    <div class="col-md-6">
-                      <label class="form-label">Body (JSON or plain text)</label>
-                      <textarea id="entry-body" class="form-control" rows="2"></textarea>
-                    </div>
+                <div class="col-md-6">
+                  <label class="form-label">Body (JSON or plain text)</label>
+                  <div id="entry-body-editor" class="monaco-field"></div>
+                  <textarea id="entry-body" class="form-control d-none" rows="2"></textarea>
+                </div>
                   </div>
                   <div class="row g-2 mt-2">
                     <div class="col-md-4">
@@ -260,7 +262,7 @@
         </section>
 
         <section id="users" class="tab-pane">
-          <h1>Users & Permissions</h1>
+          <h1>Users & Project Permissions</h1>
           <div class="row g-4 mt-3">
             <div class="col-lg-6">
               <h4>Users</h4>
@@ -301,17 +303,50 @@
               </form>
             </div>
             <div class="col-lg-6">
-              <h4>Endpoint Permissions</h4>
-              <div class="mb-3">
-                <label class="form-label">Endpoint</label>
-                <select id="permissions-endpoint" class="form-select"></select>
+              <h4>Project Permissions</h4>
+              <p class="text-muted small mb-2">Select one or more projects to review or edit per-user tiers.</p>
+              <div class="input-group mb-3">
+                <span class="input-group-text">Filter</span>
+                <input type="text" id="project-permission-filter" class="form-control" placeholder="Search projects" autocomplete="off" />
               </div>
-              <div class="mb-3">
-                <label class="form-label">Assignments (JSON)</label>
-                <textarea id="permissions-assignments" rows="6" class="form-control" placeholder="{ \"alice\": \"Admin\" }"></textarea>
+              <div class="list-group" id="project-permissions-list"></div>
+              <div class="d-flex justify-content-between align-items-center small text-muted mt-2">
+                <span id="project-selection-count">0 selected</span>
+                <span>Checked projects receive bulk changes.</span>
               </div>
-              <button type="button" id="permissions-save" class="btn btn-primary">Save assignments</button>
-              <p id="permissions-status" class="small text-muted mt-2"></p>
+            </div>
+            <div class="col-lg-6">
+              <h4>Project Permission Detail</h4>
+              <div class="card card-body mb-3">
+                <div id="project-permissions-detail">
+                  <p class="text-muted mb-0">Select a project to view overrides.</p>
+                </div>
+                <button type="button" id="project-permissions-save" class="btn btn-primary mt-3" disabled>Save project permissions</button>
+                <p id="project-permissions-status" class="small text-muted mt-2"></p>
+              </div>
+              <div class="card card-body">
+                <h5 class="mb-3">Bulk Override</h5>
+                <div class="row g-2">
+                  <div class="col-md-6">
+                    <label class="form-label">User</label>
+                    <select id="project-bulk-user" class="form-select">
+                      <option value="">Select user</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Tier</label>
+                    <select id="project-bulk-tier" class="form-select">
+                      <option value="">Use default tier</option>
+                      <option value="Reader">Reader</option>
+                      <option value="Editor">Editor</option>
+                      <option value="Curator">Curator</option>
+                      <option value="Admin">Admin</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="button" id="project-bulk-apply" class="btn btn-outline-secondary mt-3" disabled>Apply to selected projects</button>
+                <p id="project-bulk-status" class="small text-muted mt-2"></p>
+              </div>
             </div>
           </div>
         </section>
@@ -355,6 +390,12 @@
           <h1>Admin UI Help</h1>
           <div class="card card-body bg-white shadow-sm mt-3" id="admin-ui-help-content">
             <p class="text-muted small">Loading admin UI tips...</p>
+          </div>
+        </section>
+        <section id="codex-workspace" class="tab-pane">
+          <h1>Codex Workspace Setup</h1>
+          <div class="card card-body bg-white shadow-sm mt-3" id="codex-workspace-help-content">
+            <p class="text-muted small">Loading workspace guide...</p>
           </div>
         </section>
       </main>

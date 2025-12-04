@@ -499,6 +499,15 @@ try {
     $serviceExe = Join-Path $InstallDirectory 'QuickMemoryServer.exe'
 
     $backupZip = $null
+    $existingPreBackup = $null
+    if (-not $targetIsRemote) {
+        $existingPreBackup = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
+        if ($existingPreBackup -and $existingPreBackup.Status -ne 'Stopped') {
+            Write-Note "Stopping $serviceName before backup"
+            Stop-Service $serviceName -Force
+        }
+    }
+
     try {
         if (-not $targetIsRemote) {
             $backupZip = Backup-ExistingInstall -InstallDir $InstallDirectory

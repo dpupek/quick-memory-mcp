@@ -11,6 +11,10 @@ public sealed record AdminUserRequest(
 public sealed record PermissionUpdateRequest(
     [property: JsonPropertyName("assignments")] Dictionary<string, string> Assignments);
 
+public sealed record PermissionBulkUpdateRequest(
+    [property: JsonPropertyName("projects")] string[] Projects,
+    [property: JsonPropertyName("overrides")] Dictionary<string, string?> Overrides);
+
 public sealed record AdminEndpointRequest(
     [property: JsonPropertyName("key")] string Key,
     [property: JsonPropertyName("name")] string Name,

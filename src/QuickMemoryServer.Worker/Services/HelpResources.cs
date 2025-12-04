@@ -111,4 +111,65 @@ The latest recipes live in `docs/agent-usage.md` (copied alongside the binaries 
 """;
         return Task.FromResult(text);
     }
+
+[McpServerResource(
+    Name = "entry-fields",
+    Title = "MemoryEntry Field Guide",
+    MimeType = "text/markdown",
+    UriTemplate = "resource://quick-memory/entry-fields")]
+    public static Task<string> GetEntryFieldsAsync()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "docs", "agent-usage.md");
+        if (!File.Exists(path))
+        {
+            return Task.FromResult("# MemoryEntry Field Reference\n\nSee `/admin/help/agent#memoryentry-field-reference` for the latest table.");
+        }
+
+        try
+        {
+            var markdown = File.ReadAllText(path);
+            const string marker = "## MemoryEntry field reference";
+            var start = markdown.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+            if (start < 0)
+            {
+                return Task.FromResult("# MemoryEntry Field Reference\n\nSection not found in agent-usage.md.");
+            }
+
+            var nextHeader = markdown.IndexOf("\n## ", start + marker.Length, StringComparison.Ordinal);
+            var section = nextHeader >= 0
+                ? markdown.Substring(start, nextHeader - start)
+                : markdown.Substring(start);
+
+            return Task.FromResult(section.Trim());
+        }
+        catch
+        {
+            return Task.FromResult("# MemoryEntry Field Reference\n\nUnable to load agent-usage.md.");
+        }
+    }
+
+    [McpServerResource(
+        Name = "codex-workspace",
+        Title = "Codex Workspace Guide",
+        MimeType = "text/markdown",
+        UriTemplate = "resource://quick-memory/codex-workspace")]
+    public static Task<string> GetCodexWorkspaceGuideAsync()
+    {
+        var fallback = "# Codex Workspace Guide\n\nOpen the admin SPA Help tab to read the rendered version.";
+        var path = Path.Combine(AppContext.BaseDirectory, "docs", "codex-workspace-guide.md");
+        if (File.Exists(path))
+        {
+            try
+            {
+                var content = File.ReadAllText(path);
+                return Task.FromResult(content);
+            }
+            catch
+            {
+                // fall through
+            }
+        }
+
+        return Task.FromResult(fallback);
+    }
 }

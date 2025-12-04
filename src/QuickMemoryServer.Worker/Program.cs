@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json.Serialization;
@@ -48,6 +49,7 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
 {
     var baseDir = AppContext.BaseDirectory;
     var logDir = Path.Combine(baseDir, "logs");
+    var auditDbPath = Path.Combine(logDir, "quick-memory-audit.db");
     Directory.CreateDirectory(logDir);
 
     loggerConfiguration
@@ -58,6 +60,17 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
         .WriteTo.File(Path.Combine(logDir, "quick-memory-server-.log"), rollingInterval: RollingInterval.Day,
             restrictedToMinimumLevel: LogEventLevel.Information,
             retainedFileCountLimit: 7);
+
+    loggerConfiguration
+        .WriteTo.Logger(lc => lc
+            .Filter.ByIncludingOnly(e => e.Properties.ContainsKey("AuditTrail"))
+            .WriteTo.File(Path.Combine(logDir, "quick-memory-audit-.log"),
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 7,
+                restrictedToMinimumLevel: LogEventLevel.Information)
+            .WriteTo.SQLite(auditDbPath,
+                tableName: "AuditLog",
+                storeTimestampInUtc: true));
 
     if (OperatingSystem.IsWindows())
     {
@@ -187,9 +200,10 @@ builder.Services.AddMcpServer()
             var schemaUrl = $"{requestHost}/docs/schema";
             var agentHelp = $"{requestHost}/admin/help/agent";
             var userHelp = $"{requestHost}/admin/help/end-user";
+            var entryFieldGuide = $"{requestHost}/admin/help/agent#memoryentry-field-reference";
             var codexConfig = $"Codex: `[mcp_servers.quick-memory] url=\"{requestHost}/mcp\" experimental_use_rmcp_client=true bearer_token_env_var=\"QMS_API_KEY\"`.";
             var quickStart = "Next steps: listProjects → pick endpoint → listRecentEntries(endpoint) for a browse; use searchEntries(endpoint, text, includeShared) for focus.";
-            serverOptions.ServerInstructions = $"Schema: {schemaUrl}. Agent guide: {agentHelp}. End-user help: {userHelp}. {codexConfig} {quickStart} Schema ETag {schemaService.ETag}.";
+            serverOptions.ServerInstructions = $"Schema: {schemaUrl}. Agent guide: {agentHelp}. Entry fields: {entryFieldGuide} (or resource://quick-memory/entry-fields). End-user help: {userHelp}. {codexConfig} {quickStart} Schema ETag {schemaService.ETag}.";
             return Task.CompletedTask;
         };
     })
@@ -746,13 +760,18 @@ app.MapPost("/mcp/{endpoint}/entries", async (
         return Results.BadRequest(new { error = "invalid-entry" });
     }
 
+    if (!MemoryMcpTools.TryPrepareEntry(endpoint, entry, out entry, out var prepError))
+    {
+        return Results.BadRequest(new { error = prepError ?? "invalid-entry" });
+    }
+
     if (entry.IsPermanent && tier != PermissionTier.Admin)
     {
         return Results.StatusCode(StatusCodes.Status403Forbidden);
     }
 
     await store.UpsertAsync(entry, cancellationToken);
-    return Results.Ok(new { updated = true });
+    return Results.Ok(new { updated = true, id = entry.Id });
 });
 
 app.MapPatch("/mcp/{endpoint}/entries/{id}", async (
@@ -1060,6 +1079,17 @@ app.MapGet("/admin/help/admin-ui", (HttpContext context, ApiKeyAuthorizer author
     return Results.Content(html, "text/html");
 });
 
+app.MapGet("/admin/help/codex-workspace", (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor, DocumentService documentService) =>
+{
+    if (!TryAuthorizeAny(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var html = documentService.RenderMarkdown("codex-workspace-guide.md");
+    return Results.Content(html, "text/html");
+});
+
 app.MapGet("/admin/permissions", (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor) =>
 {
     if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
@@ -1088,18 +1118,178 @@ app.MapPost("/admin/permissions/{endpointKey}", async (string endpointKey, HttpC
         return Results.BadRequest(new { error = "invalid-request" });
     }
 
-    var assignments = new Dictionary<string, PermissionTier>(StringComparer.OrdinalIgnoreCase);
-    foreach (var (user, tierValue) in request.Assignments ?? new Dictionary<string, string>())
+    var payload = request.Assignments ?? new Dictionary<string, string>();
+    if (!TryParseTierAssignments(payload, out var assignments, out var error))
     {
+        return Results.BadRequest(new { error });
+    }
+
+    try
+    {
+        await adminService.SetPermissionsAsync(endpointKey, assignments, cancellationToken);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+
+    var auditUser = ResolveAdminUser(context, authorizer, optionsMonitor);
+    LogProjectPermissionChange(
+        "project-permissions.set",
+        auditUser,
+        new[] { endpointKey },
+        assignments.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString()));
+
+    return Results.Ok(new { saved = true });
+});
+
+app.MapGet("/admin/projects/{projectKey}/permissions", (string projectKey, HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (string.IsNullOrWhiteSpace(projectKey))
+    {
+        return Results.BadRequest(new { error = "missing-project" });
+    }
+
+    var endpoints = adminService.ListEndpoints();
+    if (!endpoints.TryGetValue(projectKey, out var project))
+    {
+        return Results.NotFound(new { error = "project-not-found" });
+    }
+
+    var permissions = adminService.ListPermissions();
+    var assignments = permissions.TryGetValue(projectKey, out var map)
+        ? map.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString(), StringComparer.OrdinalIgnoreCase)
+        : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    return Results.Ok(new
+    {
+        project = new
+        {
+            key = projectKey,
+            project.Name,
+            project.Slug,
+            project.Description,
+            project.StoragePath,
+            project.IncludeInSearchByDefault,
+            project.InheritShared
+        },
+        assignments
+    });
+});
+
+app.MapPatch("/admin/projects/{projectKey}/permissions", async (string projectKey, HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, CancellationToken cancellationToken, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    if (string.IsNullOrWhiteSpace(projectKey))
+    {
+        return Results.BadRequest(new { error = "missing-project" });
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<PermissionUpdateRequest>(cancellationToken);
+    if (request is null)
+    {
+        return Results.BadRequest(new { error = "invalid-request" });
+    }
+
+    var payload = request.Assignments ?? new Dictionary<string, string>();
+    if (!TryParseTierAssignments(payload, out var assignments, out var error))
+    {
+        return Results.BadRequest(new { error });
+    }
+
+    try
+    {
+        await adminService.SetPermissionsAsync(projectKey, assignments, cancellationToken);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+
+    var auditUser = ResolveAdminUser(context, authorizer, optionsMonitor);
+    LogProjectPermissionChange(
+        "project-permissions.patch",
+        auditUser,
+        new[] { projectKey },
+        assignments.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.ToString()));
+
+    return Results.Ok(new { saved = true });
+});
+
+app.MapPost("/admin/projects/permissions/bulk", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, CancellationToken cancellationToken, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<PermissionBulkUpdateRequest>(cancellationToken);
+    if (request is null || request.Projects is null || request.Projects.Length == 0)
+    {
+        return Results.BadRequest(new { error = "invalid-request" });
+    }
+
+    var projects = request.Projects
+        .Where(key => !string.IsNullOrWhiteSpace(key))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
+    if (projects.Length == 0)
+    {
+        return Results.BadRequest(new { error = "invalid-projects" });
+    }
+
+    var overridesPayload = request.Overrides ?? new Dictionary<string, string?>();
+    var overrides = new Dictionary<string, PermissionTier?>(StringComparer.OrdinalIgnoreCase);
+
+    foreach (var (user, tierValue) in overridesPayload)
+    {
+        if (string.IsNullOrWhiteSpace(user))
+        {
+            continue;
+        }
+
+        if (string.IsNullOrWhiteSpace(tierValue) || tierValue.Equals("default", StringComparison.OrdinalIgnoreCase))
+        {
+            overrides[user] = null;
+            continue;
+        }
+
         if (!Enum.TryParse<PermissionTier>(tierValue, true, out var tier))
         {
             return Results.BadRequest(new { error = $"invalid-tier:{tierValue}" });
         }
 
-        assignments[user] = tier;
+        overrides[user] = tier;
     }
 
-    await adminService.SetPermissionsAsync(endpointKey, assignments, cancellationToken);
+    if (overrides.Count == 0)
+    {
+        return Results.BadRequest(new { error = "no-overrides" });
+    }
+
+    try
+    {
+        await adminService.ApplyPermissionOverridesAsync(projects, overrides, cancellationToken);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+
+    var auditUser = ResolveAdminUser(context, authorizer, optionsMonitor);
+    var overrideSnapshot = overrides.ToDictionary(kvp => kvp.Key, kvp => kvp.Value?.ToString() ?? "default", StringComparer.OrdinalIgnoreCase);
+    LogProjectPermissionChange("project-permissions.bulk", auditUser, projects, overrideSnapshot);
+
     return Results.Ok(new { saved = true });
 });
 
@@ -1107,6 +1297,62 @@ app.MapMcp("/mcp");
 app.MapFallbackToFile("index.html");
 app.MapMetrics();
 app.Run();
+
+static bool TryParseTierAssignments(IDictionary<string, string> source, out Dictionary<string, PermissionTier> assignments, out string? error)
+{
+    assignments = new Dictionary<string, PermissionTier>(StringComparer.OrdinalIgnoreCase);
+
+    foreach (var (user, tierValue) in source)
+    {
+        if (string.IsNullOrWhiteSpace(user))
+        {
+            error = "invalid-user";
+            return false;
+        }
+
+        if (!Enum.TryParse<PermissionTier>(tierValue, true, out var tier))
+        {
+            error = $"invalid-tier:{tierValue}";
+            return false;
+        }
+
+        assignments[user] = tier;
+    }
+
+    error = null;
+    return true;
+}
+
+static string? ResolveAdminUser(HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor)
+{
+    var apiKey = ExtractApiKey(context);
+    if (string.IsNullOrWhiteSpace(apiKey))
+    {
+        return null;
+    }
+
+    foreach (var endpointKey in optionsMonitor.CurrentValue.Endpoints.Keys)
+    {
+        if (authorizer.TryAuthorize(apiKey, endpointKey, out var user, out var tier) && tier == PermissionTier.Admin)
+        {
+            return user;
+        }
+    }
+
+    return authorizer.TryAuthorize(apiKey, "shared", out var sharedUser, out var sharedTier) && sharedTier == PermissionTier.Admin
+        ? sharedUser
+        : null;
+}
+
+static void LogProjectPermissionChange(string action, string? user, IEnumerable<string> projects, object payload)
+{
+    var projectArray = projects as string[] ?? projects.ToArray();
+    Log.ForContext("AuditTrail", true)
+        .ForContext("AuditAction", action)
+        .ForContext("AuditUser", user ?? "unknown")
+        .ForContext("AuditProjects", projectArray)
+        .Information("{Action} by {User} on {Projects}: {@Payload}", action, user ?? "unknown", projectArray, payload);
+}
 
 static bool TryAuthorizeAdmin(HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor)
 {

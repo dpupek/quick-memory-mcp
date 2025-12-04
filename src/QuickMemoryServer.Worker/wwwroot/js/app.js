@@ -6,10 +6,15 @@ const state = {
   allowedEndpoints: [],
   entries: [],
   permissions: {},
+  users: [],
+  activeProjectKey: null,
+  selectedProjects: new Set(),
+  projectFilter: '',
   lastDetailEntry: null,
   configEditor: null,
   monacoReady: null,
-  lastConfigText: null
+  lastConfigText: null,
+  monacoEditors: {}
 };
 
 const KIND_SUGGESTIONS = [
@@ -24,6 +29,8 @@ const KIND_SUGGESTIONS = [
   'question',
   'task'
 ];
+
+const TIER_OPTIONS = ['Reader', 'Editor', 'Curator', 'Admin'];
 
 const selectors = {
   loginOverlay: document.getElementById('login-overlay'),
@@ -87,6 +94,7 @@ function resetEntryForm() {
   document.getElementById('entry-confidence').value = '0.5';
   document.getElementById('entry-tags').value = '';
   document.getElementById('entry-body').value = '';
+  mountMonacoField('entryBodyEditor', 'entry-body-editor', 'entry-body', '');
   document.getElementById('entry-id').value = '';
   document.getElementById('entry-epic-slug').value = '';
   document.getElementById('entry-epic-case').value = '';
@@ -111,8 +119,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('entity-detail').addEventListener('click', handleEntryDetailActions);
   document.getElementById('user-save').addEventListener('click', saveUser);
   document.getElementById('user-form').addEventListener('submit', (event) => event.preventDefault());
-  document.getElementById('permissions-endpoint').addEventListener('change', populatePermissionsPayload);
-  document.getElementById('permissions-save').addEventListener('click', savePermissions);
+  document.getElementById('project-permissions-list')?.addEventListener('click', handleProjectPermissionsListClick);
+  document.getElementById('project-permissions-list')?.addEventListener('change', handleProjectSelectionChange);
+  document.getElementById('project-permission-filter')?.addEventListener('input', handleProjectFilterInput);
+  document.getElementById('project-permissions-save')?.addEventListener('click', saveProjectPermissions);
+  document.getElementById('project-bulk-apply')?.addEventListener('click', applyBulkPermissions);
   document.getElementById('project-create').addEventListener('click', createProject);
   document.getElementById('open-entry-modal').addEventListener('click', showEntryModal);
   document.getElementById('entry-modal-close').addEventListener('click', closeEntryModal);
@@ -134,6 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
     await fetchEndpoints();
     await tryResumeSession();
   })();
+});
+
+window.addEventListener('resize', () => {
+  Object.values(state.monacoEditors).forEach((editor) => editor.layout());
 });
 
 function setupNavigation() {
@@ -171,6 +186,9 @@ function setActiveTab(tab) {
   }
   if (tab === 'admin-ui-help') {
     loadAdminUiHelp();
+  }
+  if (tab === 'codex-workspace') {
+    loadCodexWorkspaceHelp();
   }
   if (tab === 'config') {
     loadConfig();
@@ -246,6 +264,7 @@ async function fetchEndpoints() {
     const data = await response.json();
     state.endpoints = data.endpoints ?? [];
     renderProjectsList();
+    renderProjectPermissionsList();
   } catch (error) {
     console.error(error);
     setStatus('Failed to load endpoint catalog', 'danger');
@@ -442,21 +461,6 @@ function updateEntityProjectSelect() {
   }
 }
 
-function updatePermissionsEndpointSelect() {
-  const select = document.getElementById('permissions-endpoint');
-  if (!select) {
-    return;
-  }
-
-  if (!state.allowedEndpoints.length) {
-    select.innerHTML = '<option value="">Select a project</option>';
-    return;
-  }
-
-  select.innerHTML = state.allowedEndpoints
-    .map((endpoint) => `<option value="${endpoint.key}">${escapeHtml(endpoint.key)}</option>`)
-    .join('');
-}
 
 function renderConfigInstructions() {
   const container = document.getElementById('overview-config');
@@ -668,9 +672,11 @@ async function validateConfig(applyChanges) {
   });
 
   if (response.ok) {
-    state.lastConfigText = content;
+    if (applyChanges) {
+      state.lastConfigText = content;
+    }
     setConfigStatus(applyChanges ? 'Saved successfully' : 'Valid TOML', 'success');
-    renderConfigDiff(null);
+    renderConfigDiff();
     return;
   }
 
@@ -857,8 +863,28 @@ async function loadAdminUiHelp() {
   document.getElementById('admin-ui-help-content').innerHTML = html;
 }
 
+async function loadCodexWorkspaceHelp() {
+  if (!ensureAuth()) {
+    return;
+  }
+
+  const response = await fetch('/admin/help/codex-workspace', { headers: authHeaders(false) });
+  if (!response.ok) {
+    setStatus('Unable to load Codex workspace guide', 'danger');
+    return;
+  }
+
+  const html = await response.text();
+  document.getElementById('codex-workspace-help-content').innerHTML = html;
+}
+
 function renderEntryDetail(entry) {
   state.lastDetailEntry = entry;
+  const bodyValue = entry.body
+    ? typeof entry.body === 'string'
+      ? entry.body
+      : JSON.stringify(entry.body, null, 2)
+    : '';
 
   const container = document.getElementById('entity-detail');
   const updated = entry.timestamps?.updatedUtc ? formatDate(entry.timestamps.updatedUtc) : 'never';
@@ -894,6 +920,7 @@ function renderEntryDetail(entry) {
         <div class="col-md-6">
           <label class="form-label">Tags (comma separated)</label>
           <input
+            id="detail-tags"
             name="tags"
             class="form-control"
             value="${(entry.tags || []).join(', ')}"
@@ -901,7 +928,8 @@ function renderEntryDetail(entry) {
         </div>
         <div class="col-md-6">
           <label class="form-label">Body (JSON or text)</label>
-          <textarea name="body" class="form-control" rows="4">${entry.body ? escapeHtml(typeof entry.body === 'string' ? entry.body : JSON.stringify(entry.body, null, 2)) : ''}</textarea>
+          <div id="detail-body-editor" class="monaco-field"></div>
+          <textarea id="detail-body" name="body" class="form-control d-none" rows="4">${escapeHtml(bodyValue)}</textarea>
         </div>
       </div>
       <div class="row g-2 mt-2">
@@ -951,11 +979,12 @@ function renderEntryDetail(entry) {
         <button type="button" class="btn btn-outline-danger" data-action="delete-entry" data-entry-id="${entry.id}">Delete entry</button>
       </div>
     </form>
-
-  renderRelationsControl(document.getElementById("detail-relations"), entry.relations || []);
-  renderSourceControl(document.getElementById("detail-source"), entry.source || null);
   `;
-  enhanceTagsInput('entry-tags');
+
+  renderRelationsControl(document.getElementById('detail-relations'), entry.relations || []);
+  renderSourceControl(document.getElementById('detail-source'), entry.source || null);
+  enhanceTagsInput('detail-tags');
+  mountMonacoField('detailBodyEditor', 'detail-body-editor', 'detail-body', bodyValue);
 }
 
 
@@ -974,15 +1003,15 @@ async function saveEntryDetail() {
     .map((part) => part.trim())
     .filter(Boolean);
   const tier = form.querySelector('[name="curationTier"]').value.trim();
-  const bodyText = form.querySelector('[name="body"]').value.trim();
+  const bodyText = readMonacoField('detailBodyEditor', 'detail-body').trim();
   const kind = form.querySelector('[name="kind"]').value.trim();
   const confidenceValue = parseFloat(form.querySelector('[name="confidence"]').value);
   const isPermanent = form.querySelector('[name="isPermanent"]').checked;
   const pinned = form.querySelector('[name="pinned"]').checked;
   const epicSlug = form.querySelector('[name="epicSlug"]').value.trim();
   const epicCase = form.querySelector('[name="epicCase"]').value.trim();
-  const relationsText = form.querySelector('[name="relations"]').value.trim();
-  const sourceText = form.querySelector('[name="source"]').value.trim();
+  const relationsRoot = document.getElementById('detail-relations');
+  const sourceRoot = document.getElementById('detail-source');
 
   const payload = {};
   if (kind && kind !== state.lastDetailEntry.kind) {
@@ -1028,34 +1057,16 @@ async function saveEntryDetail() {
     payload.epicCase = epicCase;
   }
 
-  if (relationsText) {
-    try {
-      const parsed = JSON.parse(relationsText);
-      if (Array.isArray(parsed) && parsed.every((r) => r && typeof r === 'object' && r.type && r.targetId)) {
-        payload.relations = parsed;
-      } else {
-        setStatus('Relations must be an array of { "type": "ref", "targetId": "project:key" }', 'danger');
-        return;
-      }
-    } catch {
-      setStatus('Relations must be valid JSON', 'danger');
-      return;
-    }
+  const nextRelations = collectRelations(relationsRoot);
+  const prevRelations = state.lastDetailEntry.relations || [];
+  if (JSON.stringify(nextRelations) !== JSON.stringify(prevRelations)) {
+    payload.relations = nextRelations;
   }
 
-  if (sourceText) {
-    try {
-      const parsed = JSON.parse(sourceText);
-      if (parsed && typeof parsed === 'object') {
-        payload.source = parsed;
-      } else {
-        setStatus('Source must be a JSON object (e.g., { "type": "api", "url": "https://..." })', 'danger');
-        return;
-      }
-    } catch {
-      setStatus('Source metadata must be valid JSON', 'danger');
-      return;
-    }
+  const nextSource = collectSource(sourceRoot);
+  const prevSource = state.lastDetailEntry.source || null;
+  if (JSON.stringify(nextSource ?? null) !== JSON.stringify(prevSource ?? null)) {
+    payload.source = nextSource ?? {};
   }
 
   if (!Object.keys(payload).length) {
@@ -1157,7 +1168,7 @@ async function createEntry() {
   const title = document.getElementById('entry-title').value.trim();
   const tier = document.getElementById('entry-tier').value || 'provisional';
   const tags = getTagValues('entry-tags');
-  const rawBody = document.getElementById('entry-body').value.trim();
+  const rawBody = readMonacoField('entryBodyEditor', 'entry-body').trim();
   let body;
   if (rawBody) {
     try {
@@ -1261,8 +1272,7 @@ async function deleteEntry(entryId) {
 
 async function loadAdminData() {
   await Promise.all([loadUsers(), loadPermissions()]);
-  updatePermissionsEndpointSelect();
-  populatePermissionsPayload();
+  renderProjectPermissionsPanels();
 }
 
 async function loadUsers() {
@@ -1281,20 +1291,9 @@ async function loadUsers() {
     return;
   }
 
-  const data = await response.json();
-  const tbody = document.querySelector('#users-table tbody');
-  tbody.innerHTML = data
-    .map((user) => {
-      return `
-        <tr>
-          <td>${escapeHtml(user.username)}</td>
-          <td>${escapeHtml(user.defaultTier)}</td>
-          <td><code class="text-break">${escapeHtml(user.apiKey)}</code></td>
-          <td><button class="btn btn-sm btn-danger" onclick="removeUser('${user.username}')">Delete</button></td>
-        </tr>
-      `;
-    })
-    .join('');
+  state.users = await response.json();
+  renderUsersTable();
+  renderProjectPermissionsPanels();
 }
 
 window.removeUser = async function (username) {
@@ -1359,43 +1358,424 @@ async function loadPermissions() {
   }
 
   state.permissions = await response.json();
-  populatePermissionsPayload();
+  renderProjectPermissionsPanels();
 }
 
-function populatePermissionsPayload() {
-  const endpoint = document.getElementById('permissions-endpoint').value;
-  const assignments = state.permissions[endpoint] || {};
-  document.getElementById('permissions-assignments').value = JSON.stringify(assignments, null, 2);
+function renderUsersTable() {
+  const tbody = document.querySelector('#users-table tbody');
+  if (!tbody) {
+    return;
+  }
+
+  if (!state.users.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No users configured.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = state.users
+    .map((user) => {
+      return `
+        <tr>
+          <td>${escapeHtml(user.username)}</td>
+          <td>${escapeHtml(user.defaultTier)}</td>
+          <td><code class="text-break">${escapeHtml(user.apiKey)}</code></td>
+          <td><button class="btn btn-sm btn-danger" onclick="removeUser('${user.username}')">Delete</button></td>
+        </tr>`;
+    })
+    .join('');
 }
 
-async function savePermissions() {
+function renderProjectPermissionsPanels() {
+  renderProjectPermissionsList();
+  renderProjectPermissionsDetail();
+  renderProjectPermissionsBulkControls();
+}
+
+function renderProjectPermissionsList() {
+  const list = document.getElementById('project-permissions-list');
+  if (!list) {
+    return;
+  }
+
+  if (!state.endpoints.length) {
+    list.innerHTML = '<div class="text-muted small">No projects configured.</div>';
+    state.selectedProjects.clear();
+    state.activeProjectKey = null;
+    updateProjectSelectionCount();
+    return;
+  }
+
+  const filter = (state.projectFilter || '').toLowerCase();
+  const filtered = state.endpoints.filter((endpoint) => {
+    if (!filter) {
+      return true;
+    }
+    const haystack = `${endpoint.key} ${endpoint.name ?? ''} ${endpoint.slug ?? ''}`.toLowerCase();
+    return haystack.includes(filter);
+  });
+
+  const validKeys = new Set(filtered.map((endpoint) => endpoint.key));
+  state.selectedProjects = new Set([...state.selectedProjects].filter((key) => validKeys.has(key)));
+
+  if (!state.activeProjectKey || !validKeys.has(state.activeProjectKey)) {
+    state.activeProjectKey = filtered.length ? filtered[0].key : null;
+  }
+
+  if (state.activeProjectKey) {
+    state.selectedProjects.add(state.activeProjectKey);
+  }
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="text-muted small">No projects match that filter.</div>';
+    updateProjectSelectionCount();
+    return;
+  }
+
+  list.innerHTML = filtered
+    .map((endpoint) => {
+      const inheritLabel = endpoint.inheritShared ? 'Inherits shared memory' : 'Isolated from shared memory';
+      const isActive = endpoint.key === state.activeProjectKey ? 'active' : '';
+      const checked = state.selectedProjects.has(endpoint.key) ? 'checked' : '';
+      return `
+        <div class="list-group-item d-flex justify-content-between align-items-start ${isActive}" data-project-key="${endpoint.key}">
+          <div class="flex-grow-1 pe-2" data-project-key="${endpoint.key}">
+            <strong>${escapeHtml(endpoint.name || endpoint.key)}</strong>
+            <div class="text-muted small">Key: ${escapeHtml(endpoint.key)} • ${inheritLabel}</div>
+          </div>
+          <div class="form-check mb-0">
+            <input class="form-check-input" type="checkbox" data-project-select="${endpoint.key}" ${checked} />
+          </div>
+        </div>`;
+    })
+    .join('');
+
+  updateProjectSelectionCount();
+}
+
+function renderProjectPermissionsDetail() {
+  const container = document.getElementById('project-permissions-detail');
+  const saveButton = document.getElementById('project-permissions-save');
+  if (!container || !saveButton) {
+    return;
+  }
+
+  if (!state.activeProjectKey) {
+    container.innerHTML = '<p class="text-muted mb-0">Select a project to view overrides.</p>';
+    saveButton.disabled = true;
+    return;
+  }
+
+  const project = state.endpoints.find((endpoint) => endpoint.key === state.activeProjectKey);
+  if (!project) {
+    container.innerHTML = '<p class="text-muted mb-0">Project not found.</p>';
+    saveButton.disabled = true;
+    return;
+  }
+
+  if (!state.users.length) {
+    container.innerHTML = '<p class="text-muted mb-0">Add a user before configuring project permissions.</p>';
+    saveButton.disabled = true;
+    return;
+  }
+
+  const overrides = state.permissions[state.activeProjectKey] || {};
+  let hasAdmin = false;
+
+  const rows = state.users
+    .map((user) => {
+      const override = overrides[user.username] || '';
+      const effective = override || user.defaultTier;
+      if ((effective || '').toLowerCase() === 'admin') {
+        hasAdmin = true;
+      }
+      const badge = override ? '<span class="badge bg-info ms-2">Override</span>' : '';
+      return `
+        <tr data-permission-row>
+          <td>${escapeHtml(user.username)}</td>
+          <td>${escapeHtml(user.defaultTier)}</td>
+          <td>
+            <select class="form-select form-select-sm" data-user-tier="${escapeHtml(user.username)}" data-default-tier="${escapeHtml(user.defaultTier)}">
+              <option value="">Use default (${escapeHtml(user.defaultTier)})</option>
+              ${TIER_OPTIONS.map((tier) => `<option value="${tier}" ${tier === override ? 'selected' : ''}>${tier}</option>`).join('')}
+            </select>
+          </td>
+          <td>${escapeHtml(effective || user.defaultTier)}${badge}</td>
+        </tr>`;
+    })
+    .join('');
+
+  const inheritLabel = project.inheritShared ? 'Inherits shared memory' : 'Does not inherit shared memory';
+  const warning = hasAdmin
+    ? ''
+    : '<div class="alert alert-warning mt-3 mb-0">This project currently has no Admin-tier access.</div>';
+
+  container.innerHTML = `
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <h5 class="mb-1">${escapeHtml(project.name || project.key)}</h5>
+        <p class="text-muted small mb-0">Slug: ${escapeHtml(project.slug || project.key)} • ${inheritLabel}</p>
+      </div>
+    </div>
+    <div class="table-responsive mt-3">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Default tier</th>
+            <th>Override</th>
+            <th>Effective tier</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    </div>
+    ${warning}
+  `;
+
+  saveButton.disabled = false;
+}
+
+function renderProjectPermissionsBulkControls() {
+  const userSelect = document.getElementById('project-bulk-user');
+  const applyButton = document.getElementById('project-bulk-apply');
+  if (!userSelect || !applyButton) {
+    return;
+  }
+
+  const currentValue = userSelect.value;
+  if (!state.users.length) {
+    userSelect.innerHTML = '<option value="">No users available</option>';
+    userSelect.disabled = true;
+  } else {
+    userSelect.disabled = false;
+    const options = ['<option value="">Select user</option>']
+      .concat(state.users.map((user) => `<option value="${user.username}">${escapeHtml(user.username)}</option>`))
+      .join('');
+    userSelect.innerHTML = options;
+    if (state.users.some((user) => user.username === currentValue)) {
+      userSelect.value = currentValue;
+    }
+  }
+
+  applyButton.disabled = !state.selectedProjects.size || !state.users.length;
+}
+
+function updateProjectSelectionCount() {
+  const target = document.getElementById('project-selection-count');
+  if (target) {
+    target.textContent = `${state.selectedProjects.size} selected`;
+  }
+  const applyButton = document.getElementById('project-bulk-apply');
+  if (applyButton) {
+    applyButton.disabled = !state.selectedProjects.size || !state.users.length;
+  }
+}
+
+function handleProjectPermissionsListClick(event) {
+  const item = event.target.closest('[data-project-key]');
+  if (!item) {
+    return;
+  }
+
+  const key = item.dataset.projectKey;
+  if (!key) {
+    return;
+  }
+
+  state.activeProjectKey = key;
+  state.selectedProjects.add(key);
+  renderProjectPermissionsList();
+  renderProjectPermissionsDetail();
+  renderProjectPermissionsBulkControls();
+}
+
+function handleProjectSelectionChange(event) {
+  const checkbox = event.target.closest('input[data-project-select]');
+  if (!checkbox) {
+    return;
+  }
+
+  event.stopPropagation();
+  const key = checkbox.dataset.projectSelect;
+  if (!key) {
+    return;
+  }
+
+  if (checkbox.checked) {
+    state.selectedProjects.add(key);
+  } else {
+    state.selectedProjects.delete(key);
+    if (state.activeProjectKey === key) {
+      state.activeProjectKey = state.selectedProjects.values().next().value || null;
+    }
+  }
+
+  updateProjectSelectionCount();
+  renderProjectPermissionsDetail();
+  renderProjectPermissionsBulkControls();
+}
+
+function handleProjectFilterInput(event) {
+  state.projectFilter = event.target.value || '';
+  renderProjectPermissionsList();
+}
+
+function setProjectPermissionsStatus(message, tone = 'muted') {
+  const target = document.getElementById('project-permissions-status');
+  if (!target) {
+    return;
+  }
+
+  target.textContent = message || '';
+  target.className = `small mt-2 text-${tone}`;
+}
+
+function setBulkPermissionsStatus(message, tone = 'muted') {
+  const target = document.getElementById('project-bulk-status');
+  if (!target) {
+    return;
+  }
+
+  target.textContent = message || '';
+  target.className = `small mt-2 text-${tone}`;
+}
+
+async function saveProjectPermissions() {
   if (!ensureAuth()) {
     return;
   }
 
-  const endpoint = document.getElementById('permissions-endpoint').value;
-  const json = document.getElementById('permissions-assignments').value.trim() || '{}';
-  let parsed;
-  try {
-    parsed = JSON.parse(json);
-  } catch (error) {
-    setStatus('Permissions JSON is invalid', 'danger');
+  const projectKey = state.activeProjectKey;
+  if (!projectKey) {
     return;
   }
 
-  const response = await fetch(`/admin/permissions/${encodeURIComponent(endpoint)}`, {
-    method: 'POST',
+  const detail = document.getElementById('project-permissions-detail');
+  if (!detail) {
+    return;
+  }
+
+  const rows = Array.from(detail.querySelectorAll('[data-permission-row]'));
+  if (!rows.length) {
+    return;
+  }
+
+  const assignments = {};
+  let hasAdmin = false;
+
+  rows.forEach((row) => {
+    const select = row.querySelector('[data-user-tier]');
+    if (!select) {
+      return;
+    }
+
+    const user = select.dataset.userTier;
+    const defaultTier = select.dataset.defaultTier;
+    const value = select.value;
+    if (value) {
+      assignments[user] = value;
+    }
+
+    const effective = value || defaultTier;
+    if ((effective || '').toLowerCase() === 'admin') {
+      hasAdmin = true;
+    }
+  });
+
+  if (!hasAdmin) {
+    setProjectPermissionsStatus('Each project must retain at least one Admin-tier user.', 'danger');
+    return;
+  }
+
+  setProjectPermissionsStatus('Saving...', 'info');
+
+  const response = await fetch(`/admin/projects/${encodeURIComponent(projectKey)}/permissions`, {
+    method: 'PATCH',
     headers: authHeaders(true),
-    body: JSON.stringify({ assignments: parsed })
+    body: JSON.stringify({ assignments })
   });
 
   if (!response.ok) {
-    setStatus('Failed to save permissions', 'danger');
+    const err = await response.text().catch(() => '');
+    setProjectPermissionsStatus(`Failed to save permissions (${response.status}). ${err}`, 'danger');
     return;
   }
 
-  setStatus('Permissions updated', 'success');
-  loadPermissions();
+  setProjectPermissionsStatus('Permissions updated', 'success');
+  await loadPermissions();
+}
+
+async function applyBulkPermissions() {
+  if (!ensureAuth()) {
+    return;
+  }
+
+  const projects = Array.from(state.selectedProjects);
+  if (!projects.length) {
+    setBulkPermissionsStatus('Select at least one project.', 'danger');
+    return;
+  }
+
+  if (!state.users.length) {
+    setBulkPermissionsStatus('Add a user before applying overrides.', 'danger');
+    return;
+  }
+
+  const user = document.getElementById('project-bulk-user').value;
+  const tier = document.getElementById('project-bulk-tier').value;
+
+  if (!user) {
+    setBulkPermissionsStatus('Choose a user to override.', 'danger');
+    return;
+  }
+
+  const overridePatch = { [user]: tier || null };
+  for (const key of projects) {
+    if (!willProjectHaveAdmin(key, overridePatch)) {
+      setBulkPermissionsStatus(`Applying this change would leave ${key} without an Admin.`, 'danger');
+      return;
+    }
+  }
+
+  setBulkPermissionsStatus('Applying overrides...', 'info');
+
+  const response = await fetch('/admin/projects/permissions/bulk', {
+    method: 'POST',
+    headers: authHeaders(true),
+    body: JSON.stringify({ projects, overrides: overridePatch })
+  });
+
+  if (!response.ok) {
+    const err = await response.text().catch(() => '');
+    setBulkPermissionsStatus(`Failed to apply overrides (${response.status}). ${err}`, 'danger');
+    return;
+  }
+
+  setBulkPermissionsStatus('Overrides applied', 'success');
+  await loadPermissions();
+}
+
+function willProjectHaveAdmin(projectKey, patch) {
+  if (!state.users.length) {
+    return true;
+  }
+
+  const overrides = { ...(state.permissions[projectKey] || {}) };
+  if (patch) {
+    Object.entries(patch).forEach(([user, tier]) => {
+      if (!tier) {
+        delete overrides[user];
+      } else {
+        overrides[user] = tier;
+      }
+    });
+  }
+
+  return state.users.some((user) => (
+    (overrides[user.username] || user.defaultTier || '').toLowerCase() === 'admin'
+  ));
 }
 
 async function handleLogin(event) {
@@ -1418,7 +1798,6 @@ async function handleLogin(event) {
   setStatus(`Welcome ${state.user} (${state.tier})`, 'success');
   renderProjectsList();
   updateEntityProjectSelect();
-  updatePermissionsEndpointSelect();
   renderConfigInstructions();
   loadOverview();
   loadAdminData();
@@ -1429,6 +1808,11 @@ function logout() {
   state.user = null;
   state.tier = null;
   state.allowedEndpoints = [];
+  state.permissions = {};
+  state.users = [];
+  state.selectedProjects.clear();
+  state.activeProjectKey = null;
+  state.projectFilter = '';
   selectors.loginOverlay.classList.remove('hidden');
   setStatus('Logged out', 'info');
   fetch('/admin/logout', { method: 'POST', credentials: 'same-origin' }).catch(() => {});
@@ -1671,6 +2055,51 @@ function normalizeStoragePath(value) {
 
 function formatStoragePath(value) {
   return normalizeStoragePath(value);
+}
+
+function mountMonacoField(stateKey, containerId, fallbackId, value, language = 'json') {
+  const fallback = document.getElementById(fallbackId);
+  if (fallback) {
+    fallback.value = value || '';
+  }
+
+  ensureMonaco()
+    .then((monaco) => {
+      const container = document.getElementById(containerId);
+      if (!container) {
+        return;
+      }
+
+      let editor = state.monacoEditors[stateKey];
+      if (!editor) {
+        editor = monaco.editor.create(container, {
+          value: value || '',
+          language,
+          theme: 'vs-light',
+          minimap: { enabled: false },
+          automaticLayout: true,
+          wordWrap: 'on',
+          scrollBeyondLastLine: false
+        });
+        state.monacoEditors[stateKey] = editor;
+      } else {
+        editor.setValue(value || '');
+        editor.layout();
+        if (language && editor.getModel()) {
+          monaco.editor.setModelLanguage(editor.getModel(), language);
+        }
+      }
+    })
+    .catch((err) => console.error('monaco field failed', err));
+}
+
+function readMonacoField(stateKey, fallbackId) {
+  const editor = state.monacoEditors[stateKey];
+  if (editor) {
+    return editor.getValue();
+  }
+  const fallback = document.getElementById(fallbackId);
+  return fallback ? fallback.value : '';
 }
 
 function enhanceTagsInput(id) {

@@ -17,7 +17,7 @@ public sealed class ServerOptions : IValidatableObject
         new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Endpoint permissions mapped by endpoint key -> (user -> tier).
+    /// Project permissions mapped by project key -> (user -> tier).
     /// </summary>
     public Dictionary<string, Dictionary<string, PermissionTier>> Permissions { get; set; } =
         new(StringComparer.OrdinalIgnoreCase);

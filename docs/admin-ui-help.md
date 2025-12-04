@@ -17,10 +17,11 @@ Welcome to the Quick Memory Server admin console. This page collects quick tips 
 - View/Edit entries inline; delete honors permanence/tier rules.
 - “Add entry” modal supports JSON bodies, relations, source metadata, and epic fields.
 
-## Users & Permissions
+## Users & Project Permissions
 - Manage API keys and default tiers per user.
-- Assign per-project tiers via the Permissions panel (JSON map of user -> tier).
-- Use project-scoped keys to limit agent access.
+- The Project Permissions panel lets you pick a project, review every user’s effective tier, and adjust overrides without editing raw JSON.
+- Bulk override form applies a single user/tier change across every selected project; the UI warns if a project would lose its last Admin.
+- Use project-scoped keys and overrides together to confine agent access.
 
 ## Config (TOML)
 - Monaco editor with validation and diff preview.
@@ -35,6 +36,7 @@ Welcome to the Quick Memory Server admin console. This page collects quick tips 
 - End-user help: `/admin/help/end-user`
 - Agent help: `/admin/help/agent`
 - MCP cheatsheet: `resource://quick-memory/cheatsheet`
+- Codex workspace guide (per-project configs): `/admin/help/codex-workspace` and `resource://quick-memory/codex-workspace`
 
 Tips:
 - If auth fails, re-enter your API key; sessions persist across refresh.

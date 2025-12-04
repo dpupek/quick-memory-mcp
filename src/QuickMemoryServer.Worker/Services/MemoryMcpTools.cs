@@ -217,10 +217,11 @@ public static async Task<object> UpsertEntry(
         return ErrorResult("invalid-entry");
     }
 
-    if (!string.Equals(entry.Project, endpoint, StringComparison.OrdinalIgnoreCase))
+    if (!TryPrepareEntry(endpoint, entry, out var prepared, out var prepareError))
     {
-        return ErrorResult("project-mismatch: set entry.project to the endpoint you are calling");
+        return ErrorResult(prepareError ?? "invalid-entry");
     }
+    entry = prepared;
 
     var relationsError = ValidateRelations(entry.Relations);
     if (relationsError is not null)
@@ -246,7 +247,7 @@ public static async Task<object> UpsertEntry(
         }
 
         await store.UpsertAsync(entry, cancellationToken);
-        return new { updated = true };
+        return new { updated = true, id = entry.Id };
     }
 
 [McpServerTool(Name = "patchEntry", Title = "Patch entry")]
@@ -507,6 +508,36 @@ private static string? ValidateSource(object? source)
         default:
             return "invalid-source: must be an object with type/url/path/shard";
     }
+}
+
+internal static bool TryPrepareEntry(string endpoint, MemoryEntry entry, out MemoryEntry prepared, out string? error)
+{
+    ArgumentException.ThrowIfNullOrWhiteSpace(endpoint);
+    ArgumentNullException.ThrowIfNull(entry);
+
+    var project = string.IsNullOrWhiteSpace(entry.Project) ? endpoint : entry.Project;
+    if (!string.Equals(project, endpoint, StringComparison.OrdinalIgnoreCase))
+    {
+        prepared = entry;
+        error = "project-mismatch: set entry.project to the endpoint you are calling";
+        return false;
+    }
+
+    var normalized = entry;
+    if (!string.Equals(entry.Project, project, StringComparison.OrdinalIgnoreCase))
+    {
+        normalized = normalized with { Project = project };
+    }
+
+    if (string.IsNullOrWhiteSpace(normalized.Id))
+    {
+        var generatedId = $"{project}:{Guid.NewGuid():N}";
+        normalized = normalized with { Id = generatedId };
+    }
+
+    prepared = normalized;
+    error = null;
+    return true;
 }
 
 private static string? ValidateSourceElement(JsonElement source)

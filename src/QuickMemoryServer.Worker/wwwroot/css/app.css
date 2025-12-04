@@ -163,3 +163,11 @@ body {
 
 .relations-editor .form-select,.relations-editor .form-control,.source-editor .form-control{min-width:0;}
 .relations-editor .btn{padding:0.35rem 0.6rem;}
+
+.monaco-field {
+  border: 1px solid #dfe4ef;
+  border-radius: 8px;
+  min-height: 200px;
+  background: #fefefe;
+  overflow: hidden;
+}

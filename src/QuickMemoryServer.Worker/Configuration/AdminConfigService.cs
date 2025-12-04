@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -102,11 +103,60 @@ public sealed class AdminConfigService
         {
             if (assignments.Count == 0)
             {
+                EnsureProjectHasAdmin(options, endpoint, null);
                 options.Permissions.Remove(endpoint);
                 return;
             }
 
-            options.Permissions[endpoint] = new Dictionary<string, PermissionTier>(assignments, StringComparer.OrdinalIgnoreCase);
+            var normalized = new Dictionary<string, PermissionTier>(assignments, StringComparer.OrdinalIgnoreCase);
+            EnsureProjectHasAdmin(options, endpoint, normalized);
+            options.Permissions[endpoint] = normalized;
+        }, cancellationToken);
+    }
+
+    public Task ApplyPermissionOverridesAsync(IEnumerable<string> endpoints, IDictionary<string, PermissionTier?> overrides, CancellationToken cancellationToken = default)
+    {
+        return MutateAsync(options =>
+        {
+            foreach (var endpoint in endpoints.Where(key => !string.IsNullOrWhiteSpace(key)))
+            {
+                if (!options.Endpoints.ContainsKey(endpoint))
+                {
+                    continue;
+                }
+
+                var current = options.Permissions.TryGetValue(endpoint, out var existing)
+                    ? new Dictionary<string, PermissionTier>(existing, StringComparer.OrdinalIgnoreCase)
+                    : new Dictionary<string, PermissionTier>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var (user, tier) in overrides)
+                {
+                    if (string.IsNullOrWhiteSpace(user))
+                    {
+                        continue;
+                    }
+
+                    if (tier is null)
+                    {
+                        current.Remove(user);
+                    }
+                    else
+                    {
+                        current[user] = tier.Value;
+                    }
+                }
+
+                if (current.Count == 0)
+                {
+                    EnsureProjectHasAdmin(options, endpoint, null);
+                    options.Permissions.Remove(endpoint);
+                }
+                else
+                {
+                    EnsureProjectHasAdmin(options, endpoint, current);
+                    options.Permissions[endpoint] = current;
+                }
+            }
         }, cancellationToken);
     }
 
@@ -144,6 +194,31 @@ public sealed class AdminConfigService
         _configurationRoot.Reload();
         _logger.LogInformation("Persisted raw configuration to {Path}", _configPath);
         return validation;
+    }
+
+    private static void EnsureProjectHasAdmin(ServerOptions options, string endpoint, IReadOnlyDictionary<string, PermissionTier>? overrides)
+    {
+        if (options.Users.Count == 0)
+        {
+            return;
+        }
+
+        var hasAdmin = options.Users.Any(kvp =>
+        {
+            var username = kvp.Key;
+            var defaultTier = kvp.Value.DefaultTier;
+            if (overrides is not null && overrides.TryGetValue(username, out var overrideTier))
+            {
+                return overrideTier == PermissionTier.Admin;
+            }
+
+            return defaultTier == PermissionTier.Admin;
+        });
+
+        if (!hasAdmin)
+        {
+            throw new InvalidOperationException($"Project '{endpoint}' must retain at least one Admin-tier user.");
+        }
     }
 
     private async Task MutateAsync(Action<ServerOptions> mutation, CancellationToken cancellationToken)
