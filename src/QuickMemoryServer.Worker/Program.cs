@@ -916,6 +916,49 @@ app.MapGet("/admin/endpoints/manage", (HttpContext context, ApiKeyAuthorizer aut
     return Results.Ok(payload);
 });
 
+
+static bool IsSafeKey(string? value)
+{
+    return !string.IsNullOrWhiteSpace(value) && System.Text.RegularExpressions.Regex.IsMatch(value, "^[A-Za-z0-9_-]+$");
+}
+
+static (string? Error, string? Path) ValidateAndPrepareStorage(string? path)
+{
+    if (string.IsNullOrWhiteSpace(path))
+    {
+        return ("storage-path-missing", null);
+    }
+
+    try
+    {
+        var full = Path.GetFullPath(path);
+        var dir = Directory.Exists(full) ? full : Path.GetDirectoryName(full);
+        if (string.IsNullOrWhiteSpace(dir))
+        {
+            return ("storage-path-invalid", null);
+        }
+
+        if (!Directory.Exists(dir))
+        {
+            Directory.CreateDirectory(dir);
+        }
+
+        var testFile = Path.Combine(dir, ".qms_write_test" + Guid.NewGuid().ToString("N"));
+        File.WriteAllText(testFile, "test");
+        var content = File.ReadAllText(testFile);
+        File.Delete(testFile);
+        if (content != "test")
+        {
+            return ("storage-path-unreadable", null);
+        }
+
+        return (null, full);
+    }
+    catch (Exception ex)
+    {
+        return ($"storage-path-invalid: {ex.Message}", null);
+    }
+}
 app.MapPost("/admin/endpoints/manage", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, CancellationToken cancellationToken, IOptionsMonitor<ServerOptions> optionsMonitor) =>
 {
     if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
