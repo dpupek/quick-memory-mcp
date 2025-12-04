@@ -75,6 +75,10 @@ public sealed class GlobalOptions
     public BackupOptions Backup { get; set; } = new();
 
     public string InstallLayoutManifest { get; set; } = "layout.json";
+
+    public string StorageBasePath { get; set; } = OperatingSystem.IsWindows()
+        ? "C\\ProgramData\\q-memory-mcp"
+        : "/var/lib/q-memory-mcp";
 }
 
 public sealed class EndpointOptions

@@ -51,6 +51,7 @@
   - [ ] Add a Health blade that surfaces `/health` details and exposes one-click log download from the server.
   - [ ] Add MCP usage cheatsheet resource (`resource://quick-memory/cheatsheet`) with concise “do X → call Y” guidance.
   - [ ] Add MCP `listRecentEntries` tool to browse recent updates without a query.
+  - [ ] UI polish: integrate Bootstrap Icons for nav/buttons and SweetAlert2 for confirmations/toasts; enhance tags input with Choices.js.
 - [ ] **Phase 10 – Release & Hardening** (installer packaging with WiX, load + failure testing, release notes, ONNX artifacts, final docs, and load test evidence).  
 - [x] PowerShell installer/updater helper for manual Windows deployments (`tools/install-service.ps1`).
 

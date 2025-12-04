@@ -78,6 +78,14 @@ var httpUrl = builder.Configuration["global:httpUrl"]
 
 builder.WebHost.UseUrls(httpUrl);
 
+var serviceName = builder.Configuration["global:serviceName"]
+    ?? builder.Configuration["Global:ServiceName"]
+    ?? "QuickMemoryServer";
+
+var assembly = Assembly.GetEntryAssembly();
+var assemblyVersion = assembly?.GetName().Version?.ToString() ?? "0.0.0.0";
+var infoVersion = assembly?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? assemblyVersion;
+
 builder.Services.AddRouting();
 builder.Services.AddMemoryCache();
 builder.Services.AddHttpContextAccessor();
@@ -266,6 +274,10 @@ builder.Services.AddMcpServer()
 
 var app = builder.Build();
 var observabilityMetrics = app.Services.GetRequiredService<ObservabilityMetrics>();
+
+// Startup banner with version info reaches configured Serilog sinks.
+Log.Information("Starting {ServiceName} version {Version} (informational {InfoVersion}) listening at {HttpUrl} (BaseDir: {BaseDir})",
+    serviceName, assemblyVersion, infoVersion, httpUrl, AppContext.BaseDirectory);
 
 app.UseSerilogRequestLogging();
 app.UseSession();
@@ -1170,6 +1182,14 @@ static string? ExtractApiKey(HttpContext? httpContext)
         return sessionKey;
     }
 
+    // Prefer explicit X-Api-Key header over any ambient Authorization bearer to avoid
+    // cached OAuth tokens (or empty bearer headers) shadowing a valid API key.
+    var apiKeyHeader = httpContext.Request.Headers["X-Api-Key"].FirstOrDefault();
+    if (!string.IsNullOrWhiteSpace(apiKeyHeader))
+    {
+        return apiKeyHeader.Trim();
+    }
+
     if (httpContext.Request.Headers.TryGetValue("Authorization", out var authorization))
     {
         var bearer = authorization.FirstOrDefault();
@@ -1181,12 +1201,6 @@ static string? ExtractApiKey(HttpContext? httpContext)
                 return token;
             }
         }
-    }
-
-    var apiKeyHeader = httpContext.Request.Headers["X-Api-Key"].FirstOrDefault();
-    if (!string.IsNullOrWhiteSpace(apiKeyHeader))
-    {
-        return apiKeyHeader;
     }
 
     if (httpContext.Request.Query.TryGetValue("apiKey", out var queryValue))
