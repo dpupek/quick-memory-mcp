@@ -118,12 +118,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('entry-modal-close').addEventListener('click', closeEntryModal);
   document.getElementById('entry-modal-cancel').addEventListener('click', closeEntryModal);
   document.getElementById('entry-form').addEventListener('submit', handleEntryFormSubmit);
-  document.getElementById('entry-modal').addEventListener('click', (event) => {
-    const dialog = document.querySelector('#entry-modal .modal-dialog');
-    if (event.currentTarget === event.target && dialog && !dialog.contains(event.target)) {
-      closeEntryModal();
-    }
-  });
+  // Backdrop close disabled to prevent accidental dismiss; use close/cancel buttons instead
+  // document.getElementById('entry-modal').addEventListener('click', (event) => { ... });
   renderRelationsControl(document.getElementById('entry-relations'), []);
   renderSourceControl(document.getElementById('entry-source'), null);
   document.getElementById('entity-project').addEventListener('change', () => loadEntities());
@@ -863,8 +859,6 @@ async function loadAdminUiHelp() {
 
 function renderEntryDetail(entry) {
   state.lastDetailEntry = entry;
-  renderRelationsControl(document.getElementById('detail-relations'), entry.relations || []);
-  renderSourceControl(document.getElementById('detail-source'), entry.source || null);
 
   const container = document.getElementById('entity-detail');
   const updated = entry.timestamps?.updatedUtc ? formatDate(entry.timestamps.updatedUtc) : 'never';
@@ -944,12 +938,12 @@ function renderEntryDetail(entry) {
       </div>
       <div class="row g-2 mt-2">
         <div class="col-md-6">
-          <label class="form-label">Relations (JSON array)</label>
-          <textarea name="relations" class="form-control" rows="2">${entry.relations ? escapeHtml(JSON.stringify(entry.relations, null, 2)) : ''}</textarea>
+          <label class="form-label">Relations</label>
+          <div id="detail-relations" class="relations-editor"></div>
         </div>
         <div class="col-md-6">
-          <label class="form-label">Source metadata (JSON)</label>
-          <textarea name="source" class="form-control" rows="2">${entry.source ? escapeHtml(JSON.stringify(entry.source, null, 2)) : ''}</textarea>
+          <label class="form-label">Source metadata</label>
+          <div id="detail-source" class="source-editor"></div>
         </div>
       </div>
       <div class="mt-3 d-flex gap-2">
@@ -958,7 +952,9 @@ function renderEntryDetail(entry) {
       </div>
     </form>
   `;
+  enhanceTagsInput('entry-tags');
 }
+
 
 async function saveEntryDetail() {
   if (!state.lastDetailEntry || !ensureAuth()) {
