@@ -6,6 +6,7 @@
 - Runtime aids and tooling are under `tools/` (backup CLI, watchers) and `load-tests/` (k6 scripts); platform-specific installer layout lives in `layout.json`.
 
 ## Build, Test, and Development Commands
+- Always run `"/mnt/c/Program Files/Git/bin/git.exe" status` to confirm staging, and `"$NEXPORT_WINDOTNETdotnet.exe" test` (or Roslyn `TestSolution`) after code changes to catch validation/build regressions early.
 - Set `NEXPORT_WINDOTNET` to `"/mnt/c/Program Files/dotnet/"` once per shell so scripts use `"$NEXPORT_WINDOTNETdotnet.exe" build ...`, `test`, and `run` (same binary for CLI, restore, publish).
 - For git operations under WSL, prefer `"/mnt/c/Program Files/Git/bin/git.exe" status` (note timeline slowdowns on native Linux Git).
 - `"$NEXPORT_WINDOTNETdotnet.exe" build QuickMemoryServer.sln` compiles everything with the required .NET 9 preview.
@@ -45,3 +46,13 @@
   env = { AUTH_TOKEN = "/K/XodEPueCMorpZV8qKP47svleB0FQ9jmMVtIXO+Lw=" }
   ```
   Notes: `mcp-remote` caches auth under `~/.mcp-auth`; if keys change, delete that folder. Prefer `X-Api-Key` header for Quick Memory; bearer also works. Ensure `global.httpUrl` binds to `0.0.0.0:5080` and Windows firewall allows 5080 so WSL → Windows works.
+
+## Roslyn Code Navigator (MCP) – How to use
+
+- Primary tools: `TestSolution`, `BuildSolution`, `SearchSymbols`, `FindReferences`, `GetSymbolInfo`, `ListProjects`, `AnalyzeDependencies`.
+- Always pass the absolute `/mnt/.../QuickMemoryServer.sln` path from WSL. The server uses Windows SDKs by default.
+- Run tests via MCP for speed/consistency: `TestSolution(solutionPath="/mnt/e/sandbox/quick-memory-server/QuickMemoryServer.sln", configuration="Release")`.
+- If builds/tests fail, inspect `standardOutput`; nullable warnings in `Program.cs` are known noise unless specified otherwise.
+- Symbol spelunking recipe: `SearchSymbols(symbolName="*Memory*", symbolTypes="class,method")` → `FindReferences(symbolName="MemoryStore")`.
+- Environment/SDK check: `ListBuildRunners` or `RoslynEnv` before builds; ensures dotnet/VS toolchains are detected.
+- Prefer `BuildSolution`/`TestSolution` over local `dotnet` in WSL unless you need custom scripts; the MCP server already uses the Windows toolchain requested by this repo.
