@@ -198,7 +198,7 @@ function handleProjectButton(event) {
   }
 
   const endpoint = deleteButton.dataset.endpoint;
-  deleteProject(endpoint);
+  confirmDeleteProject(endpoint);
 }
 
 function handleEntityActions(event) {
@@ -234,7 +234,7 @@ function handleEntryDetailActions(event) {
   if (del) {
     const entryId = del.dataset.entryId || state.lastDetailEntry?.id;
     if (entryId) {
-      deleteEntry(entryId);
+      confirmDeleteEntry(entryId, () => deleteEntry(entryId));
     }
   }
 }
@@ -1692,4 +1692,32 @@ function getTagValues(id) {
     return el._choices.getValue(true) || [];
   }
   return el.value.split(',').map((p) => p.trim()).filter(Boolean);
+}
+
+async function confirmDeleteEntry(entryId, onConfirm) {
+  if (!window.Swal) { onConfirm(); return; }
+  const result = await Swal.fire({
+    title: 'Delete entry?',
+    text: entryId,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, delete',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#d33'
+  });
+  if (result.isConfirmed) { onConfirm(); }
+}
+
+async function confirmDeleteProject(endpoint) {
+  if (!window.Swal) { deleteProject(endpoint); return; }
+  const result = await Swal.fire({
+    title: 'Delete project?',
+    text: endpoint,
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Yes, delete',
+    cancelButtonText: 'Cancel',
+    confirmButtonColor: '#d33'
+  });
+  if (result.isConfirmed) { deleteProject(endpoint); }
 }
