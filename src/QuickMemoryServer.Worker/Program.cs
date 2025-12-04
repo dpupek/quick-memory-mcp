@@ -924,7 +924,7 @@ app.MapPost("/admin/endpoints/manage", async (HttpContext context, ApiKeyAuthori
     }
 
     var request = await context.Request.ReadFromJsonAsync<AdminEndpointRequest>(cancellationToken);
-    if (request is null || string.IsNullOrWhiteSpace(request.Key) || string.IsNullOrWhiteSpace(request.Name))
+    if (request is null || string.IsNullOrWhiteSpace(request.Key) || string.IsNullOrWhiteSpace(request.Name) || !IsSafeKey(request.Key) || (!string.IsNullOrWhiteSpace(request.Slug) && !IsSafeKey(request.Slug)))
     {
         return Results.BadRequest(new { error = "invalid-request" });
     }
@@ -943,6 +943,14 @@ app.MapPost("/admin/endpoints/manage", async (HttpContext context, ApiKeyAuthori
         IncludeInSearchByDefault = request.IncludeInSearchByDefault,
         InheritShared = request.InheritShared
     };
+
+    var storageValidation = ValidateAndPrepareStorage(endpointOptions.StoragePath);
+    if (storageValidation.Error is not null)
+    {
+        return Results.BadRequest(new { error = storageValidation.Error });
+    }
+
+    endpointOptions.StoragePath = storageValidation.Path!;
 
     await adminService.AddOrUpdateEndpointAsync(request.Key, endpointOptions, cancellationToken);
     return Results.Ok(new { saved = true });

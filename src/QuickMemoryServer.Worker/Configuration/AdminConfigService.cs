@@ -67,7 +67,8 @@ public sealed class AdminConfigService
 
             if (string.IsNullOrWhiteSpace(endpoint.StoragePath))
             {
-                endpoint.StoragePath = Path.Combine(AppContext.BaseDirectory, "MemoryStores", key);
+                var baseDir = _optionsMonitor.CurrentValue.Global.StorageBasePath;
+                endpoint.StoragePath = Path.Combine(baseDir, key);
             }
 
             options.Endpoints[key] = endpoint;
