@@ -929,12 +929,17 @@ app.MapPost("/admin/endpoints/manage", async (HttpContext context, ApiKeyAuthori
         return Results.BadRequest(new { error = "invalid-request" });
     }
 
+    var slug = string.IsNullOrWhiteSpace(request.Slug) ? request.Key : request.Slug;
+    var storagePath = string.IsNullOrWhiteSpace(request.StoragePath)
+        ? Path.Combine(AppContext.BaseDirectory, "MemoryStores", request.Key)
+        : request.StoragePath;
+
     var endpointOptions = new EndpointOptions
     {
         Name = request.Name,
-        Slug = request.Slug,
+        Slug = slug,
         Description = request.Description,
-        StoragePath = request.StoragePath,
+        StoragePath = storagePath,
         IncludeInSearchByDefault = request.IncludeInSearchByDefault,
         InheritShared = request.InheritShared
     };

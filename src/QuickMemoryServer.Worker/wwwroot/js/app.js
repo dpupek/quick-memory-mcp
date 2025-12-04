@@ -320,9 +320,9 @@ async function createProject() {
 
   const key = document.getElementById('project-key').value.trim();
   const name = document.getElementById('project-name').value.trim();
-  const slug = document.getElementById('project-slug').value.trim();
+  const slugInput = document.getElementById('project-slug').value.trim();
   const description = document.getElementById('project-description').value.trim();
-  const storagePath = normalizeStoragePath(document.getElementById('project-storage').value);
+  const storageInput = normalizeStoragePath(document.getElementById('project-storage').value);
   const includeInSearch = document.getElementById('project-include-search').checked;
   const inheritShared = document.getElementById('project-inherit-shared').checked;
 
@@ -330,6 +330,9 @@ async function createProject() {
     setStatus('Project key and name are required', 'danger');
     return;
   }
+
+  const slug = slugInput || key;
+  const storagePath = storageInput || `MemoryStores/${key}`;
 
   const response = await fetch('/admin/endpoints/manage', {
     method: 'POST',

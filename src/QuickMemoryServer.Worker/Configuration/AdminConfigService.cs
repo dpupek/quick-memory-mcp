@@ -60,6 +60,16 @@ public sealed class AdminConfigService
     {
         return MutateAsync(options =>
         {
+            if (string.IsNullOrWhiteSpace(endpoint.Slug))
+            {
+                endpoint.Slug = key;
+            }
+
+            if (string.IsNullOrWhiteSpace(endpoint.StoragePath))
+            {
+                endpoint.StoragePath = Path.Combine(AppContext.BaseDirectory, "MemoryStores", key);
+            }
+
             options.Endpoints[key] = endpoint;
         }, cancellationToken);
     }
