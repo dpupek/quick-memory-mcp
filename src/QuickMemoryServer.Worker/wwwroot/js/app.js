@@ -106,7 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('entry-modal-cancel').addEventListener('click', closeEntryModal);
   document.getElementById('entry-form').addEventListener('submit', handleEntryFormSubmit);
   document.getElementById('entry-modal').addEventListener('click', (event) => {
-    if (event.target === document.getElementById('entry-modal')) {
+    const dialog = document.querySelector('#entry-modal .modal-dialog');
+    if (event.target === document.getElementById('entry-modal') && dialog && !dialog.contains(event.target)) {
       closeEntryModal();
     }
   });
@@ -846,6 +847,9 @@ async function loadAdminUiHelp() {
 
 function renderEntryDetail(entry) {
   state.lastDetailEntry = entry;
+  renderRelationsControl(document.getElementById('detail-relations'), entry.relations || []);
+  renderSourceControl(document.getElementById('detail-source'), entry.source || null);
+
   const container = document.getElementById('entity-detail');
   const updated = entry.timestamps?.updatedUtc ? formatDate(entry.timestamps.updatedUtc) : 'never';
   container.innerHTML = `
