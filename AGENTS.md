@@ -24,9 +24,9 @@
 - Run `"$NEXPORT_WINDOTNETdotnet.exe" test` before pairing changes; document skipped tests with TODO comments referencing follow-up cases.
 
 ## Commit & Pull Request Guidelines
-- Conventional commits referencing the current case number (e.g., `case 202345 feat(memory): add streamable mcp transport`).
+- Use conventional commits that reference the relevant GitHub issue (e.g., `feat(memory): add streamable mcp transport (closes #1)`).
 - PRs must describe what changed, reference spec sections (`docs/spec.md`), include tests run, link the relevant `docs/plan.md` iteration, and attach installer/log artifacts when applicable.
-- Always ask for a case number before committing; do **not** auto-commit.
+- Always ask for an issue number before committing; do **not** auto-commit.
 
 ## Documentation & Planning Discipline
 - Update `docs/plan.md` with checkboxes/phases for every new epic; call out completed phases (0–7) and the next focus (streamable MCP implementation + schema). Link decisions/questions directly in the plan file.

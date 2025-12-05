@@ -2089,7 +2089,13 @@ function mountMonacoField(stateKey, containerId, fallbackId, value, language = '
       }
 
       let editor = state.monacoEditors[stateKey];
-      if (!editor) {
+      const domNode = editor && editor.getDomNode ? editor.getDomNode() : null;
+      const needsRecreate = !editor || !domNode || domNode.parentElement !== container;
+
+      if (needsRecreate) {
+        if (editor && typeof editor.dispose === 'function') {
+          editor.dispose();
+        }
         editor = monaco.editor.create(container, {
           value: value || '',
           language,

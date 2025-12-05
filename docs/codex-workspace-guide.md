@@ -1,164 +1,163 @@
-# Workspace-Level Codex MCP Configuration Guide
+# Codex MCP Configuration Guide (Global)
 
-This guide explains how to add a **workspace-local `.codex`
-configuration**, safely manage **API keys**, configure **timeouts**, and
-ensure everything stays **out of version control**.
+> **Updated 5 December 2025:** Codex no longer honors workspace-local
+> `.codex/config.toml` overrides. All MCP servers must be declared in the
+> global file at `~/.codex/config.toml`. Use per-project API keys and
+> separate server blocks to constrain access instead of per-repo
+> configuration files.
 
-------------------------------------------------------------------------
+This guide explains how to update the global Codex configuration, wire it
+up to the Quick Memory MCP server via either `mcp-proxy` or
+`mcp-remote`, and keep API keys isolated per project.
 
-## 1. Creating a Workspace-Local `.codex` Directory
+----------------------------------------------------------------------------
 
-Codex supports configuration overrides on a per-project basis by placing
-a `config.toml` file inside:
+## 1. Find the global config
 
-    ./.codex/config.toml
+Codex reads one config file:
 
-### Steps:
-
-``` bash
-cd /your-project
-mkdir -p .codex
-touch .codex/config.toml
+```
+~/.codex/config.toml
 ```
 
-------------------------------------------------------------------------
+Create it if it does not exist. All examples below go into that file.
 
-## 2. Example `config.toml` for a Project-Specific MCP Server
+----------------------------------------------------------------------------
 
-Place this inside `.codex/config.toml`:
+## 2. Recommended: `mcp-proxy` (no Node, supports headers)
 
-``` toml
+```toml
+[mcp_servers.quick-memory]
+command = "mcp-proxy"
+args = [
+  "http://localhost:5080/mcp",
+  "--transport", "streamablehttp",
+  "--no-verify-ssl",
+  "--headers", "X-Api-Key", "${QM_AUTH_TOKEN}",
+  "--stateless"
+]
+timeout_ms = 60000
+startup_timeout_ms = 60000
+```
+
+Notes:
+
+- `mcp-proxy` is Python-based and skips the OAuth dance, so it works well
+  inside WSL. Install it once via `uv tool install mcp-proxy` **from a WSL
+  terminal** so the binary lands in your Linux path (or run through
+  `uvx mcp-proxy …`).
+- Use `--headers` for multiple headers if needed (e.g., `Authorization`).
+- `--transport streamablehttp` enables schema streaming; remove it if you
+  only need classic HTTP.
+- `--stateless` is recommended for Quick Memory because auth is per
+  request; it also behaves better when multiple clients on the same
+  workstation share the same server.
+- `--debug` is available if you need verbose bridge logging; it is a
+  flag only (do **not** append `true` or any other value).
+
+If you prefer to keep keys in a small Codex-specific env table instead
+of your shell profile, you can also write:
+
+```toml
+[mcp_servers.quick-memory]
+command = "mcp-proxy"
+args = [
+  "http://localhost:5080/mcp",
+  "--headers", "X-Api-Key", "${QM_AUTH_TOKEN}",
+  "--stateless"
+]
+env = {"QM_AUTH_TOKEN"="/K/XodEPueCMorpZV8qKP47svleB0FQ9jmMVtIXO+Lw="}
+```
+
+The `env` table must be on a single line and both the variable name and
+value must be quoted.
+
+----------------------------------------------------------------------------
+
+## 3. Alternative: `mcp-remote` (Node bridge)
+
+```toml
 [mcp_servers.quick-memory]
 command = "npx"
 args = [
   "mcp-remote@latest",
   "http://localhost:5080/mcp",
-  "--header", "X-Api-Key:${QUICK_MEMORY_API_KEY}",
+  "--header", "X-Api-Key:/K/XodEPueCMorpZV8qKP47svleB0FQ9jmMVtIXO+Lw=",
   "--allow-http",
   "--debug"
 ]
-
-# Timeouts in milliseconds
-timeout_ms = 60000
-startup_timeout_ms = 60000
 ```
 
-### Notes:
+Tips:
 
--   `${QUICK_MEMORY_API_KEY}` is looked up from your environment
-    variables.
--   This configuration applies **only to the project folder it lives
-    in**.
--   It fully overrides any global MCP server with the same name.
+- The bridge still expects an OAuth-capable keyring; if your
+  environment lacks one (common inside WSL), prefer `mcp-proxy` instead
+  of `mcp-remote`.
+- If another process is already bound to the bridge port, pass
+  `"--port","9100"` (or any free port) and update Codex accordingly.
+- Cache files live in `~/.mcp-auth/mcp-remote-*/`; delete them when keys
+  rotate.
 
-------------------------------------------------------------------------
+----------------------------------------------------------------------------
 
-## 3. Adding `.codex` to `.gitignore`
+## 4. Handling multiple projects without workspace configs (mcp-remote)
 
-You do **not** want `.codex` (or any API keys) committed to version
-control.
+Because Codex only reads the global config, create **multiple server
+entries**—one per project key—and give them unique names:
 
-In the project root, edit `.gitignore`:
+```toml
+[mcp_servers.quick-memory-pr1]
+command = "mcp-proxy"
+args = [
+  "http://localhost:5080/mcp",
+  "--headers", "X-Api-Key", "${PR1_KEY}",
+  "--stateless"
+]
 
-``` bash
-touch .gitignore
+[mcp_servers.quick-memory-shared]
+command = "mcp-proxy"
+args = [
+  "http://localhost:5080/mcp",
+  "--headers", "X-Api-Key", "${SHARED_KEY}",
+  "--stateless"
+]
 ```
 
-Add:
+Workflow:
 
-``` gitignore
-# Codex workspace-specific configuration
-.codex/
-```
+1. Issue a project-limited API key in the SPA Users/Permissions blades.
+2. Export the key in your shell profile (or use a password manager that
+   can inject environment variables):
+   
+   ```bash
+   export PR1_KEY="project-1-api-key"
+   export SHARED_KEY="shared-readonly-api-key"
+   ```
+3. Toggle which server Codex uses by selecting it inside the UI, or keep
+   them all enabled if you routinely work across projects.
+4. When rotating keys, update the environment variables and restart
+   Codex; no repo-local edits are needed.
 
-This prevents accidental commits of MCP settings and secrets.
+----------------------------------------------------------------------------
 
-------------------------------------------------------------------------
+## 5. Keeping secrets out of version control
 
-## 4. Creating a Project-Limited API Key
+- The config lives in your home directory, so it is already outside your
+  Git repos. Do **not** copy it into individual projects.
+- Prefer environment variables for API keys (`${PR1_KEY}`) so the
+  global file never needs to contain raw secrets.
+- If you must keep plaintext keys, ensure your workstation disk is
+  encrypted and rotate keys frequently from the SPA.
 
-To avoid cross-project access, create a **least-privilege** service
-account dedicated only to this project.
+----------------------------------------------------------------------------
 
-### Requirements for this account:
+## 6. Quick checklist
 
--   Only permitted to access the specific project's memory records.
--   No cross-project read or write permissions.
--   No administrative privileges.
--   Generates its own API key.
+- [ ] Update `~/.codex/config.toml` with either the `mcp-proxy` or  `mcp-remote` block.
+- [ ] Create/rotate project-scoped API keys in the admin SPA.
+- [ ] Export the API keys as environment variables before launching Codex (or use a credential manager).
+- [ ] Restart Codex so it picks up the new configuration.
+- [ ] Confirm `listProjects` shows only the endpoints your key should access.
 
-### Example environment variable setup:
-
-**macOS / Linux (bash or zsh):**
-
-In `~/.bashrc` or `~/.zshrc`:
-
-``` bash
-export QUICK_MEMORY_API_KEY="your-project-limited-api-key"
-```
-
-Reload:
-
-``` bash
-source ~/.zshrc
-```
-
-**Windows PowerShell:**
-
-``` powershell
-[System.Environment]::SetEnvironmentVariable(
-  "QUICK_MEMORY_API_KEY",
-  "your-project-limited-api-key",
-  "User"
-)
-```
-
-Restart VS Code so Codex picks up the new variable.
-
-------------------------------------------------------------------------
-
-## 5. Directory Structure Example
-
-Your workspace might look like:
-
-    /your-project
-      .codex/
-        config.toml
-      src/
-      README.md
-      .gitignore
-
-Codex automatically merges this configuration on top of your global one
-at `~/.codex/config.toml`.
-
-------------------------------------------------------------------------
-
-## 6. How Codex Uses This Configuration
-
-When you open the workspace:
-
-1.  Codex loads global config from `~/.codex/config.toml`.
-2.  It loads `./.codex/config.toml`.
-3.  Servers defined in the project config override global ones of the
-    same name.
-4.  API key variables are substituted from the environment.
-5.  MCP tools become available **only inside this project**.
-
-This is the correct way to isolate access and behavior per repository.
-
-------------------------------------------------------------------------
-
-## 7. Quick Checklist
-
--   [x] Create `.codex/` folder in the project root\
--   [x] Add project-specific `config.toml`\
--   [x] Add `.codex/` to `.gitignore`\
--   [x] Create a project-limited service account\
--   [x] Store API key as `QUICK_MEMORY_API_KEY` environment variable\
--   [x] Restart VS Code\
--   [x] Use project-specific MCP tools safely and securely
-
-------------------------------------------------------------------------
-
-If you need a **template repo**, **multi-environment setup**, or
-**automated API key provisioning**, I can generate those too.
+Need help automating key rotation or managing many projects? Ask and we
+can script the bridge startup or generate shell snippets for you.

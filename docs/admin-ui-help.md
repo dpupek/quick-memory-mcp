@@ -33,10 +33,10 @@ Welcome to the Quick Memory Server admin console. This page collects quick tips 
 - Download recent log files as a zip; the service writes logs under `C:\Program Files\q-memory-mcp\logs`.
 
 ## Help
-- End-user help: `/admin/help/end-user`
-- Agent help: `/admin/help/agent`
+- End-user help: `/admin/help/end-user` (includes a Codex MCP quick start)
+- Agent help: `/admin/help/agent` (links to the MemoryEntry field reference)
 - MCP cheatsheet: `resource://quick-memory/cheatsheet`
-- Codex workspace guide (per-project configs): `/admin/help/codex-workspace` and `resource://quick-memory/codex-workspace`
+- Codex MCP guide (global config + mcp-proxy examples): `/admin/help/codex-workspace` and `resource://quick-memory/codex-workspace`
 
 Tips:
 - If auth fails, re-enter your API key; sessions persist across refresh.

@@ -1,15 +1,42 @@
 # Quick Memory Server End-User Help
 
 - [MCP short commands](#mcp-short-commands)
+- [Prompt recipes](#prompt-recipes)
 - [Admin SPA walkthrough](#admin-spa-walkthrough)
 - [Installing in Codex](#installing-in-codex)
 - [Troubleshooting](#troubleshooting)
 
-Use these steps when accessing the MCP memory server or the embedded admin SPA.
+Use these steps when accessing the Quick Memory MCP server or the embedded admin SPA.
+
+## Codex MCP quick start (global config)
+1. Install the Quick Memory service and confirm `GET /health` returns `"status": "Healthy"`.
+2. From a WSL terminal, install `mcp-proxy` with `uv tool install mcp-proxy` so it is on your Linux `PATH`.
+3. Open `~/.codex/config.toml` and add:
+   ```toml
+   [mcp_servers.quick-memory]
+   command = "mcp-proxy"
+   args = [
+     "http://localhost:5080/mcp",
+     "--transport", "streamablehttp",
+     "--no-verify-ssl",
+     "--headers", "X-Api-Key", "<your-api-key>",
+     "--stateless"
+   ]
+   timeout_ms = 60000
+   startup_timeout_ms = 60000
+   ```
+4. In the admin SPA, issue a project-limited API key (Users + Project Permissions) and paste it in place of `<your-api-key>`.
+5. Restart Codex, verify the **Quick Memory** MCP server is listed, then call `listProjects` to confirm the endpoints (projects) that key can see.
+
+`mcp-proxy` also supports a `--debug` flag for verbose logging if you
+need to troubleshoot MCP startup or HTTP calls. For more detailed
+Codex configuration patterns (multiple projects, env vars), see the
+Codex MCP guide (`docs/codex-workspace-guide.md` or
+`resource://quick-memory/codex-workspace`).
 
 ## MCP short commands
 1. Authenticate every request with `X-Api-Key: <your key>`.
-2. List endpoints: `GET /admin/endpoints`.
+2. List projects (endpoints): `GET /admin/endpoints`.
 3. Check health: `GET /health`; take note of `status`, `stores`, and `issues`.
 4. Search: `POST /mcp/{endpoint}/searchEntries` with optional `text`, `tags`, and `embedding`.
 5. Fetch a single entry: `GET /mcp/{endpoint}/entries/{id}`.
@@ -18,6 +45,50 @@ Use these steps when accessing the MCP memory server or the embedded admin SPA.
 8. Related entries: `POST /mcp/{endpoint}/relatedEntries` with `id` + `maxHops` to walk the relation graph.
 9. Backup: `POST /mcp/{endpoint}/backup` with `{ "mode": "differential" }` (admin tier).
 
+## Prompt recipes
+
+These are example prompts you can paste into Codex or ChatGPT to get an
+agent using Quick Memory effectively.
+
+### First-time setup prompt
+
+> "Please read **all** Quick Memory resources
+> (`resource://quick-memory/help`, `resource://quick-memory/entry-fields`,
+> `resource://quick-memory/codex-workspace`). I want you to start using
+> Quick Memory to store and retrieve context between sessions and
+> between agents. Summarize how entries are structured (id, project,
+> kind, tags, body, confidence, curationTier, isPermanent) and propose
+> a default tagging pattern for this project."
+
+### Cold start prompt (new session)
+
+> "Before doing anything else, call `listProjects` and
+> `listRecentEntries { endpoint: \"<project-key>\", maxResults: 20 }` to
+> catch up on the most recent entries. Summarize what you see and point
+> out any gaps you think we should fill with new entries (tests,
+> deployment, UX quirks, etc.). Then suggest which new entries we should
+> create today."
+
+### Recording a new lesson
+
+> "We just debugged an issue. Draft an `upsertEntry` payload for endpoint
+> `<project-key>` that captures:
+> – a concise title,
+> – `kind` (fact, procedure, or decision),
+> – 3–6 useful tags,
+> – a body that includes steps, root cause, and validation,
+> – any relations to existing entries by id.
+> Keep `isPermanent` false unless this is a canonical rule we never
+> expect to change."
+
+### Using Quick Memory during investigations
+
+> "Before proposing changes, search Quick Memory with
+> `searchEntries { endpoint: \"<project-key>\", text: \"<topic>\", maxResults:20 }`.
+> Summarize any relevant entries, note prior decisions, and only then
+> propose next steps. If nothing is found, explicitly say so and suggest
+> a new entry we should create when we are done."
+
 ## Admin SPA walkthrough
 1. Visit `/`, enter your API key, and the SPA will fetch the endpoints you have permissions on.
 2. The Projects tab shows each endpoint's metadata and lets you store `projectMetadata` entries that capture storage paths, include/shared settings, and descriptions.
@@ -25,50 +96,18 @@ Use these steps when accessing the MCP memory server or the embedded admin SPA.
 4. Users lets you add/update API keys and assign per-endpoint tiers (used by Codex or service bots).
 5. The Help tabs surface this page plus the agent usage doc so you never leave the console.
 
-## Installing in Codex
+-## Installing in Codex
 - Copy the `QuickMemoryServer.sample.toml` snippet, fill in your API key, and paste it into `QuickMemoryServer.toml` (same directory as the service exe). Restart the worker when you edit the file directly; the SPA Users tab writes this file for you after CRUD operations and each change is reloaded automatically.
-- Codex currently accesses HTTP MCP servers through the `mcp-remote` bridge. Add this block to `~/.codex/config.toml` (or your workspace-level config):
-  ```toml
-  [mcp_servers.quick-memory]
-  command = "npx"
-  args = [
-    "mcp-remote@latest",
-    "http://localhost:5080/mcp",
-    "--header","X-Api-Key:$AUTH_TOKEN",
-    "--allow-http",
-    "--debug"
-  ]
-  env = { AUTH_TOKEN = "${env:AUTH_TOKEN}" }
-  ```
-  - Export `AUTH_TOKEN` before launching Codex (`$env:AUTH_TOKEN="your-api-key"` on PowerShell, `export AUTH_TOKEN=your-api-key` on Bash/Zsh).
-  - `mcp-remote` stores auth metadata under `~/.mcp-auth`. Delete the corresponding folder if you rotate keys and need the bridge to prompt for the new value.
-- To scope an agent to a single project, issue it an API key that only has permissions on that project (configure via SPA Users/Permissions). The MCP base URL stays the same (`http://localhost:5080/mcp`); disallowed projects will be filtered by `listProjects` and blocked on use.
-- **Workspace-specific Codex config (per-project keys)**:
-  1. Create a dedicated API key (e.g., `projectA-bot`) and grant it access to exactly one project in the admin SPA.
-  2. Inside that project’s repo, create `.codex/config.toml`. Codex automatically prefers this file over `~/.codex/config.toml` when you open the folder.
-  3. Drop the bridge definition directly in the workspace config so the key never leaves that repo:
-     ```toml
-     # <workspace>/.codex/config.toml
-     [mcp_servers.quick-memory]
-     command = "npx"
-     args = [
-       "mcp-remote@latest",
-       "http://localhost:5080/mcp",
-       "--header","X-Api-Key:${env:PROJECT_A_KEY}",
-       "--allow-http"
-     ]
-     env = { PROJECT_A_KEY = "paste-the-projectA-key-here" }
-     ```
-     - You can also keep secrets out of source control by referencing a workspace-specific env var instead of inlining the value (e.g., run `export PROJECT_A_KEY=...` before launching Codex, or store it in `.codex/secrets.toml` which Git ignores by default).
-     - Repeat this pattern for other projects by cloning the repo, creating `.codex/config.toml`, and pointing it at an API key that only knows about that project. Codex will automatically limit the MCP tools exposed in that workspace to whatever the API key can see.
-- Always add `.codex/` (and any `.codex/*.toml` secrets) to your project’s `.gitignore` so API keys never end up in version control. If the file already exists, append:
-  ```
-  # Codex workspace config
-  .codex/
-  ```
-- Need a deeper walkthrough? See [Codex workspace guide](codex-workspace-guide.md) for screenshots, timeout knobs, and environment-variable tips.
+- Codex accesses the Quick Memory MCP server using globally configured MCP
+  servers in `~/.codex/config.toml`. For up-to-date examples using
+  `mcp-proxy` (recommended) or `mcp-remote`, refer to the Codex MCP
+  guide (`docs/codex-workspace-guide.md` or
+  `resource://quick-memory/codex-workspace`).
+- To scope an agent to a single project, issue a project-limited API
+  key (via Users + Project Permissions) and use separate Codex server
+  blocks per project as described in that guide.
 - When calling `upsertEntry`, leave `id` empty to let the server generate a stable `<project>:<guid>` identifier automatically.
-- Use the Overview tab in the admin SPA to verify `/health`, copy the user-specific snippet, and ensure the listed endpoints match the ones you configured for Codex. This page also contains the current API key snippet so you can rehydrate `.codex/config.toml` or `QuickMemoryServer.toml` when rotating keys.
+- Use the Overview tab in the admin SPA to verify `/health`, copy the user-specific snippet, and ensure the listed endpoints match the ones you configured for Codex. This page also contains the current API key snippet so you can refresh `~/.codex/config.toml` or `QuickMemoryServer.toml` when rotating keys.
 
 ## Troubleshooting
 - **401 from SPA or MCP tools**: your session probably expired. Re-enter the API key (SPA) or restart Codex so `mcp-remote` re-reads the key. Check that the key still exists in the Users tab and retains the right tiers.

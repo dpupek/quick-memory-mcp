@@ -1,8 +1,8 @@
 # Quick Memory Server MCP Usage (MCP-first)
 
 ## MCP Quickstart
-- `listProjects` – discover allowed endpoints.
-- `listRecentEntries` with `{ endpoint, maxResults }` – browse latest entries (no query needed).
+- `listProjects` – discover allowed projects (endpoints) for the current API key.
+- `listRecentEntries` with `{ endpoint, maxResults }` – browse latest entries in that project (no query needed).
 - `searchEntries` with `{ endpoint, text, includeShared, maxResults }` – focused retrieval.
 - `getEntry` / `listEntries` – fetch one or all entries in a project.
 - `upsertEntry` / `patchEntry` / `deleteEntry` – mutate entries (permanent requires Admin; `entry.project` must match endpoint).
@@ -10,22 +10,48 @@
 - `requestBackup` with `{ endpoint, mode }` (Admin) – queue backup.
 - `health` – server health report.
 
-## MCP Configuration (mcp-remote)
-```toml
-[mcp_servers.quick-memory]
-command = "npx"
-args = [
-  "mcp-remote@latest",
-  "http://localhost:5080/mcp",
-  "--header","X-Api-Key:$AUTH_TOKEN",
-  "--allow-http",
-  "--debug"
-]
-env = { AUTH_TOKEN = "<your-api-key>" }
-```
-Notes:
-- Delete `~/.mcp-auth` after rotating keys to re-auth.
-- Use project-scoped API keys to limit agent reach; disallowed projects are filtered/blocked.
+## First-time agent onboarding (Codex / ChatGPT)
+
+When you connect an agent to the Quick Memory MCP server for the first
+time in a repo, use this flow to “prime” it before doing real work:
+
+1. **Verify connectivity**
+   - Call `health` and check that the status is `Healthy` and that at
+     least one store is listed.
+   - Call `listProjects` and note the project keys you are allowed to
+     use (e.g., `projectA`, `shared`, `pr-1-3-X`).
+2. **Pick a default project**
+   - Ask the user which project key should be treated as the
+     **default endpoint** for this repo (for example, `pr-1-3-X`).
+   - Remember that choice for the rest of the session and mention it in
+     your summaries.
+3. **Read the field guide and help resources**
+   - Fetch `resource://quick-memory/help` and skim the quickstart and
+     recipes.
+   - Fetch `resource://quick-memory/entry-fields` and summarize the
+     `MemoryEntry field reference` so you understand how `id`, `project`,
+     `kind`, `tags`, `confidence`, `curationTier`, and `isPermanent`
+     affect behavior.
+4. **Warm up with recent entries**
+   - Call `listRecentEntries { endpoint: <default>, maxResults: 20 }`
+     and summarize what kinds of memories already exist for this
+     project.
+   - Ask the user if there are any gaps they want you to focus on
+     (e.g., “tests”, “deployment”, “RichTextBox quirks”).
+5. **Confirm how to record new lessons**
+   - Propose a pattern for new entries (title, kind, tags, relations,
+     epicSlug/epicCase) based on the existing data.
+   - Ask whether they want you to keep most entries non-permanent by
+     default and when `isPermanent=true` should be used.
+6. **Optional: update the client’s AGENTS.md**
+   - Offer to add or update the **Quick Memory Usage** block in the
+     client repo’s `AGENTS.md` using the pattern below. Only proceed
+     after explicit confirmation from the user.
+
+> For Codex configuration examples (global `~/.codex/config.toml` using
+> `mcp-proxy` or `mcp-remote`), see
+> `docs/codex-workspace-guide.md` or
+> `resource://quick-memory/codex-workspace`.
 
 ## Common Payload Shapes
 - **Relations:** array of `{ "type": "ref", "targetId": "project:key" }`.
@@ -103,3 +129,26 @@ Notes: project must equal endpoint; permanent entries require Admin.
 - If auth fails, re-enter the API key; sessions persist in the SPA.
 - Keys/slugs must match `^[A-Za-z0-9_-]+$`; storage defaults to `global.storageBasePath` + key if omitted.
 - Use `listRecentEntries` for cold-start browsing; then `searchEntries` for precision.
+
+## Recommending client-side AGENTS.md guidance
+
+When you’re acting as an MCP-aware agent inside a client (Codex, ChatGPT, etc.), you should **offer** to add a short Quick Memory section to the project’s `AGENTS.md` (or equivalent) so future agents inherit the same rules.
+
+Suggested pattern (adjust names/IDs per project):
+
+```markdown
+## Quick Memory Usage
+
+* **Project selection:** Premier Responder 1.3.x work should be logged under the `pr-1-3-X` endpoint (use `listProjects` if you forget the slug). Reserve `nc-7-x` or other projects for their respective branches; don’t cross-post.
+* **Common flow:** `listRecentEntries { endpoint:\"pr-1-3-X\", maxResults:20 }` to catch up, `searchEntries` for focused lookups, then `upsertEntry`/`patchEntry` to capture new lessons. Include concise titles, tags like `rtf`, `hyperlinks`, `tests`, and reference any relevant FogBugz/case numbers.
+* **Cold starts:** at the beginning of every session (especially if you weren’t the previous agent), run `listRecentEntries` before doing any work so you inherit the newest lessons and avoid duplicating investigations.
+* **What to record:** build/test recipes that differ from the norms, control quirks, parser behaviors, stakeholder decisions, and troubleshooting guidance future agents need. Prefer facts/notes over raw logs; attach summaries instead of pasting entire transcripts.
+* **Operational tips:** if a Quick Memory command times out (e.g., idle connection), restart the chat/session to reset the MCP client, then retry. You can also re-run `listProjects` to confirm connectivity before another `upsertEntry`.
+* **Security:** the endpoint enforces per-project access. Keep entries non-permanent unless the user explicitly requests archival, and avoid storing credentials or customer PHI.
+```
+
+Agent behavior:
+- Ask the user:  
+  - which Quick Memory endpoint should be treated as the **default project** for this repo (e.g., `pr-1-3-X`), and  
+  - whether they want you to add/update the `Quick Memory Usage` block in `AGENTS.md`.
+- Only propose edits; do not silently change the client’s repo. Once confirmed, update `AGENTS.md` with the project-specific endpoint, examples, and any house rules the user calls out.
