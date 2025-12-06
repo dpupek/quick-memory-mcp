@@ -28,6 +28,20 @@
   - `reader`: read/search only.
 - ONNX model artifacts for embeddings and summaries are deployed with the installer under `Models/embeddings.onnx` and `Models/summarizer.onnx`; config references them via relative paths to support portable installs.
 
+### System endpoints
+
+The server may define system/locked endpoints that are not intended for
+general project use. One such endpoint is:
+
+- `prompts-repository` – a dedicated store for curated MCP prompt
+  templates. Entries here:
+  - Have `kind = "prompt"` and a `prompt-template` tag.
+  - Use category tags (e.g., `category:onboarding`) to group prompts.
+  - Are typically marked `isPermanent = true` and edited only by
+    admins.
+  - Are exposed via the MCP `prompts` capability rather than through
+    normal project-scoped keys.
+
 ## Component Architecture
 - **MemoryService** (`BackgroundService`): orchestrates preload, scheduled flushes, and exposes health state.
 - **MemoryRouter**: resolves MCP endpoint/project to the appropriate `MemoryStore` and shared context.

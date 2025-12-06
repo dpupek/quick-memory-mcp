@@ -51,3 +51,66 @@ Agents should be able to:
   documented argument schema and placeholder syntax.
 - Fine-grained per-prompt ACLs beyond the existing endpoint + tier model
   (project-scoped keys never see `qm-prompts` directly).
+
+## Prompt Entry Shape (Prompts Repository)
+
+All curated prompts live in the `prompts-repository` endpoint and use a
+consistent shape:
+
+- `project` – must be `prompts-repository`.
+- `kind` – must be `"prompt"` to be eligible for `prompts/*`.
+- `tags` – must include:
+  - `prompt-template` (marks the entry as a prompt), and
+  - One or more category tags, e.g.:
+    - `category:onboarding`
+    - `category:cold-start`
+    - `category:lesson`
+    - `category:troubleshooting`
+- `isPermanent` – should be `true` for all curated prompts; deletions
+  require admin + `force`.
+- `title` – human-readable name for the recipe; surfaced as the MCP
+  prompt description.
+- `id` – stable slug used as the MCP `prompt.name`, e.g.:
+  - `onboarding/first-time`
+  - `cold-start/project`
+  - `lessons/new-entry`
+
+### Argument Metadata (`prompt-args` Block)
+
+Prompt arguments are defined inside the entry `body` using a small JSON
+block at the top:
+
+```markdown
+```prompt-args
+[
+  { "name": "projectKey", "description": "Quick Memory endpoint key", "required": true },
+  { "name": "topic", "description": "Area to investigate", "required": false }
+]
+```
+
+Use Quick Memory for project {{projectKey}}. Focus on {{topic}}…
+```
+
+Rules:
+
+- The `prompt-args` block:
+  - Must be valid JSON array of objects.
+  - Each object must contain at least `"name"` and `"description"`.
+  - `"required": true|false` is optional; default is `false`.
+- The block is stripped from the body before the template is returned
+  to the model.
+- MCP `prompts/list` parses this block into `arguments[]` for each
+  prompt.
+
+### Placeholder Syntax in Body
+
+- Placeholders use double curly braces: `{{argName}}`.
+- `argName` must match one of the `"name"` values defined in the
+  `prompt-args` block.
+- When `prompts/get` is called:
+  - Required arguments must be provided; missing ones cause a clear
+    error (no silent empty substitutions).
+  - Provided values are substituted into the template body wherever
+    `{{argName}}` appears.
+- Extra arguments (not referenced in the body) are allowed but ignored;
+  they may be useful if we extend templates later.

@@ -119,6 +119,60 @@ Notes: project must equal endpoint; permanent entries require Admin.
 - `patchEntry` accepts the same fields but only replaces those present; relations/source payloads must remain valid JSON objects/arrays.
 - Permanent entries can only be deleted with `deleteEntry(..., force: true)` by Admin-tier keys.
 
+## Prompt templates via MCP (prompts-repository)
+
+Quick Memory exposes curated prompt templates through the MCP
+`prompts` capability, backed by entries in a dedicated
+`prompts-repository` endpoint.
+
+- Prompt entries:
+  - Live in `prompts-repository` with `kind = "prompt"`.
+  - Include a `prompt-template` tag plus one or more `category:*` tags
+    (e.g., `category:onboarding`, `category:cold-start`).
+  - Use a stable `id` that becomes the MCP `prompt.name`
+    (e.g., `onboarding/first-time`).
+- Argument metadata:
+  - Defined in the entry `body` using a `prompt-args` JSON block at the
+    top of the markdown, for example:
+
+    ```markdown
+    ```prompt-args
+    [
+      { "name": "projectKey", "description": "Quick Memory endpoint key", "required": true }
+    ]
+    ```
+
+    Use Quick Memory for project {{projectKey}}…
+    ```
+
+  - The server parses this block for `prompts/list` and strips it
+    before the template text is sent to the model.
+- Placeholder syntax:
+  - Template bodies use `{{argName}}` where `argName` matches an
+    argument `"name"` in the `prompt-args` block.
+  - `prompts/get` performs substitution using the provided arguments and
+    returns a `messages[]` payload suitable for priming the agent.
+
+Agents should prefer `prompts/list` + `prompts/get` to fetch these
+recipes instead of copying prompt text from static docs.
+
+Recommended flow for agents:
+
+- For **first-time** usage on a repo:
+  - Call the prompt tool equivalent of `onboarding/first-time` with
+    `projectKey = "<default-endpoint>"` to bootstrap your behavior.
+- For **cold starts**:
+  - Use the `cold-start/project` prompt with the same `projectKey` at
+    the beginning of a new session.
+- After **investigations**:
+  - Use `lessons/new-entry` or `investigation/troubleshoot` to draft
+    `upsertEntry` payloads and confirm them with the user before
+    sending.
+- For **AGENTS.md guidance**:
+  - Use `onboarding/agents-guidance` to propose a `Quick Memory Usage`
+    section for the client repo, then follow the confirmation rules in
+    the section below.
+
 ## Resources
 - `resource://quick-memory/help` – main MCP help + quickstart.
 - `resource://quick-memory/end-user-help` – end-user guide.

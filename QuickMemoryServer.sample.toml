@@ -28,6 +28,14 @@ storagePath = "MemoryStores/projectA"
 includeInSearchByDefault = true
 inheritShared = true
 
+[endpoint."prompts-repository"]
+slug = "prompts-repository"
+name = "Prompts Repository"
+description = "Curated MCP prompt templates (system endpoint)"
+storagePath = "MemoryStores/prompts-repository"
+includeInSearchByDefault = false
+inheritShared = false
+
 [users.alice]
 apiKey = "gsk_replace_me"
 defaultTier = "Admin"

@@ -892,6 +892,7 @@ function renderEntryDetail(entry) {
 
   const container = document.getElementById('entity-detail');
   const updated = entry.timestamps?.updatedUtc ? formatDate(entry.timestamps.updatedUtc) : 'never';
+  const isPromptsRepo = entry.project === 'prompts-repository';
   container.innerHTML = `
     <div class="d-flex justify-content-between">
       <div>
@@ -901,6 +902,12 @@ function renderEntryDetail(entry) {
         </p>
       </div>
     </div>
+    ${isPromptsRepo ? `
+    <div class="alert alert-warning mt-2 mb-0">
+      <strong>System prompts:</strong> entries in <code>prompts-repository</code> back MCP prompt templates.
+      Avoid deleting them; edit carefully and keep <code>kind = \"prompt\"</code>, the <code>prompt-template</code> tag,
+      and any <code>prompt-args</code> blocks valid.
+    </div>` : ''}
     <form id="entry-detail-form" class="mt-3">
       <div class="row g-2">
         <div class="col-md-4">
@@ -986,7 +993,9 @@ function renderEntryDetail(entry) {
       </div>
       <div class="mt-3 d-flex gap-2">
         <button type="button" class="btn btn-success" data-action="update-entry">Save entry</button>
-        <button type="button" class="btn btn-outline-danger" data-action="delete-entry" data-entry-id="${entry.id}">Delete entry</button>
+        ${isPromptsRepo
+          ? '<button type="button" class="btn btn-outline-danger" disabled title="Prompts in prompts-repository cannot be hard-deleted; retire or edit them instead.">Delete entry</button>'
+          : `<button type="button" class="btn btn-outline-danger" data-action="delete-entry" data-entry-id="${entry.id}">Delete entry</button>`}
       </div>
     </form>
   `;
@@ -1271,6 +1280,11 @@ async function deleteEntry(entryId) {
   const project = state.lastDetailEntry?.project || state.allowedEndpoints[0]?.key;
   if (!project) {
     setStatus('Project context missing', 'danger');
+    return;
+  }
+
+  if (project === 'prompts-repository') {
+    setStatus('Prompts in prompts-repository cannot be hard-deleted; retire or edit them instead.', 'warning');
     return;
   }
 
@@ -2089,30 +2103,20 @@ function mountMonacoField(stateKey, containerId, fallbackId, value, language = '
       }
 
       let editor = state.monacoEditors[stateKey];
-      const domNode = editor && editor.getDomNode ? editor.getDomNode() : null;
-      const needsRecreate = !editor || !domNode || domNode.parentElement !== container;
-
-      if (needsRecreate) {
-        if (editor && typeof editor.dispose === 'function') {
-          editor.dispose();
-        }
-        editor = monaco.editor.create(container, {
-          value: value || '',
-          language,
-          theme: 'vs-light',
-          minimap: { enabled: false },
-          automaticLayout: true,
-          wordWrap: 'on',
-          scrollBeyondLastLine: false
-        });
-        state.monacoEditors[stateKey] = editor;
-      } else {
-        editor.setValue(value || '');
-        editor.layout();
-        if (language && editor.getModel()) {
-          monaco.editor.setModelLanguage(editor.getModel(), language);
-        }
+      if (editor && typeof editor.dispose === 'function') {
+        editor.dispose();
       }
+
+      editor = monaco.editor.create(container, {
+        value: value || '',
+        language,
+        theme: 'vs-light',
+        minimap: { enabled: false },
+        automaticLayout: true,
+        wordWrap: 'on',
+        scrollBeyondLastLine: false
+      });
+      state.monacoEditors[stateKey] = editor;
     })
     .catch((err) => console.error('monaco field failed', err));
 }

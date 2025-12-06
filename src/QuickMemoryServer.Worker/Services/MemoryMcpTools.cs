@@ -21,6 +21,7 @@ namespace QuickMemoryServer.Worker.Services;
 public static class MemoryMcpTools
 {
     private static readonly JsonSerializerOptions JsonOptions = new();
+    private const string PromptsEndpointKey = "prompts-repository";
 
 [McpServerTool(Name = "searchEntries", Title = "Search memory entries", ReadOnly = true)]
 [McpMeta("description", "Hybrid text + vector search across the endpoint (optionally including shared memory).")]
@@ -261,43 +262,49 @@ public static async Task<object> UpsertEntry(
         RequestContext<CallToolRequestParams> context,
         CancellationToken cancellationToken)
     {
-    if (router.ResolveStore(endpoint) is not MemoryStore store)
-    {
-        return ErrorResult($"Endpoint '{endpoint}' is not available.");
-    }
+        if (router.ResolveStore(endpoint) is not MemoryStore store)
+        {
+            return ErrorResult($"Endpoint '{endpoint}' is not available.");
+        }
 
-    var existing = store.FindEntry(id);
-    if (existing is null)
-    {
-        return ErrorResult("not-found");
-    }
+        var existing = store.FindEntry(id);
+        if (existing is null)
+        {
+            return ErrorResult("not-found");
+        }
 
-    var relationsError = ValidateRelations(patch.Relations);
-    if (relationsError is not null)
-    {
-        return ErrorResult(relationsError);
-    }
+        var relationsError = ValidateRelations(patch.Relations);
+        if (relationsError is not null)
+        {
+            return ErrorResult(relationsError);
+        }
 
-    var sourceError = ValidateSource(patch.Source);
-    if (sourceError is not null)
-    {
-        return ErrorResult(sourceError);
-    }
+        var sourceError = ValidateSource(patch.Source);
+        if (sourceError is not null)
+        {
+            return ErrorResult(sourceError);
+        }
 
-    var updated = existing with
-    {
-        Title = patch.Title ?? existing.Title,
-        Tags = patch.Tags ?? existing.Tags,
-        CurationTier = patch.CurationTier ?? existing.CurationTier,
-        IsPermanent = patch.IsPermanent ?? existing.IsPermanent,
-        Pinned = patch.Pinned ?? existing.Pinned,
-        Confidence = patch.Confidence ?? existing.Confidence,
-        Body = patch.Body ?? existing.Body,
-        EpicSlug = patch.EpicSlug ?? existing.EpicSlug,
-        EpicCase = patch.EpicCase ?? existing.EpicCase,
-        Relations = patch.Relations is null ? existing.Relations : patch.Relations.Deserialize<MemoryRelation[]>(JsonOptions),
-        Source = patch.Source is null ? existing.Source : patch.Source.Deserialize<MemorySource>(JsonOptions)
-    };
+        var updated = existing with
+        {
+            Title = patch.Title ?? existing.Title,
+            Tags = patch.Tags ?? existing.Tags,
+            CurationTier = patch.CurationTier ?? existing.CurationTier,
+            IsPermanent = patch.IsPermanent ?? existing.IsPermanent,
+            Pinned = patch.Pinned ?? existing.Pinned,
+            Confidence = patch.Confidence ?? existing.Confidence,
+            Body = patch.Body ?? existing.Body,
+            EpicSlug = patch.EpicSlug ?? existing.EpicSlug,
+            EpicCase = patch.EpicCase ?? existing.EpicCase,
+            Relations = patch.Relations is null ? existing.Relations : patch.Relations.Deserialize<MemoryRelation[]>(JsonOptions),
+            Source = patch.Source is null ? existing.Source : patch.Source.Deserialize<MemorySource>(JsonOptions)
+        };
+
+        var promptValidationError = ValidatePromptEntry(updated);
+        if (promptValidationError is not null)
+        {
+            return ErrorResult(promptValidationError);
+        }
 
         var tier = McpAuthorizationContext.GetTier(context);
         if (updated.IsPermanent && tier != PermissionTier.Admin)
@@ -321,6 +328,11 @@ public static async Task<object> DeleteEntry(
         RequestContext<CallToolRequestParams> context,
         CancellationToken cancellationToken)
     {
+        if (string.Equals(endpoint, PromptsEndpointKey, StringComparison.OrdinalIgnoreCase))
+        {
+            return ErrorResult("prompt-delete-disallowed: prompts in prompts-repository should be retired or edited, not hard-deleted.");
+        }
+
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
             return ErrorResult($"Endpoint '{endpoint}' is not available.");
@@ -397,6 +409,142 @@ public static HealthReport GetHealth(HealthReporter healthReporter)
         return healthReporter.GetReport();
     }
 
+[McpServerTool(Name = "listPromptTemplates", Title = "List curated prompt templates", ReadOnly = true)]
+[McpMeta("description", "List curated MCP prompt templates backed by entries in the prompts-repository endpoint.")]
+[McpMeta("tier", "reader")]
+public static PromptListResponse ListPromptTemplates(MemoryRouter router)
+{
+    if (router.ResolveStore(PromptsEndpointKey) is not MemoryStore store)
+    {
+        return new PromptListResponse(Array.Empty<PromptListItem>());
+    }
+
+    var entries = store.Snapshot()
+        .Where(e =>
+            string.Equals(e.Kind, "prompt", StringComparison.OrdinalIgnoreCase) &&
+            e.Tags.Any(t => string.Equals(t, "prompt-template", StringComparison.OrdinalIgnoreCase)))
+        .ToArray();
+
+    var prompts = new List<PromptListItem>();
+
+    foreach (var entry in entries)
+    {
+        if (!TryGetPromptBody(entry, out var text))
+        {
+            continue;
+        }
+
+        if (!TryExtractPromptArgs(text, out var args, out var strippedBody))
+        {
+            // Even if there is no args block or it fails to parse,
+            // we still expose the prompt with zero arguments.
+        }
+
+        var categories = entry.Tags
+            .Where(t => t.StartsWith("category:", StringComparison.OrdinalIgnoreCase))
+            .Select(t => t.Substring("category:".Length))
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .ToArray();
+
+        prompts.Add(new PromptListItem(
+            Name: entry.Id,
+            Title: entry.Title ?? entry.Id,
+            Categories: categories,
+            Arguments: args));
+    }
+
+    return new PromptListResponse(prompts);
+}
+
+[McpServerTool(Name = "getPromptTemplate", Title = "Get a curated prompt template", ReadOnly = true)]
+[McpMeta("description", "Resolve a curated prompt template by name with argument substitution.")]
+[McpMeta("tier", "reader")]
+public static object GetPromptTemplate(
+    string name,
+    Dictionary<string, string>? arguments,
+    MemoryRouter router)
+{
+    if (string.IsNullOrWhiteSpace(name))
+    {
+        return ErrorResult("prompt-name-required");
+    }
+
+    if (router.ResolveStore(PromptsEndpointKey) is not MemoryStore store)
+    {
+        return ErrorResult("prompts-repository-not-configured");
+    }
+
+    var entry = store.Snapshot()
+        .FirstOrDefault(e => string.Equals(e.Id, name, StringComparison.OrdinalIgnoreCase));
+
+    if (entry is null)
+    {
+        return ErrorResult("prompt-not-found");
+    }
+
+    if (!TryGetPromptBody(entry, out var text))
+    {
+        return ErrorResult("prompt-body-missing");
+    }
+
+    if (!TryExtractPromptArgs(text, out var args, out var templateBody))
+    {
+        // No args block; treat as zero-argument prompt.
+        args = Array.Empty<PromptArgument>();
+        templateBody = text;
+    }
+
+    var requiredArgs = args.Where(a => a.Required).Select(a => a.Name).ToArray();
+    var missing = requiredArgs
+        .Where(r => arguments == null || !arguments.ContainsKey(r) || string.IsNullOrWhiteSpace(arguments[r]))
+        .ToArray();
+
+    if (missing.Length > 0)
+    {
+        return ErrorResult("missing-arguments: " + string.Join(",", missing));
+    }
+
+    var resolved = templateBody;
+    if (arguments is not null)
+    {
+        foreach (var arg in args)
+        {
+            if (!arguments.TryGetValue(arg.Name, out var value) || value is null)
+            {
+                continue;
+            }
+
+            var placeholder = "{{" + arg.Name + "}}";
+            resolved = resolved.Replace(placeholder, value, StringComparison.Ordinal);
+        }
+    }
+
+    var categories = entry.Tags
+        .Where(t => t.StartsWith("category:", StringComparison.OrdinalIgnoreCase))
+        .Select(t => t.Substring("category:".Length))
+        .Where(t => !string.IsNullOrWhiteSpace(t))
+        .ToArray();
+
+    var response = new PromptGetResponse(
+        Name: entry.Id,
+        Title: entry.Title ?? entry.Id,
+        Categories: categories,
+        Arguments: args,
+        Messages: new[]
+        {
+            new PromptMessage(
+                Role: "user",
+                Content: new[]
+                {
+                    new PromptMessageContent(
+                        Type: "text",
+                        Text: resolved)
+                })
+        });
+
+    return response;
+}
+
     private static CallToolResult ErrorResult(string message)
     {
         return new CallToolResult
@@ -435,6 +583,147 @@ public static HealthReport GetHealth(HealthReporter healthReporter)
         [property: JsonPropertyName("storagePath")] string StoragePath,
         [property: JsonPropertyName("inheritShared")] bool InheritShared,
         [property: JsonPropertyName("includeInSearchByDefault")] bool IncludeInSearchByDefault);
+
+    public sealed record PromptArgument(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("description")] string Description,
+        [property: JsonPropertyName("required")] bool Required);
+
+    public sealed record PromptListItem(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("title")] string Title,
+        [property: JsonPropertyName("categories")] IReadOnlyList<string> Categories,
+        [property: JsonPropertyName("arguments")] IReadOnlyList<PromptArgument> Arguments);
+
+    public sealed record PromptListResponse(
+        [property: JsonPropertyName("prompts")] IReadOnlyList<PromptListItem> Prompts);
+
+    public sealed record PromptMessageContent(
+        [property: JsonPropertyName("type")] string Type,
+        [property: JsonPropertyName("text")] string Text);
+
+    public sealed record PromptMessage(
+        [property: JsonPropertyName("role")] string Role,
+        [property: JsonPropertyName("content")] IReadOnlyList<PromptMessageContent> Content);
+
+    public sealed record PromptGetResponse(
+        [property: JsonPropertyName("name")] string Name,
+        [property: JsonPropertyName("title")] string Title,
+        [property: JsonPropertyName("categories")] IReadOnlyList<string> Categories,
+        [property: JsonPropertyName("arguments")] IReadOnlyList<PromptArgument> Arguments,
+        [property: JsonPropertyName("messages")] IReadOnlyList<PromptMessage> Messages);
+
+    private static string? ValidatePromptEntry(MemoryEntry entry)
+    {
+        if (!string.Equals(entry.Project, PromptsEndpointKey, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        if (!string.Equals(entry.Kind, "prompt", StringComparison.OrdinalIgnoreCase))
+        {
+            return "prompts-repository entries must use kind='prompt'.";
+        }
+
+        if (entry.Tags is null || !entry.Tags.Any(t => string.Equals(t, "prompt-template", StringComparison.OrdinalIgnoreCase)))
+        {
+            return "prompts-repository entries must include the 'prompt-template' tag.";
+        }
+
+        if (!TryGetPromptBody(entry, out var text))
+        {
+            return "prompts-repository entries must have a body with text or { text: \"...\" }.";
+        }
+
+        const string fence = "```prompt-args";
+        if (text.IndexOf(fence, StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            if (!TryExtractPromptArgs(text, out _, out _))
+            {
+                return "invalid prompt-args block: must be valid JSON inside ```prompt-args ``` fencing.";
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TryGetPromptBody(MemoryEntry entry, out string text)
+    {
+        text = string.Empty;
+
+        if (entry.Body is null)
+        {
+            return false;
+        }
+
+        if (entry.Body is JsonValue value && value.TryGetValue(out string? str) && !string.IsNullOrWhiteSpace(str))
+        {
+            text = str;
+            return true;
+        }
+
+        if (entry.Body is JsonObject obj &&
+            obj.TryGetPropertyValue("text", out var textNode) &&
+            textNode is JsonValue tv &&
+            tv.TryGetValue(out string? textValue) &&
+            !string.IsNullOrWhiteSpace(textValue))
+        {
+            text = textValue;
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryExtractPromptArgs(
+        string body,
+        out IReadOnlyList<PromptArgument> arguments,
+        out string strippedBody)
+    {
+        const string fence = "```prompt-args";
+        arguments = Array.Empty<PromptArgument>();
+        strippedBody = body;
+
+        var fenceStart = body.IndexOf(fence, StringComparison.OrdinalIgnoreCase);
+        if (fenceStart < 0)
+        {
+            return false;
+        }
+
+        var firstNewline = body.IndexOf('\n', fenceStart + fence.Length);
+        if (firstNewline < 0)
+        {
+            return false;
+        }
+
+        var fenceEnd = body.IndexOf("```", firstNewline + 1, StringComparison.Ordinal);
+        if (fenceEnd < 0)
+        {
+            return false;
+        }
+
+        var jsonSegment = body.Substring(firstNewline + 1, fenceEnd - (firstNewline + 1)).Trim();
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<List<PromptArgument>>(jsonSegment, JsonOptions);
+            if (parsed is null)
+            {
+                return false;
+            }
+
+            arguments = parsed;
+        }
+        catch
+        {
+            return false;
+        }
+
+        var before = body.Substring(0, fenceStart);
+        var after = body.Substring(fenceEnd + 3);
+        strippedBody = (before + after).Trim();
+
+        return true;
+    }
 
 private static string? ValidateRelations(object? relations)
 {
@@ -533,6 +822,14 @@ internal static bool TryPrepareEntry(string endpoint, MemoryEntry entry, out Mem
     {
         var generatedId = $"{project}:{Guid.NewGuid():N}";
         normalized = normalized with { Id = generatedId };
+    }
+
+    var promptValidationError = ValidatePromptEntry(normalized);
+    if (promptValidationError is not null)
+    {
+        prepared = entry;
+        error = promptValidationError;
+        return false;
     }
 
     prepared = normalized;
