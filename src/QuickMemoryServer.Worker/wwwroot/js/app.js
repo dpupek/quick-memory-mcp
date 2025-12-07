@@ -1841,6 +1841,9 @@ async function handleLogin(event) {
   renderProjectsList();
   updateEntityProjectSelect();
   renderConfigInstructions();
+
+  // Initialize import editor with Monaco in plain-text mode
+  mountMonacoField('importContentEditor', 'import-content-editor', 'import-content', '');
   loadOverview();
   loadAdminData();
 }
@@ -2154,7 +2157,7 @@ async function runImport() {
 
   const mode = document.getElementById('import-mode').value || 'upsert';
   const dryRun = document.getElementById('import-dryrun').checked;
-  const content = document.getElementById('import-content').value;
+  const content = readMonacoField('importContentEditor', 'import-content');
 
   if (!content || !content.trim()) {
     setStatus('Paste JSONL or JSON content to import', 'danger');
