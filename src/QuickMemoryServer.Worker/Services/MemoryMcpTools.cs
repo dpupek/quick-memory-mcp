@@ -407,7 +407,8 @@ public static ListProjectsResponse ListProjects(IOptionsMonitor<ServerOptions> o
 public static object ColdStart(
     string endpoint,
     string? epicSlug,
-    MemoryRouter router)
+    MemoryRouter router,
+    IOptionsMonitor<ServerOptions> optionsMonitor)
 {
     if (router.ResolveStore(endpoint) is not MemoryStore store)
     {
@@ -416,7 +417,21 @@ public static object ColdStart(
 
     var snapshot = store.Snapshot();
 
-    var coldStartEntries = snapshot
+    var includeShared = optionsMonitor.CurrentValue.Endpoints.TryGetValue(endpoint, out var endpointOptions)
+        ? endpointOptions.IncludeInSearchByDefault
+        : true;
+
+    IEnumerable<MemoryEntry> coldStartSource = snapshot;
+
+    if (includeShared && !string.Equals(endpoint, "shared", StringComparison.OrdinalIgnoreCase))
+    {
+        if (router.ResolveStore("shared") is MemoryStore sharedStore)
+        {
+            coldStartSource = coldStartSource.Concat(sharedStore.Snapshot());
+        }
+    }
+
+    var coldStartEntries = coldStartSource
         .Where(e =>
             e.Tags != null &&
             e.Tags.Any(t => string.Equals(t, "category:cold-start", StringComparison.OrdinalIgnoreCase)) &&
