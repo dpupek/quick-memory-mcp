@@ -1143,6 +1143,177 @@ app.MapPost("/admin/permissions/{endpointKey}", async (string endpointKey, HttpC
     return Results.Ok(new { saved = true });
 });
 
+app.MapPost("/admin/import/{endpoint}", async (string endpoint, HttpContext context, ApiKeyAuthorizer authorizer, MemoryRouter router, IOptionsMonitor<ServerOptions> optionsMonitor, CancellationToken cancellationToken) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var mode = context.Request.Query["mode"].FirstOrDefault() ?? "upsert";
+    var dryRunRaw = context.Request.Query["dryRun"].FirstOrDefault();
+    var dryRun = string.Equals(dryRunRaw, "true", StringComparison.OrdinalIgnoreCase);
+
+    if (!string.Equals(mode, "upsert", StringComparison.OrdinalIgnoreCase) &&
+        !string.Equals(mode, "append", StringComparison.OrdinalIgnoreCase))
+    {
+        return Results.BadRequest(new { error = "unsupported-mode", details = "Supported modes are 'upsert' and 'append'." });
+    }
+
+    IMemoryStore store;
+    try
+    {
+        store = router.ResolveStore(endpoint);
+    }
+    catch (KeyNotFoundException)
+    {
+        return Results.NotFound(new { error = "endpoint-not-found" });
+    }
+
+    string rawContent;
+    using (var reader = new StreamReader(context.Request.Body))
+    {
+        rawContent = await reader.ReadToEndAsync(cancellationToken);
+    }
+
+    if (string.IsNullOrWhiteSpace(rawContent))
+    {
+        return Results.BadRequest(new { error = "empty-content" });
+    }
+
+    var processed = 0;
+    var imported = 0;
+    var skipped = 0;
+    var errors = new List<object>();
+    var entries = new List<(int Index, MemoryEntry Entry)>();
+
+    var trimmed = rawContent.TrimStart();
+    try
+    {
+        if (trimmed.StartsWith("["))
+        {
+            var doc = JsonDocument.Parse(rawContent);
+            if (doc.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return Results.BadRequest(new { error = "invalid-format", details = "Expected a JSON array for import content." });
+            }
+
+            var index = 0;
+            foreach (var element in doc.RootElement.EnumerateArray())
+            {
+                processed++;
+                try
+                {
+                    var entry = element.Deserialize<MemoryEntry>();
+                    if (entry is null)
+                    {
+                        errors.Add(new { index, message = "null-entry" });
+                    }
+                    else
+                    {
+                        entries.Add((index, entry));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors.Add(new { index, message = $"parse-error: {ex.Message}" });
+                }
+
+                index++;
+            }
+        }
+        else
+        {
+            var lines = rawContent.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            for (var i = 0; i < lines.Length; i++)
+            {
+                var line = lines[i].Trim();
+                if (line.Length == 0)
+                {
+                    continue;
+                }
+
+                processed++;
+                try
+                {
+                    var entry = JsonSerializer.Deserialize<MemoryEntry>(line);
+                    if (entry is null)
+                    {
+                        errors.Add(new { index = i, message = "null-entry" });
+                    }
+                    else
+                    {
+                        entries.Add((i, entry));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors.Add(new { index = i, message = $"parse-error: {ex.Message}" });
+                }
+            }
+        }
+    }
+    catch (JsonException ex)
+    {
+        return Results.BadRequest(new { error = "invalid-json", details = ex.Message });
+    }
+
+    var existingIds = new HashSet<string>(store.Snapshot().Select(e => e.Id), StringComparer.OrdinalIgnoreCase);
+
+    foreach (var (index, entry) in entries)
+    {
+        if (!MemoryMcpTools.TryPrepareEntry(endpoint, entry, out var prepared, out var prepareError))
+        {
+            errors.Add(new { index, id = entry.Id, message = prepareError ?? "invalid-entry" });
+            continue;
+        }
+
+        if (string.Equals(mode, "append", StringComparison.OrdinalIgnoreCase) &&
+            existingIds.Contains(prepared.Id))
+        {
+            skipped++;
+            continue;
+        }
+
+        if (dryRun)
+        {
+            imported++;
+            continue;
+        }
+
+        try
+        {
+            if (store is MemoryStore concrete)
+            {
+                await concrete.UpsertAsync(prepared, cancellationToken);
+            }
+            else
+            {
+                await store.UpsertAsync(prepared, cancellationToken);
+            }
+
+            imported++;
+            existingIds.Add(prepared.Id);
+        }
+        catch (Exception ex)
+        {
+            errors.Add(new { index, id = prepared.Id, message = $"upsert-error: {ex.Message}" });
+        }
+    }
+
+    return Results.Ok(new
+    {
+        endpoint,
+        mode,
+        dryRun,
+        processed,
+        imported,
+        skipped,
+        errorCount = errors.Count,
+        errors
+    });
+});
+
 app.MapGet("/admin/projects/{projectKey}/permissions", (string projectKey, HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor) =>
 {
     if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))

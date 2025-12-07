@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('entry-modal-close').addEventListener('click', closeEntryModal);
   document.getElementById('entry-modal-cancel').addEventListener('click', closeEntryModal);
   document.getElementById('entry-form').addEventListener('submit', handleEntryFormSubmit);
+  document.getElementById('import-run')?.addEventListener('click', runImport);
   // Backdrop close disabled to prevent accidental dismiss; use close/cancel buttons instead
   // document.getElementById('entry-modal').addEventListener('click', (event) => { ... });
   renderRelationsControl(document.getElementById('entry-relations'), []);
@@ -440,6 +441,7 @@ async function saveProjectMetadata(endpointKey) {
 function updateEntityProjectSelect() {
   const select = document.getElementById('entity-project');
   const entrySelect = document.getElementById('entry-project');
+  const importSelect = document.getElementById('import-project');
   if (!select) {
     return;
   }
@@ -448,6 +450,9 @@ function updateEntityProjectSelect() {
     select.innerHTML = '<option value="">Select a project</option>';
     if (entrySelect) {
       entrySelect.innerHTML = '<option value="">Select a project</option>';
+    }
+    if (importSelect) {
+      importSelect.innerHTML = '<option value=\"\">Select a project</option>';
     }
     return;
   }
@@ -462,6 +467,11 @@ function updateEntityProjectSelect() {
   if (entrySelect) {
     entrySelect.innerHTML = options;
     entrySelect.value = state.allowedEndpoints[0].key;
+  }
+
+  if (importSelect) {
+    importSelect.innerHTML = options;
+    importSelect.value = state.allowedEndpoints[0].key;
   }
 }
 
@@ -2128,6 +2138,65 @@ function readMonacoField(stateKey, fallbackId) {
   }
   const fallback = document.getElementById(fallbackId);
   return fallback ? fallback.value : '';
+}
+
+async function runImport() {
+  if (!ensureAuth()) {
+    return;
+  }
+
+  const projectSelect = document.getElementById('import-project');
+  const project = (projectSelect && projectSelect.value) || state.allowedEndpoints[0]?.key;
+  if (!project) {
+    setStatus('Select a project for import', 'danger');
+    return;
+  }
+
+  const mode = document.getElementById('import-mode').value || 'upsert';
+  const dryRun = document.getElementById('import-dryrun').checked;
+  const content = document.getElementById('import-content').value;
+
+  if (!content || !content.trim()) {
+    setStatus('Paste JSONL or JSON content to import', 'danger');
+    return;
+  }
+
+  setStatus(`Running ${dryRun ? 'dry-run ' : ''}import...`, 'info');
+
+  const url = `/admin/import/${encodeURIComponent(project)}?mode=${encodeURIComponent(mode)}&dryRun=${dryRun}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: authHeaders(true),
+    body: content
+  });
+
+  if (response.status === 401) {
+    promptLogin('Insufficient privileges for admin operations.');
+    return;
+  }
+
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    const text = await response.text().catch(() => '');
+    setStatus(`Import failed (${response.status}). ${text}`, 'danger');
+    return;
+  }
+
+  if (!response.ok) {
+    setStatus(`Import failed: ${payload.error || 'unknown error'}`, 'danger');
+    return;
+  }
+
+  const { processed = 0, imported = 0, skipped = 0, errorCount = 0 } = payload;
+  const summary = `${dryRun ? 'Dry-run' : 'Import'} for ${project} (${mode}): processed ${processed}, imported ${imported}, skipped ${skipped}, errors ${errorCount}.`;
+
+  setStatus(summary, errorCount ? 'warning' : 'success');
+
+  if (!dryRun) {
+    loadEntities();
+  }
 }
 
 function enhanceTagsInput(id) {
