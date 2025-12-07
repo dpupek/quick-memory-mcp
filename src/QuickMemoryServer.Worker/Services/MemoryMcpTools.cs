@@ -401,6 +401,50 @@ public static ListProjectsResponse ListProjects(IOptionsMonitor<ServerOptions> o
         return new ListProjectsResponse(endpoints);
     }
 
+[McpServerTool(Name = "coldStart", Title = "Cold start snapshot", ReadOnly = true)]
+[McpMeta("description", "Return curated cold-start entries plus recent activity for a project.")]
+[McpMeta("tier", "reader")]
+public static object ColdStart(
+    string endpoint,
+    string? epicSlug,
+    MemoryRouter router)
+{
+    if (router.ResolveStore(endpoint) is not MemoryStore store)
+    {
+        return ErrorResult($"Endpoint '{endpoint}' is not available.");
+    }
+
+    var snapshot = store.Snapshot();
+
+    var coldStartEntries = snapshot
+        .Where(e =>
+            e.Tags != null &&
+            e.Tags.Any(t => string.Equals(t, "category:cold-start", StringComparison.OrdinalIgnoreCase)) &&
+            (string.Equals(e.CurationTier, "curated", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(e.CurationTier, "canonical", StringComparison.OrdinalIgnoreCase)))
+        .ToArray();
+
+    var recentQuery = snapshot.AsEnumerable();
+    if (!string.IsNullOrWhiteSpace(epicSlug))
+    {
+        recentQuery = recentQuery.Where(e =>
+            !string.IsNullOrWhiteSpace(e.EpicSlug) &&
+            string.Equals(e.EpicSlug, epicSlug, StringComparison.OrdinalIgnoreCase));
+    }
+
+    var recentEntries = recentQuery
+        .OrderByDescending(e => e.Timestamps?.UpdatedUtc ?? e.Timestamps?.CreatedUtc ?? DateTimeOffset.UnixEpoch)
+        .ThenBy(e => e.Id)
+        .Take(20)
+        .ToArray();
+
+    return new ColdStartResponse(
+        Endpoint: endpoint,
+        EpicSlug: epicSlug,
+        ColdStartEntries: coldStartEntries,
+        RecentEntries: recentEntries);
+}
+
 [McpServerTool(Name = "health", Title = "Health report", ReadOnly = true)]
 [McpMeta("description", "Expose stores, uptime, and issue counts that the SPA surfaces.")]
 [McpMeta("tier", "reader")]
@@ -583,6 +627,12 @@ public static object GetPromptTemplate(
         [property: JsonPropertyName("storagePath")] string StoragePath,
         [property: JsonPropertyName("inheritShared")] bool InheritShared,
         [property: JsonPropertyName("includeInSearchByDefault")] bool IncludeInSearchByDefault);
+
+    public sealed record ColdStartResponse(
+        [property: JsonPropertyName("endpoint")] string Endpoint,
+        [property: JsonPropertyName("epicSlug")] string? EpicSlug,
+        [property: JsonPropertyName("coldStartEntries")] IReadOnlyList<MemoryEntry> ColdStartEntries,
+        [property: JsonPropertyName("recentEntries")] IReadOnlyList<MemoryEntry> RecentEntries);
 
     public sealed record PromptArgument(
         [property: JsonPropertyName("name")] string Name,

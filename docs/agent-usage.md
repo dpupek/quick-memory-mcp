@@ -91,6 +91,26 @@ Notes: project must equal endpoint; permanent entries require Admin.
 ### Backup
 `requestBackup { endpoint:"projectA", mode:"differential" }` (Admin).
 
+### Cold start snapshot
+Use `coldStart` when you want a one-shot summary of curated cold-start
+recipes plus recent activity for a project:
+
+- Project-only:
+  - `coldStart { endpoint: "<project-key>" }`
+- Epic-focused:
+  - `coldStart { endpoint: "<project-key>", epicSlug: "<epic-slug>" }`
+
+The response includes:
+
+- `endpoint` – the project key you passed.
+- `coldStartEntries` – entries in that project tagged
+  `category:cold-start` with `curationTier` of `curated` or `canonical`.
+- `recentEntries` – the last 20 entries for that project (filtered to
+  `epicSlug` when provided).
+
+Agents should summarize both lists, call out any missing cold-start
+entries, and propose new entries when appropriate.
+
 ## MemoryEntry field reference
 
 | Field | Description |

@@ -54,6 +54,17 @@ general project use. One such endpoint is:
 - **MCP Adapter**: ASP.NET Core minimal APIs translating MCP requests to domain commands; handles auth/quotas.
  - **Diagnostics**: Serilog/EventLog, EventCounters for memory pressure, and optional Prometheus endpoint.
 
+### MCP Tools (selected)
+
+- `searchEntries`, `relatedEntries`, `getEntry`, `listEntries`,
+  `listRecentEntries`, `upsertEntry`, `patchEntry`, `deleteEntry`,
+  `requestBackup`, `listProjects`, `health`.
+- `listPromptTemplates` / `getPromptTemplate` – expose curated
+  prompt templates backed by `prompts-repository` entries.
+- `coldStart` – returns a project-level cold-start snapshot:
+  curated `category:cold-start` entries plus the last 20 recent
+  entries, optionally filtered by `epicSlug`.
+
 ## Schema & Help Docs
 - Provide the runtime JSON Schema via `GET /docs/schema` (includes the `MemoryEntry` and `SearchRequest` structures and a generated timestamp), cache it with `ETag`/`Cache-Control`, and expose the URL so agents can validate payloads.
 - Surface `/admin/help/agent` and `/admin/help/end-user` in the MCP `describe` response (via `ServerInstructions`) so clients know where to read the recipes/help before calling tools.
