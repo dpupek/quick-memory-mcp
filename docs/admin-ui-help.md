@@ -11,6 +11,16 @@ Welcome to the Quick Memory Server admin console. This page collects quick tips 
 - Save per-project metadata to memory (uses `projectMetadata` entries).
 - Deleting a project removes its metadata and permissions but not the disk data; clean up storage manually if needed.
 
+Field hints:
+- **Inherit shared** – indicates that this project conceptually
+  “inherits” the global shared store. This is primarily for admin/help
+  semantics and future features; it does not automatically merge shared
+  entries into every call.
+- **Include in search by default** – controls whether tools like
+  `searchEntries` and `relatedEntries` include the `shared` store by
+  default when the caller does not explicitly set `includeShared`. You
+  can still override this per-call from MCP clients.
+
 ## Entities
 - Select a project, refresh to browse recent entries (empty search uses recent list).
 - Use search text for focused queries; include shared is on by default.

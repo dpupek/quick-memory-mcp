@@ -28,6 +28,24 @@
   - `reader`: read/search only.
 - ONNX model artifacts for embeddings and summaries are deployed with the installer under `Models/embeddings.onnx` and `Models/summarizer.onnx`; config references them via relative paths to support portable installs.
 
+### Endpoint options – shared memory
+
+Each `[endpoint.<key>]` block includes two flags that affect how shared
+memory is treated:
+
+- `inheritShared`:
+  - Declares that this endpoint conceptually “inherits” the shared
+    store (e.g., `shared`). This is primarily used for admin/help UX and
+    future behaviors; it does not, by itself, change how MCP tools read
+    data.
+- `includeInSearchByDefault`:
+  - Controls the default value for `includeShared` in tools that support
+    shared search (for example, `searchEntries` and `relatedEntries`).
+  - When `true`, those tools will include `shared` by default when the
+    caller does not explicitly specify `includeShared`. When `false`,
+    they will only look at the project’s own store unless the caller
+    passes `includeShared = true`.
+
 ### System endpoints
 
 The server may define system/locked endpoints that are not intended for

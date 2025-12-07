@@ -10,6 +10,15 @@
 - `requestBackup` with `{ endpoint, mode }` (Admin) – queue backup.
 - `health` – server health report.
 
+Note on shared memory:
+
+- Projects that conceptually “inherit” the shared store are marked with
+  `inheritShared` in config and in the Projects blade of the admin UI.
+- Whether shared entries are merged into search by default is controlled
+  by `includeInSearchByDefault`; you can always override this per-call
+  using the `includeShared` parameter on `searchEntries` and
+  `relatedEntries`.
+
 ## First-time agent onboarding (Codex / ChatGPT)
 
 When you connect an agent to the Quick Memory MCP server for the first
