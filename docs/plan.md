@@ -42,21 +42,24 @@
 - [x] **Task 8.5:** Update `docs/spec.md`, `docs/agent-usage.md`, and the README with Streamable transport details, tool listings, and configuration samples (TOML + `.codex/config.toml`).
 - [x] **Task 8.6:** Document MCP command recipes (search, entry checks, project changes) within `docs/agent-usage.md`, including payload examples, canonical/permanent behaviors, and curation tier matrix.
 
+## Phase 9 – Embedded Admin SPA
+- [x] Reload blade content from the server whenever switching tabs (Overview/Projects/Entities/Users/Help/Health) via per-tab view controllers.
+- [x] Ensure the Projects list refreshes immediately after creating, updating, or deleting a project.
+- [x] Persist login across page refreshes using the server-side session-backed `/admin/login` + `/admin/session` flow.
+- [x] Add a Config blade for viewing/editing the raw TOML configuration with validation and a safe-apply flow.
+- [x] Add a Health blade that surfaces `/health` details and exposes one-click log download from the server.
+- [ ] Add MCP usage cheatsheet resource (`resource://quick-memory/cheatsheet`) with concise “do X → call Y” guidance.
+- [x] Add MCP `listRecentEntries`-style browse behavior to the Entities tab when no query is provided.
+- [x] UI polish: integrate Bootstrap Icons for nav/buttons and SweetAlert2 for confirmations/toasts; enhance tags input with Choices.js.
+- [x] Rename “Endpoint permissions” to “Project permissions” across nav labels, API payloads, and docs to match user vocabulary.
+- [x] Build a dedicated Project-permissions editor: left pane lists projects, right pane shows per-user overrides with dropdown tiers, add/remove user controls, and inherit-shared indicator.
+- [x] Support bulk updates (apply the same tier override to multiple projects) and warn when a project has no Admin tier after edits.
+- [x] Expose GET/PATCH endpoints (`/admin/projects/{key}/permissions`) so the SPA doesn’t rewrite the full TOML on each change.
+- [x] Surface an audit trail of permission changes (who/when/what) for future troubleshooting.
+- [x] Move the SPA shell into a Razor view (`Views/Admin/Index.cshtml`) and enable cache-busted static assets via `asp-append-version` for `app.css` and `app.js`.
+- [x] Auto-create the `prompts-repository` project at startup when missing so curated prompt entries are always reachable from the SPA and MCP tools.
+
 ## Future Phases
-- [ ] **Phase 9 – Embedded Admin SPA**
-  - [ ] Reload blade content from the server whenever switching tabs (Overview/Projects/Entities/Users/Help/Health).
-  - [ ] Ensure the Projects list refreshes immediately after creating, updating, or deleting a project.
-  - [ ] Persist login across page refreshes (e.g., durable token or local storage) so users do not have to re-enter the API key on reload.
-  - [ ] Add a Config blade for viewing/editing the raw TOML configuration with validation and a safe-apply flow.
-  - [ ] Add a Health blade that surfaces `/health` details and exposes one-click log download from the server.
-  - [ ] Add MCP usage cheatsheet resource (`resource://quick-memory/cheatsheet`) with concise “do X → call Y” guidance.
-  - [ ] Add MCP `listRecentEntries` tool to browse recent updates without a query.
-  - [ ] UI polish: integrate Bootstrap Icons for nav/buttons and SweetAlert2 for confirmations/toasts; enhance tags input with Choices.js.
-  - [x] Rename “Endpoint permissions” to “Project permissions” across nav labels, API payloads, and docs to match user vocabulary.
-  - [x] Build a dedicated Project-permissions editor: left pane lists projects, right pane shows per-user overrides with dropdown tiers, add/remove user controls, and inherit-shared indicator.
-  - [x] Support bulk updates (apply the same tier override to multiple projects) and warn when a project has no Admin tier after edits.
-  - [x] Expose GET/PATCH endpoints (`/admin/projects/{key}/permissions`) so the SPA doesn’t rewrite the full TOML on each change.
-  - [x] Surface an audit trail of permission changes (who/when/what) for future troubleshooting.
 - [ ] **Phase 10 – Release & Hardening** (installer packaging with WiX, load + failure testing, release notes, ONNX artifacts, final docs, and load test evidence).  
 - [x] PowerShell installer/updater helper for manual Windows deployments (`tools/install-service.ps1`).
 

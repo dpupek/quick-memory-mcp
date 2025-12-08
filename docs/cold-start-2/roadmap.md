@@ -2,31 +2,33 @@
 
 ## Phase 0 – Design
 
-- [ ] Confirm shape of `coldStart` response:
-  - [ ] `endpoint` (string).
-  - [ ] `coldStartEntries` (array of `MemoryEntry`).
-  - [ ] `recentEntries` (array of `MemoryEntry`).
-- [ ] Decide whether to include shared or only project-local entries for
-      cold-start recipes (initially project-local only).
+- [x] Confirm shape of `coldStart` response:
+  - [x] `endpoint` (string).
+  - [x] `coldStartEntries` (array of `MemoryEntry`).
+  - [x] `recentEntries` (array of `MemoryEntry`).
+- [x] Decide whether to include shared or only project-local entries for
+      cold-start recipes (initially project-local only, now honoring
+      the project’s `includeInSearchByDefault` for shared).
 
 ## Phase 1 – Tool Implementation
 
-- [ ] Add a `coldStart` MCP tool to `MemoryMcpTools`:
-  - [ ] Accept `endpoint` and optional `epicSlug`.
-  - [ ] Resolve the `MemoryStore` for `endpoint`.
-  - [ ] Filter `Snapshot()` results for:
-    - [ ] `coldStartEntries`: `tags` contains `category:cold-start` and
-          `curationTier` ∈ {`curated`, `canonical`}.
-    - [ ] `recentEntries`: top 20 by `timestamps.updatedUtc` /
+- [x] Add a `coldStart` MCP tool to `MemoryMcpTools`:
+  - [x] Accept `endpoint` and optional `epicSlug`.
+  - [x] Resolve the `MemoryStore` for `endpoint`.
+  - [x] Filter `Snapshot()` results for:
+    - [x] `coldStartEntries`: `tags` contains `category:cold-start` and
+          `curationTier` ∈ {`curated`, `canonical`}, optionally enriched
+          from the `shared` project when `includeInSearchByDefault` is true.
+    - [x] `recentEntries`: top 20 by `timestamps.updatedUtc` /
           `createdUtc`, filtered by `epicSlug` when provided.
-  - [ ] Return a new response type capturing both lists.
+  - [x] Return a new response type capturing both lists.
 
 ## Phase 2 – Docs & Agent Guidance
 
-- [ ] Update `docs/agent-usage.md`:
-  - [ ] Add a section explaining when and how to call `coldStart`.
-  - [ ] Show example usage for project-only and epic-specific cold starts.
-- [ ] Update `docs/spec.md` to mention the `coldStart` tool and how it
+- [x] Update `docs/agent-usage.md`:
+  - [x] Add a section explaining when and how to call `coldStart`.
+  - [x] Show example usage for project-only and epic-specific cold starts.
+- [x] Update `docs/spec.md` to mention the `coldStart` tool and how it
       relates to `listRecentEntries`.
 
 ## Phase 3 – SPA & UX (Optional)
@@ -42,4 +44,3 @@
   - [ ] Filtering recent entries by `epicSlug`.
   - [ ] Behavior when there are no cold-start entries.
 - [ ] Verify performance on large projects (snapshot-only, no extra IO).
-

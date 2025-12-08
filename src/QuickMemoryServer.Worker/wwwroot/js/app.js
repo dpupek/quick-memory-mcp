@@ -109,37 +109,192 @@ function handleEntryFormSubmit(event) {
   createEntry();
 }
 
+const views = {
+  overview: {
+    id: 'overview',
+    init() {
+      // no-op for now; kept for future hooks
+    },
+    onShow() {
+      loadOverview();
+    }
+  },
+  projects: {
+    id: 'projects',
+    init() {
+      const projectsList = document.getElementById('projects-list');
+      if (projectsList) {
+        projectsList.addEventListener('click', handleProjectButton);
+      }
+      const createButton = document.getElementById('project-create');
+      if (createButton) {
+        createButton.addEventListener('click', createProject);
+      }
+      const filter = document.getElementById('project-permission-filter');
+      if (filter) {
+        filter.addEventListener('input', handleProjectFilterInput);
+      }
+      const permissionsList = document.getElementById('project-permissions-list');
+      if (permissionsList) {
+        permissionsList.addEventListener('click', handleProjectPermissionsListClick);
+        permissionsList.addEventListener('change', handleProjectSelectionChange);
+      }
+      const savePermissionsButton = document.getElementById('project-permissions-save');
+      if (savePermissionsButton) {
+        savePermissionsButton.addEventListener('click', saveProjectPermissions);
+      }
+      const bulkApplyButton = document.getElementById('project-bulk-apply');
+      if (bulkApplyButton) {
+        bulkApplyButton.addEventListener('click', applyBulkPermissions);
+      }
+    },
+    onShow() {
+      refreshAuthState();
+    }
+  },
+  entities: {
+    id: 'entities',
+    init() {
+      const refreshButton = document.getElementById('entity-refresh');
+      if (refreshButton) {
+        refreshButton.addEventListener('click', () => loadEntities());
+      }
+      const tableBody = document.getElementById('entities-body');
+      if (tableBody) {
+        tableBody.addEventListener('click', handleEntityActions);
+      }
+      const detailPanel = document.getElementById('entity-detail');
+      if (detailPanel) {
+        detailPanel.addEventListener('click', handleEntryDetailActions);
+      }
+      const projectSelect = document.getElementById('entity-project');
+      if (projectSelect) {
+        projectSelect.addEventListener('change', () => loadEntities());
+      }
+      const openEntryModal = document.getElementById('open-entry-modal');
+      if (openEntryModal) {
+        openEntryModal.addEventListener('click', showEntryModal);
+      }
+      const entryForm = document.getElementById('entry-form');
+      if (entryForm) {
+        entryForm.addEventListener('submit', handleEntryFormSubmit);
+      }
+      const entryModalClose = document.getElementById('entry-modal-close');
+      if (entryModalClose) {
+        entryModalClose.addEventListener('click', closeEntryModal);
+      }
+      const entryModalCancel = document.getElementById('entry-modal-cancel');
+      if (entryModalCancel) {
+        entryModalCancel.addEventListener('click', closeEntryModal);
+      }
+      const importRun = document.getElementById('import-run');
+      if (importRun) {
+        importRun.addEventListener('click', runImport);
+      }
+    },
+    onShow() {
+      loadEntities();
+    }
+  },
+  users: {
+    id: 'users',
+    init() {
+      const saveUserButton = document.getElementById('user-save');
+      if (saveUserButton) {
+        saveUserButton.addEventListener('click', saveUser);
+      }
+      const userForm = document.getElementById('user-form');
+      if (userForm) {
+        userForm.addEventListener('submit', (event) => event.preventDefault());
+      }
+    },
+    onShow() {
+      loadAdminData();
+    }
+  },
+  config: {
+    id: 'config',
+    init() {
+      const reload = document.getElementById('config-reload');
+      if (reload) {
+        reload.addEventListener('click', () => loadConfig());
+      }
+      const validate = document.getElementById('config-validate');
+      if (validate) {
+        validate.addEventListener('click', () => validateConfig(false));
+      }
+      const save = document.getElementById('config-save');
+      if (save) {
+        save.addEventListener('click', () => validateConfig(true));
+      }
+    },
+    onShow() {
+      loadConfig();
+    }
+  },
+  health: {
+    id: 'health',
+    init() {
+      const refresh = document.getElementById('health-refresh');
+      if (refresh) {
+        refresh.addEventListener('click', loadHealthBlade);
+      }
+      const downloadLogsButton = document.getElementById('health-download-logs');
+      if (downloadLogsButton) {
+        downloadLogsButton.addEventListener('click', downloadLogs);
+      }
+    },
+    onShow() {
+      loadHealthBlade();
+    }
+  },
+  help: {
+    id: 'help',
+    init() {},
+    onShow() {
+      loadHelpContent();
+    }
+  },
+  'agent-help': {
+    id: 'agent-help',
+    init() {},
+    onShow() {
+      loadAgentHelp();
+    }
+  },
+  'admin-ui-help': {
+    id: 'admin-ui-help',
+    init() {},
+    onShow() {
+      loadAdminUiHelp();
+    }
+  },
+  'codex-workspace': {
+    id: 'codex-workspace',
+    init() {},
+    onShow() {
+      loadCodexWorkspaceHelp();
+    }
+  }
+};
+
+function initViews() {
+  Object.values(views).forEach((view) => {
+    if (typeof view.init === 'function') {
+      view.init();
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
   selectors.loginForm.addEventListener('submit', handleLogin);
   document.getElementById('logout-btn').addEventListener('click', logout);
-  document.getElementById('entity-refresh').addEventListener('click', () => loadEntities());
-  document.getElementById('projects-list').addEventListener('click', handleProjectButton);
-  document.getElementById('entities-body').addEventListener('click', handleEntityActions);
-  document.getElementById('entity-detail').addEventListener('click', handleEntryDetailActions);
-  document.getElementById('user-save').addEventListener('click', saveUser);
-  document.getElementById('user-form').addEventListener('submit', (event) => event.preventDefault());
-  document.getElementById('project-permissions-list')?.addEventListener('click', handleProjectPermissionsListClick);
-  document.getElementById('project-permissions-list')?.addEventListener('change', handleProjectSelectionChange);
-  document.getElementById('project-permission-filter')?.addEventListener('input', handleProjectFilterInput);
-  document.getElementById('project-permissions-save')?.addEventListener('click', saveProjectPermissions);
-  document.getElementById('project-bulk-apply')?.addEventListener('click', applyBulkPermissions);
-  document.getElementById('project-create').addEventListener('click', createProject);
-  document.getElementById('open-entry-modal').addEventListener('click', showEntryModal);
-  document.getElementById('entry-modal-close').addEventListener('click', closeEntryModal);
-  document.getElementById('entry-modal-cancel').addEventListener('click', closeEntryModal);
-  document.getElementById('entry-form').addEventListener('submit', handleEntryFormSubmit);
-  document.getElementById('import-run')?.addEventListener('click', runImport);
+  initViews();
   // Backdrop close disabled to prevent accidental dismiss; use close/cancel buttons instead
   // document.getElementById('entry-modal').addEventListener('click', (event) => { ... });
   renderRelationsControl(document.getElementById('entry-relations'), []);
   renderSourceControl(document.getElementById('entry-source'), null);
-  document.getElementById('entity-project').addEventListener('change', () => loadEntities());
-  document.getElementById('health-refresh')?.addEventListener('click', loadHealthBlade);
-  document.getElementById('health-download-logs')?.addEventListener('click', downloadLogs);
-  document.getElementById('config-reload')?.addEventListener('click', () => loadConfig());
-  document.getElementById('config-validate')?.addEventListener('click', () => validateConfig(false));
-  document.getElementById('config-save')?.addEventListener('click', () => validateConfig(true));
   document.getElementById('entry-body-mode')?.addEventListener('change', (event) => {
     const mode = event.target.value === 'text' ? 'plaintext' : 'json';
     mountMonacoField('entryBodyEditor', 'entry-body-editor', 'entry-body', readMonacoField('entryBodyEditor', 'entry-body'), mode);
@@ -171,35 +326,9 @@ function setActiveTab(tab) {
   selectors.navButtons.forEach((button) => {
     button.classList.toggle('active', button.dataset.tab === tab);
   });
-  if (tab === 'overview') {
-    loadOverview();
-  }
-  if (tab === 'projects') {
-    refreshAuthState();
-  }
-  if (tab === 'entities') {
-    loadEntities();
-  }
-  if (tab === 'users') {
-    loadAdminData();
-  }
-  if (tab === 'help') {
-    loadHelpContent();
-  }
-  if (tab === 'agent-help') {
-    loadAgentHelp();
-  }
-  if (tab === 'admin-ui-help') {
-    loadAdminUiHelp();
-  }
-  if (tab === 'codex-workspace') {
-    loadCodexWorkspaceHelp();
-  }
-  if (tab === 'config') {
-    loadConfig();
-  }
-  if (tab === 'health') {
-    loadHealthBlade();
+  const view = views[tab];
+  if (view && typeof view.onShow === 'function') {
+    view.onShow();
   }
 }
 

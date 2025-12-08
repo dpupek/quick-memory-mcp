@@ -2,35 +2,35 @@
 
 ## Phase 0 – Design
 
-- [ ] Decide on the exact import contract:
-  - [ ] MCP tool name and parameters (e.g., `importEntries`).
-  - [ ] Admin HTTP endpoint shape (if any).
-  - [ ] Accepted formats (JSONL vs JSON array) and autodetection rules.
+- [x] Decide on the exact import contract:
+  - [x] MCP tool name and parameters (defer; start with HTTP admin route).
+  - [x] Admin HTTP endpoint shape (`POST /admin/import/{endpoint}`).
+  - [x] Accepted formats (JSONL vs JSON array) and autodetection rules.
 
 ## Phase 1 – Implementation
 
-- [ ] Implement import parsing & validation:
-  - [ ] Parse content into `MemoryEntry` objects.
-  - [ ] Use `TryPrepareEntry` and `MemoryEntryValidator.Normalize` for
+- [x] Implement import parsing & validation:
+  - [x] Parse content into `MemoryEntry` objects.
+  - [x] Use `TryPrepareEntry` and `MemoryEntryValidator.Normalize` for
         each entry.
-  - [ ] Collect per-entry successes and errors.
-- [ ] Implement modes:
-  - [ ] `upsert` – update or insert by id.
-  - [ ] `append` – insert only new ids, skip existing.
+  - [x] Collect per-entry successes and errors.
+- [x] Implement modes:
+  - [x] `upsert` – update or insert by id.
+  - [x] `append` – insert only new ids, skip existing.
   - [ ] `replace` – atomically swap `entries.jsonl` with the new set
         (Admin-only, guarded).
-- [ ] Implement `dryRun` flow that skips disk writes but returns full
+- [x] Implement `dryRun` flow that skips disk writes but returns full
       summary.
 
 ## Phase 2 – Admin UI / CLI Integration
 
-- [ ] Add a minimal admin SPI/CLI surface:
-  - [ ] `POST /admin/import/{endpoint}` HTTP route (Admin-only), or
+- [x] Add a minimal admin SPI/CLI surface:
+  - [x] `POST /admin/import/{endpoint}` HTTP route (Admin-only), or
   - [ ] Documented MCP tool usage for CLI-based imports.
-- [ ] Optionally add a simple SPA panel:
-  - [ ] Text area/file upload for content.
-  - [ ] Mode + dryRun controls.
-  - [ ] Result summary display.
+- [x] Optionally add a simple SPA panel:
+  - [x] Text area/editor for content (Monaco-based).
+  - [x] Mode + dryRun controls.
+  - [x] Result summary display.
 
 ## Phase 3 – Docs & Hardening
 
@@ -41,4 +41,3 @@
   - [ ] Invalid schema rejection.
   - [ ] `upsert` vs `append` behavior.
   - [ ] `replace` failure when any entry is invalid.
-

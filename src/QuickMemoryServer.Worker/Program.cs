@@ -169,6 +169,7 @@ builder.Services.AddSingleton<HealthReporter>();
 builder.Services.AddSingleton<AdminConfigService>();
 builder.Services.AddSingleton<DocumentService>();
 builder.Services.AddSingleton<SchemaService>();
+builder.Services.AddControllersWithViews();
 builder.Services.AddMcpServer()
     .WithResourcesFromAssembly(typeof(HelpResources).Assembly)
     .WithListResourceTemplatesHandler((_, _) =>
@@ -293,6 +294,8 @@ var observabilityMetrics = app.Services.GetRequiredService<ObservabilityMetrics>
 Log.Information("Starting {ServiceName} version {Version} (informational {InfoVersion}) listening at {HttpUrl} (BaseDir: {BaseDir})",
     serviceName, assemblyVersion, infoVersion, httpUrl, AppContext.BaseDirectory);
 
+EnsureBuiltInProjectsAsync(app.Services).GetAwaiter().GetResult();
+
 app.UseSerilogRequestLogging();
 app.UseSession();
 app.Use(async (context, next) =>
@@ -325,7 +328,6 @@ app.Use(async (context, next) =>
             ObservabilityEventSource.Log.RecordMcpRequest(stopwatch.Elapsed.TotalMilliseconds);
         }
     });
-app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseHttpMetrics();
@@ -1202,12 +1204,24 @@ app.MapPost("/admin/import/{endpoint}", async (string endpoint, HttpContext cont
             foreach (var element in doc.RootElement.EnumerateArray())
             {
                 processed++;
+
+                if (element.ValueKind != JsonValueKind.Object)
+                {
+                    errors.Add(new { index, message = "invalid-entry-json: expected JSON object" });
+                    index++;
+                    continue;
+                }
+
                 try
                 {
                     var entry = element.Deserialize<MemoryEntry>();
                     if (entry is null)
                     {
                         errors.Add(new { index, message = "null-entry" });
+                    }
+                    else if (IsEffectivelyEmptyEntry(entry))
+                    {
+                        errors.Add(new { index, message = "empty-entry" });
                     }
                     else
                     {
@@ -1236,10 +1250,21 @@ app.MapPost("/admin/import/{endpoint}", async (string endpoint, HttpContext cont
                 processed++;
                 try
                 {
-                    var entry = JsonSerializer.Deserialize<MemoryEntry>(line);
+                    using var doc = JsonDocument.Parse(line);
+                    if (doc.RootElement.ValueKind != JsonValueKind.Object)
+                    {
+                        errors.Add(new { index = i, message = "invalid-entry-json: expected JSON object" });
+                        continue;
+                    }
+
+                    var entry = doc.RootElement.Deserialize<MemoryEntry>();
                     if (entry is null)
                     {
                         errors.Add(new { index = i, message = "null-entry" });
+                    }
+                    else if (IsEffectivelyEmptyEntry(entry))
+                    {
+                        errors.Add(new { index = i, message = "empty-entry" });
                     }
                     else
                     {
@@ -1465,9 +1490,37 @@ app.MapPost("/admin/projects/permissions/bulk", async (HttpContext context, ApiK
 });
 
 app.MapMcp("/mcp");
-app.MapFallbackToFile("index.html");
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Admin}/{action=Index}/{id?}");
 app.MapMetrics();
 app.Run();
+
+static async Task EnsureBuiltInProjectsAsync(IServiceProvider services)
+{
+    using var scope = services.CreateScope();
+    var provider = scope.ServiceProvider;
+    var optionsMonitor = provider.GetRequiredService<IOptionsMonitor<ServerOptions>>();
+    var adminConfig = provider.GetRequiredService<AdminConfigService>();
+
+    var options = optionsMonitor.CurrentValue;
+
+    if (!options.Endpoints.ContainsKey("prompts-repository"))
+    {
+        var endpoint = new EndpointOptions
+        {
+            Slug = "prompts-repository",
+            Name = "Prompts Repository",
+            Description = "Curated prompt templates for agents",
+            StoragePath = "MemoryStores/prompts-repository",
+            IncludeInSearchByDefault = false,
+            InheritShared = false
+        };
+
+        await adminConfig.AddOrUpdateEndpointAsync("prompts-repository", endpoint);
+        Log.Information("Created built-in endpoint '{Endpoint}' for curated prompts at {Path}", "prompts-repository", endpoint.StoragePath);
+    }
+}
 
 static bool TryParseTierAssignments(IDictionary<string, string> source, out Dictionary<string, PermissionTier> assignments, out string? error)
 {
@@ -1561,6 +1614,15 @@ static bool TryAuthorizeAny(HttpContext context, ApiKeyAuthorizer authorizer, IO
     }
 
     return authorizer.TryAuthorize(apiKey, "shared", out _, out _);
+}
+
+static bool IsEffectivelyEmptyEntry(MemoryEntry entry)
+{
+    var hasTitle = !string.IsNullOrWhiteSpace(entry.Title);
+    var hasBody = entry.Body is not null;
+    var hasTags = entry.Tags is { Count: > 0 };
+
+    return !hasTitle && !hasBody && !hasTags;
 }
 
 static (string endpoint, string command) ResolveMcpLabels(PathString remaining)
