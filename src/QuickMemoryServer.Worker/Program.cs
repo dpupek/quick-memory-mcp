@@ -1180,7 +1180,11 @@ app.MapPost("/admin/import/{endpoint}", async (string endpoint, HttpContext cont
 
     if (string.IsNullOrWhiteSpace(rawContent))
     {
-        return Results.BadRequest(new { error = "empty-content" });
+        return Results.BadRequest(new
+        {
+            error = "empty-content",
+            details = "Provide either a JSON array of MemoryEntry objects or JSONL with one MemoryEntry object per line."
+        });
     }
 
     var processed = 0;
@@ -1188,6 +1192,11 @@ app.MapPost("/admin/import/{endpoint}", async (string endpoint, HttpContext cont
     var skipped = 0;
     var errors = new List<object>();
     var entries = new List<(int Index, MemoryEntry Entry)>();
+
+    var importJsonOptions = new JsonSerializerOptions
+    {
+        PropertyNameCaseInsensitive = true
+    };
 
     var trimmed = rawContent.TrimStart();
     try
@@ -1207,21 +1216,31 @@ app.MapPost("/admin/import/{endpoint}", async (string endpoint, HttpContext cont
 
                 if (element.ValueKind != JsonValueKind.Object)
                 {
-                    errors.Add(new { index, message = "invalid-entry-json: expected JSON object" });
+                    errors.Add(new
+                    {
+                        index,
+                        message = "invalid-entry-json: expected JSON object",
+                        hint = "Each array element must be a JSON object matching the MemoryEntry shape, not a string or number."
+                    });
                     index++;
                     continue;
                 }
 
                 try
                 {
-                    var entry = element.Deserialize<MemoryEntry>();
+                    var entry = element.Deserialize<MemoryEntry>(importJsonOptions);
                     if (entry is null)
                     {
-                        errors.Add(new { index, message = "null-entry" });
+                        errors.Add(new { index, message = "null-entry", hint = "The JSON value was null; ensure each element is a populated MemoryEntry object." });
                     }
                     else if (IsEffectivelyEmptyEntry(entry))
                     {
-                        errors.Add(new { index, message = "empty-entry" });
+                        errors.Add(new
+                        {
+                            index,
+                            message = "empty-entry",
+                            hint = "Entries must include at least one of title, body, or tags to be imported."
+                        });
                     }
                     else
                     {
@@ -1253,18 +1272,28 @@ app.MapPost("/admin/import/{endpoint}", async (string endpoint, HttpContext cont
                     using var doc = JsonDocument.Parse(line);
                     if (doc.RootElement.ValueKind != JsonValueKind.Object)
                     {
-                        errors.Add(new { index = i, message = "invalid-entry-json: expected JSON object" });
+                        errors.Add(new
+                        {
+                            index = i,
+                            message = "invalid-entry-json: expected JSON object",
+                            hint = "Each non-empty line must be a JSON object representing a MemoryEntry."
+                        });
                         continue;
                     }
 
-                    var entry = doc.RootElement.Deserialize<MemoryEntry>();
+                    var entry = doc.RootElement.Deserialize<MemoryEntry>(importJsonOptions);
                     if (entry is null)
                     {
-                        errors.Add(new { index = i, message = "null-entry" });
+                        errors.Add(new { index = i, message = "null-entry", hint = "The JSON value was null; ensure each line is a populated MemoryEntry object." });
                     }
                     else if (IsEffectivelyEmptyEntry(entry))
                     {
-                        errors.Add(new { index = i, message = "empty-entry" });
+                        errors.Add(new
+                        {
+                            index = i,
+                            message = "empty-entry",
+                            hint = "Entries must include at least one of title, body, or tags to be imported."
+                        });
                     }
                     else
                     {

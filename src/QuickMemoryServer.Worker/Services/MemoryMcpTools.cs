@@ -111,7 +111,7 @@ public static object RelatedEntries(
 
         if (router.ResolveStore(endpoint) is not MemoryStore primaryStore)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available.");
+            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
         }
 
         var includeShared = request.IncludeShared ?? true;
@@ -151,7 +151,7 @@ public static object GetEntry(string endpoint, string id, MemoryRouter router)
     {
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available.");
+            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
         }
 
         var entry = store.FindEntry(id);
@@ -170,7 +170,7 @@ public static object ListEntries(string endpoint, MemoryRouter router)
     {
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available.");
+            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
         }
 
         return store.Snapshot();
@@ -183,7 +183,7 @@ public static object ListRecentEntries(string endpoint, int? maxResults, MemoryR
     {
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available.");
+            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
         }
 
         var take = maxResults is > 0 and <= 200 ? maxResults.Value : 20;
@@ -215,12 +215,13 @@ public static async Task<object> UpsertEntry(
     {
     if (entry is null)
     {
-        return ErrorResult("invalid-entry");
+        return ErrorResult("invalid-entry: entry payload was null. Ensure you pass an object matching the MemoryEntry shape.");
     }
 
     if (!TryPrepareEntry(endpoint, entry, out var prepared, out var prepareError))
     {
-        return ErrorResult(prepareError ?? "invalid-entry");
+        return ErrorResult(prepareError ??
+            "invalid-entry: check that entry.project matches the endpoint, and that required fields (id/title/body/tags) are well-formed.");
     }
     entry = prepared;
 
@@ -239,12 +240,12 @@ public static async Task<object> UpsertEntry(
         var tier = McpAuthorizationContext.GetTier(context);
         if (entry.IsPermanent && tier != PermissionTier.Admin)
         {
-            return ErrorResult("permanent entries require admin tier");
+            return ErrorResult("permanent entries require admin tier; omit isPermanent or ask an Admin-tier user to create or update this entry.");
         }
 
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available.");
+            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
         }
 
         await store.UpsertAsync(entry, cancellationToken);
@@ -264,7 +265,7 @@ public static async Task<object> UpsertEntry(
     {
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available.");
+            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
         }
 
         var existing = store.FindEntry(id);
@@ -309,7 +310,7 @@ public static async Task<object> UpsertEntry(
         var tier = McpAuthorizationContext.GetTier(context);
         if (updated.IsPermanent && tier != PermissionTier.Admin)
         {
-            return ErrorResult("permanent entries require admin tier");
+            return ErrorResult("permanent entries require admin tier; omit isPermanent or ask an Admin-tier user to update this entry.");
         }
 
         await store.UpsertAsync(updated, cancellationToken);
@@ -371,7 +372,7 @@ public static async Task<object> RequestBackup(
         var tier = McpAuthorizationContext.GetTier(context);
         if (tier != PermissionTier.Admin)
         {
-            return ErrorResult("backup operations require admin tier");
+            return ErrorResult("backup operations require admin tier; ask an Admin-tier user to invoke requestBackup or adjust your tier.");
         }
 
         var mode = Enum.TryParse<BackupMode>(payload.Mode ?? "Differential", true, out var parsed)
@@ -412,7 +413,7 @@ public static object ColdStart(
 {
     if (router.ResolveStore(endpoint) is not MemoryStore store)
     {
-        return ErrorResult($"Endpoint '{endpoint}' is not available.");
+        return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
     }
 
     var snapshot = store.Snapshot();
@@ -439,6 +440,15 @@ public static object ColdStart(
              string.Equals(e.CurationTier, "canonical", StringComparison.OrdinalIgnoreCase)))
         .ToArray();
 
+    var now = DateTimeOffset.UtcNow;
+    var cutoff = now - TimeSpan.FromHours(24);
+    var recentAllSlugsLast24hCount = snapshot
+        .Count(e =>
+        {
+            var ts = e.Timestamps?.UpdatedUtc ?? e.Timestamps?.CreatedUtc ?? DateTimeOffset.UnixEpoch;
+            return ts >= cutoff;
+        });
+
     var recentQuery = snapshot.AsEnumerable();
     if (!string.IsNullOrWhiteSpace(epicSlug))
     {
@@ -457,7 +467,8 @@ public static object ColdStart(
         Endpoint: endpoint,
         EpicSlug: epicSlug,
         ColdStartEntries: coldStartEntries,
-        RecentEntries: recentEntries);
+        RecentEntries: recentEntries,
+        RecentAllSlugsLast24hCount: recentAllSlugsLast24hCount);
 }
 
 [McpServerTool(Name = "health", Title = "Health report", ReadOnly = true)]
@@ -647,7 +658,8 @@ public static object GetPromptTemplate(
         [property: JsonPropertyName("endpoint")] string Endpoint,
         [property: JsonPropertyName("epicSlug")] string? EpicSlug,
         [property: JsonPropertyName("coldStartEntries")] IReadOnlyList<MemoryEntry> ColdStartEntries,
-        [property: JsonPropertyName("recentEntries")] IReadOnlyList<MemoryEntry> RecentEntries);
+        [property: JsonPropertyName("recentEntries")] IReadOnlyList<MemoryEntry> RecentEntries,
+        [property: JsonPropertyName("recentAllSlugsLast24hCount")] int RecentAllSlugsLast24hCount);
 
     public sealed record PromptArgument(
         [property: JsonPropertyName("name")] string Name,

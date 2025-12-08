@@ -5,6 +5,7 @@ const state = {
   endpoints: [],
   allowedEndpoints: [],
   entries: [],
+  selectedEntryIds: new Set(),
   permissions: {},
   users: [],
   activeProjectKey: null,
@@ -162,6 +163,7 @@ const views = {
       const tableBody = document.getElementById('entities-body');
       if (tableBody) {
         tableBody.addEventListener('click', handleEntityActions);
+        tableBody.addEventListener('change', handleEntitySelectionChange);
       }
       const detailPanel = document.getElementById('entity-detail');
       if (detailPanel) {
@@ -190,6 +192,15 @@ const views = {
       const importRun = document.getElementById('import-run');
       if (importRun) {
         importRun.addEventListener('click', runImport);
+      }
+
+      const selectAll = document.getElementById('entities-select-all');
+      if (selectAll) {
+        selectAll.addEventListener('change', handleEntitiesSelectAll);
+      }
+      const bulkDelete = document.getElementById('entities-bulk-delete');
+      if (bulkDelete) {
+        bulkDelete.addEventListener('click', bulkDeleteEntries);
       }
     },
     onShow() {
@@ -385,6 +396,27 @@ function handleEntryDetailActions(event) {
       confirmDeleteEntry(entryId, () => deleteEntry(entryId));
     }
   }
+}
+
+function handleEntitySelectionChange(event) {
+  const checkbox = event.target.closest('.entity-select');
+  if (!checkbox) {
+    return;
+  }
+
+  const entryId = checkbox.dataset.entryId;
+  if (!entryId) {
+    return;
+  }
+
+  if (checkbox.checked) {
+    state.selectedEntryIds.add(entryId);
+  } else {
+    state.selectedEntryIds.delete(entryId);
+  }
+
+  syncEntitiesSelectAllCheckbox();
+  updateEntitiesSelectionSummary();
 }
 
 async function fetchEndpoints() {
@@ -1292,9 +1324,13 @@ async function loadEntities() {
 function renderEntitiesTable() {
   const body = document.getElementById('entities-body');
   if (!state.entries.length) {
-    body.innerHTML = '<tr><td colspan="6" class="text-muted">No entries found.</td></tr>';
+    state.selectedEntryIds.clear();
+    body.innerHTML = '<tr><td colspan="7" class="text-muted">No entries found.</td></tr>';
+    updateEntitiesSelectionSummary();
     return;
   }
+
+  state.selectedEntryIds.clear();
 
   body.innerHTML = state.entries
     .map((result) => {
@@ -1302,6 +1338,7 @@ function renderEntitiesTable() {
       const updated = entry.timestamps?.updatedUtc ? formatDate(entry.timestamps.updatedUtc) : 'never';
       return `
         <tr>
+          <td><input type="checkbox" class="entity-select form-check-input" data-entry-id="${escapeHtml(entry.id)}" /></td>
           <td>${escapeHtml(entry.id)}</td>
           <td>${escapeHtml(entry.title || entry.id)}</td>
           <td>${escapeHtml(entry.kind)}</td>
@@ -1760,6 +1797,124 @@ function handleProjectPermissionsListClick(event) {
   renderProjectPermissionsList();
   renderProjectPermissionsDetail();
   renderProjectPermissionsBulkControls();
+}
+
+function updateEntitiesSelectionSummary() {
+  const summary = document.getElementById('entities-selection-summary');
+  const bulkDelete = document.getElementById('entities-bulk-delete');
+  const count = state.selectedEntryIds.size;
+
+  if (summary) {
+    summary.textContent = `${count} selected`;
+  }
+
+  if (bulkDelete) {
+    bulkDelete.disabled = count === 0;
+  }
+}
+
+function syncEntitiesSelectAllCheckbox() {
+  const selectAll = document.getElementById('entities-select-all');
+  if (!selectAll) {
+    return;
+  }
+
+  const checkboxes = Array.from(document.querySelectorAll('#entities-body .entity-select'));
+  if (!checkboxes.length) {
+    selectAll.checked = false;
+    selectAll.indeterminate = false;
+    return;
+  }
+
+  const selectedCount = checkboxes.filter((cb) => cb.checked).length;
+  selectAll.checked = selectedCount === checkboxes.length;
+  selectAll.indeterminate = selectedCount > 0 && selectedCount < checkboxes.length;
+}
+
+function handleEntitiesSelectAll(event) {
+  const checked = event.target.checked;
+  const checkboxes = Array.from(document.querySelectorAll('#entities-body .entity-select'));
+
+  state.selectedEntryIds.clear();
+  checkboxes.forEach((cb) => {
+    cb.checked = checked;
+    const id = cb.dataset.entryId;
+    if (checked && id) {
+      state.selectedEntryIds.add(id);
+    }
+  });
+
+  updateEntitiesSelectionSummary();
+  syncEntitiesSelectAllCheckbox();
+}
+
+async function bulkDeleteEntries() {
+  if (!ensureAuth()) {
+    return;
+  }
+
+  const toDelete = Array.from(state.selectedEntryIds);
+  if (!toDelete.length) {
+    return;
+  }
+
+  const projectSelect = document.getElementById('entity-project');
+  const project = (projectSelect && projectSelect.value) || state.allowedEndpoints[0]?.key;
+  if (!project) {
+    setStatus('No accessible project for bulk delete', 'danger');
+    return;
+  }
+
+  const confirmMessage = `Delete ${toDelete.length} selected entr${toDelete.length === 1 ? 'y' : 'ies'} from project ${project}?`;
+  if (window.Swal) {
+    const result = await Swal.fire({
+      title: 'Delete selected entries?',
+      text: confirmMessage,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#d33'
+    });
+    if (!result.isConfirmed) {
+      return;
+    }
+  } else if (!window.confirm(confirmMessage)) {
+    return;
+  }
+
+  setStatus('Deleting selected entries...', 'info');
+
+  let failures = 0;
+  for (const id of toDelete) {
+    try {
+      const response = await fetch(`/mcp/${encodeURIComponent(project)}/entries/${encodeURIComponent(id)}?force=true`, {
+        method: 'DELETE',
+        headers: authHeaders(false)
+      });
+
+      if (!response.ok) {
+        failures++;
+      }
+    } catch {
+      failures++;
+    }
+  }
+
+  if (failures > 0) {
+    setStatus(`Deleted ${toDelete.length - failures} entries; ${failures} failed.`, 'warning');
+  } else {
+    setStatus(`Deleted ${toDelete.length} entries.`, 'info');
+  }
+
+  state.selectedEntryIds.clear();
+  const selectAll = document.getElementById('entities-select-all');
+  if (selectAll) {
+    selectAll.checked = false;
+    selectAll.indeterminate = false;
+  }
+
+  await loadEntities();
 }
 
 function handleProjectSelectionChange(event) {

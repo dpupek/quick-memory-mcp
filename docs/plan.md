@@ -58,6 +58,8 @@
 - [x] Surface an audit trail of permission changes (who/when/what) for future troubleshooting.
 - [x] Move the SPA shell into a Razor view (`Views/Admin/Index.cshtml`) and enable cache-busted static assets via `asp-append-version` for `app.css` and `app.js`.
 - [x] Auto-create the `prompts-repository` project at startup when missing so curated prompt entries are always reachable from the SPA and MCP tools.
+- [ ] Add a delete button next to each entry row in the Entities table for quick single-entry deletion.
+- [ ] Add entry selection checkboxes plus bulk delete actions in the Entities tab (with confirmation and permission checks).
 
 ## Future Phases
 - [ ] **Phase 10 – Release & Hardening** (installer packaging with WiX, load + failure testing, release notes, ONNX artifacts, final docs, and load test evidence).  
