@@ -47,6 +47,16 @@
   ```
   Notes: `mcp-remote` caches auth under `~/.mcp-auth`; if keys change, delete that folder. Prefer `X-Api-Key` header for Quick Memory; bearer also works. Ensure `global.httpUrl` binds to `0.0.0.0:5080` and Windows firewall allows 5080 so WSL → Windows works.
 
+## Quick Memory Usage (MCP)
+
+- **Default project:** Use `qm-proj` unless the user says otherwise. Call `listProjects` if unsure.
+- **First minute:** Run `health`, then `listProjects`, then `listRecentEntries { endpoint: "qm-proj", maxResults: 20 }` to catch up. Surface any gaps to fill.
+- **Cold start recipe (2025-12-09):** If `coldStart` fails on `qm-proj`, run `health` and `listProjects`, then call `coldStart` with `endpoint="qm-project-notes"` and `epicSlug="qm-proj"` (this returned the canonical cold-start entries: WSL/Windows .NET guidance, epic shaping, AAAA pattern, follow code smells).
+- **Recording lessons:** Use `upsertEntry` with `project = "qm-proj"`, leave `id` empty to auto-generate, pick a clear `kind` (`note`/`procedure`/`decision`), add 3–6 tags, and set `curationTier` (`provisional`→`curated`→`canonical`) as appropriate. Avoid `isPermanent=true` unless it is a long-lived rule; Admin is required to delete permanents.
+- **Prompts:** Prefer the curated prompts in `prompts-repository` via `prompts/list` + `prompts/get` (e.g., `onboarding:first-time`, `cold-start:project`). They already include argument metadata and categories.
+- **Graph & search:** Use `searchEntries { endpoint: "qm-proj", text, includeShared }` for retrieval and `relatedEntries { endpoint: "qm-proj", id, maxHops }` for curated links. Shared inclusion follows the project’s defaults; override per call when needed.
+- **Backups & audits:** `requestBackup` is Admin-only; permission edits are logged to the audit trail. When rotating keys, update Codex config and restart the client to pick up new headers.
+
 ## Roslyn Code Navigator (MCP) – How to use
 
 - Primary tools: `TestSolution`, `BuildSolution`, `SearchSymbols`, `FindReferences`, `GetSymbolInfo`, `ListProjects`, `AnalyzeDependencies`.

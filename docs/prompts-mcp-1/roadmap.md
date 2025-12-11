@@ -60,7 +60,7 @@
 
 ## Phase 5 – Hardening & Future Enhancements
 
-- [ ] Add tests around malformed `prompt-args`, missing arguments, and
+- [x] Add tests around malformed `prompt-args`, missing arguments, and
       permission boundaries.
 - [ ] Consider richer multi-message prompts (system + user messages)
       if needed.

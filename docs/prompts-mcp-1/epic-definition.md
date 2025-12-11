@@ -71,8 +71,8 @@ consistent shape:
 - `title` – human-readable name for the recipe; surfaced as the MCP
   prompt description.
 - `id` – stable slug used as the MCP `prompt.name`, e.g.:
-  - `onboarding/first-time`
-  - `cold-start/project`
+  - `onboarding:first-time`
+  - `cold-start:project`
   - `lessons/new-entry`
 
 ### Argument Metadata (`prompt-args` Block)

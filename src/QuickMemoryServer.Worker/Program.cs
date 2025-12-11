@@ -221,7 +221,19 @@ builder.Services.AddMcpServer()
             var apiKey = ExtractApiKey(httpContext);
             if (string.IsNullOrWhiteSpace(apiKey))
             {
-                return CreateCallToolError("missing-api-key");
+                // Return HTTP 401 with a clear hint for callers.
+                return new CallToolResult
+                {
+                    IsError = true,
+                    HttpStatusCode = StatusCodes.Status401Unauthorized,
+                    Content = new List<ContentBlock>
+                    {
+                        new TextContentBlock
+                        {
+                            Text = "missing-api-key: include X-Api-Key header with a valid Quick Memory key"
+                        }
+                    }
+                };
             }
 
             var toolName = context.Params.Name;
@@ -274,7 +286,18 @@ builder.Services.AddMcpServer()
 
             if (!authorizer.TryAuthorize(apiKey, projectEndpoint, out var userScoped, out var tierScoped))
             {
-                return CreateCallToolError("unauthorized");
+                return new CallToolResult
+                {
+                    IsError = true,
+                    HttpStatusCode = StatusCodes.Status403Forbidden,
+                    Content = new List<ContentBlock>
+                    {
+                        new TextContentBlock
+                        {
+                            Text = $"unauthorized: api key is not permitted for endpoint '{projectEndpoint}'"
+                        }
+                    }
+                };
             }
 
             context.Items[McpAuthorizationContext.ApiKeyItem] = apiKey;
@@ -336,6 +359,16 @@ app.MapGet("/health", (HealthReporter healthReporter) =>
 {
     var report = healthReporter.GetReport();
     return Results.Ok(report);
+});
+
+// Friendly response for accidental GETs to the MCP endpoint (the MCP transport is POST-only).
+app.MapGet("/mcp", () =>
+{
+    return Results.Json(new
+    {
+        error = "MCP endpoint expects POST /mcp with JSON-RPC (initialize, tools/list, tools/call).",
+        hint = "Switch your client to POST /mcp and include the X-Api-Key header."
+    }, statusCode: StatusCodes.Status400BadRequest);
 });
 
 app.MapPost("/admin/login", async (HttpContext context) =>

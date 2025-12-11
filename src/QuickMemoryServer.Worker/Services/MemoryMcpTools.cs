@@ -407,9 +407,9 @@ public static ListProjectsResponse ListProjects(IOptionsMonitor<ServerOptions> o
 [McpMeta("tier", "reader")]
 public static object ColdStart(
     string endpoint,
-    string? epicSlug,
     MemoryRouter router,
-    IOptionsMonitor<ServerOptions> optionsMonitor)
+    IOptionsMonitor<ServerOptions> optionsMonitor,
+    string? epicSlug = null)
 {
     if (router.ResolveStore(endpoint) is not MemoryStore store)
     {
@@ -876,6 +876,25 @@ private static string? ValidateSource(object? source)
     }
 }
 
+    private static bool IsValidEntryId(string id, out string? error)
+    {
+        error = null;
+
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            error = "invalid-id: entry.id must be a non-empty string.";
+            return false;
+        }
+
+        if (id.Contains('/'))
+        {
+            error = $"invalid-id: '{id}' is not a valid id; ids cannot contain '/' because HTTP endpoints use the id in the path. Use '-' or ':' instead of '/' in ids.";
+            return false;
+        }
+
+        return true;
+    }
+
 internal static bool TryPrepareEntry(string endpoint, MemoryEntry entry, out MemoryEntry prepared, out string? error)
 {
     ArgumentException.ThrowIfNullOrWhiteSpace(endpoint);
@@ -899,6 +918,13 @@ internal static bool TryPrepareEntry(string endpoint, MemoryEntry entry, out Mem
     {
         var generatedId = $"{project}:{Guid.NewGuid():N}";
         normalized = normalized with { Id = generatedId };
+    }
+
+    if (!IsValidEntryId(normalized.Id, out var idError))
+    {
+        prepared = entry;
+        error = idError;
+        return false;
     }
 
     var promptValidationError = ValidatePromptEntry(normalized);

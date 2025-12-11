@@ -66,6 +66,7 @@ time in a repo, use this flow to “prime” it before doing real work:
 - **Relations:** array of `{ "type": "ref", "targetId": "project:key" }`.
 - **Source metadata:** object `{ "type": "api", "url": "https://...", "path": "...", "shard": "..." }`.
 - **Browse mode:** use `listRecentEntries` or call `searchEntries` with empty text to get recent entries.
+- **Entry ids:** must not contain `/` (HTTP path safety). Prefer `project:slug` or `project-key` formats. Existing prompt ids that still contain `/` (e.g., `onboarding/first-time`) should be migrated to colon or hyphen variants when encountered.
 
 ## Recipes
 ### Browse then search
@@ -191,7 +192,7 @@ Recommended flow for agents:
   - Call the prompt tool equivalent of `onboarding/first-time` with
     `projectKey = "<default-endpoint>"` to bootstrap your behavior.
 - For **cold starts**:
-  - Use the `cold-start/project` prompt with the same `projectKey` at
+  - Use the `cold-start:project` prompt with the same `projectKey` at
     the beginning of a new session.
 - After **investigations**:
   - Use `lessons/new-entry` or `investigation/troubleshoot` to draft

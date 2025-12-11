@@ -504,7 +504,7 @@ async function createProject() {
   const slugInput = document.getElementById('project-slug').value.trim();
   const description = document.getElementById('project-description').value.trim();
   const storageInput = normalizeStoragePath(document.getElementById('project-storage').value);
-  const includeInSearch = document.getElementById('project-include-search').checked;
+  const includeInSearch = document.getElementById('project-include-shared').checked;
   const inheritShared = document.getElementById('project-inherit-shared').checked;
 
   if (!key || !name) {

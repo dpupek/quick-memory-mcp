@@ -34,8 +34,8 @@
 
 ## Phase 3 – Docs & Hardening
 
-- [ ] Update `docs/spec.md` and `docs/agent-usage.md` / admin docs to
-      describe the import feature.
+- [x] Update `docs/spec.md` and `docs/agent-usage.md` / admin docs to
+      describe the import feature and ID constraints.
 - [ ] Add tests for:
   - [ ] Project mismatch handling.
   - [ ] Invalid schema rejection.

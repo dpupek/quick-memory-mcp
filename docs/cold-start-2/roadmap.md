@@ -21,7 +21,8 @@
           from the `shared` project when `includeInSearchByDefault` is true.
     - [x] `recentEntries`: top 20 by `timestamps.updatedUtc` /
           `createdUtc`, filtered by `epicSlug` when provided.
-  - [x] Return a new response type capturing both lists.
+  - [x] Return a new response type capturing both lists and a
+        `recentAllSlugsLast24hCount` hint for recent activity.
 
 ## Phase 2 – Docs & Agent Guidance
 
