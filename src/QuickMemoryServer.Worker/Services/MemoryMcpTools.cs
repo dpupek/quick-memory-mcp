@@ -379,7 +379,7 @@ public static async Task<object> RequestBackup(
             ? parsed
             : BackupMode.Differential;
 
-        await backupService.RequestBackupAsync(endpoint, mode, cancellationToken);
+        await backupService.RequestBackupAsync(endpoint, mode, cancellationToken, McpAuthorizationContext.GetUser(context) ?? "mcp");
         return new { queued = true, mode = mode.ToString() };
     }
 

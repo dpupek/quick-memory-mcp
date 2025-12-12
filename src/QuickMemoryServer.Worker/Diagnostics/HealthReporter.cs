@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Reflection;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -20,6 +22,8 @@ public sealed record HealthReport(
     string Status,
     DateTime TimestampUtc,
     TimeSpan Uptime,
+    string Version,
+    DateTime? BuildDateUtc,
     IReadOnlyList<HealthStoreSnapshot> Stores,
     int TotalEntries,
     long TotalBytes,
@@ -31,6 +35,8 @@ public sealed class HealthReporter
     private readonly ObservabilityMetrics _metrics;
     private readonly ILogger<HealthReporter> _logger;
     private readonly DateTime _startedAt;
+    private readonly ConcurrentDictionary<string, string> _issues = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, BackupAttempt> _lastBackupAttempt = new(StringComparer.OrdinalIgnoreCase);
 
     public HealthReporter(
         IMemoryStoreProvider storeProvider,
@@ -41,6 +47,22 @@ public sealed class HealthReporter
         _metrics = metrics;
         _logger = logger;
         _startedAt = DateTime.UtcNow;
+    }
+
+    public void ReportIssue(string key, string message)
+    {
+        _issues[key] = message;
+        _logger.LogWarning("Health issue recorded for {Key}: {Message}", key, message);
+    }
+
+    public void ClearIssue(string key)
+    {
+        _issues.TryRemove(key, out _);
+    }
+
+    public void RecordBackupAttempt(string endpoint, string status, string message, DateTime timestampUtc)
+    {
+        _lastBackupAttempt[endpoint] = new BackupAttempt(status, message, timestampUtc);
     }
 
     public HealthReport GetReport()
@@ -59,6 +81,16 @@ public sealed class HealthReporter
             issues.Add("No endpoints configured.");
         }
 
+        foreach (var (endpoint, attempt) in _lastBackupAttempt)
+        {
+            if (!string.Equals(attempt.Status, "Success", StringComparison.OrdinalIgnoreCase))
+            {
+                issues.Add($"Backup {endpoint}: last attempt {attempt.Status} at {attempt.TimestampUtc:o} - {attempt.Message}");
+            }
+        }
+
+        issues.AddRange(_issues.Values);
+
         foreach (var store in stores)
         {
             _metrics.UpdateStoreEntryCount(store.Endpoint, store.EntryCount);
@@ -67,10 +99,26 @@ public sealed class HealthReporter
         ObservabilityEventSource.Log.ReportEntryCount(totalEntries);
 
         var status = issues.Count == 0 ? "Healthy" : "Degraded";
+        var assembly = Assembly.GetEntryAssembly();
+        var version = assembly?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+                      ?? assembly?.GetName().Version?.ToString()
+                      ?? "1.0.0.0";
+        DateTime? buildDateUtc = null;
+        var baseDir = AppContext.BaseDirectory;
+        if (!string.IsNullOrWhiteSpace(baseDir))
+        {
+            var candidate = Path.Combine(baseDir, "QuickMemoryServer.dll");
+            if (File.Exists(candidate))
+            {
+                buildDateUtc = File.GetCreationTimeUtc(candidate);
+            }
+        }
         var report = new HealthReport(
             status,
             now,
             now - _startedAt,
+            version,
+            buildDateUtc,
             stores,
             totalEntries,
             totalBytes,
@@ -102,3 +150,5 @@ public sealed class HealthReporter
             fileInfo?.LastWriteTimeUtc);
     }
 }
+
+public sealed record BackupAttempt(string Status, string Message, DateTime TimestampUtc);

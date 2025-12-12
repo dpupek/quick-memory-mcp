@@ -420,7 +420,8 @@ try {
 
     $InstallDirectory = Prompt-IfMissing $InstallDirectory "Install directory" "C:\\Program Files\\q-memory-mcp"
     $DataDirectory = Prompt-IfMissing $DataDirectory "Data directory" "C:\\ProgramData\\q-memory-mcp"
-    $portInput = Prompt-IfMissing ($Port -gt 0 ? $Port.ToString() : $null) "HTTP port" "5080"
+    $initialPortInput = if ($Port -gt 0) { $Port.ToString() } else { $null }
+    $portInput = Prompt-IfMissing $initialPortInput "HTTP port" "5080"
     $Port = [int]$portInput
     if ($Port -le 0) { $Port = 5080 }
 
@@ -524,7 +525,23 @@ try {
         Write-Note "Copying payload to ${targetName}:${InstallDirectory}"
         $copyParams = @{ Path = Join-Path $publishRoot '*'; Destination = $InstallDirectory; Recurse = $true; Force = $true; ToSession = $session; Exclude = @('logs','logs/*','logs/**') }
         if (-not $overwriteConfig) { $copyParams.Exclude = 'QuickMemoryServer.toml' }
-        Copy-Item @copyParams
+        try {
+            # stop service to release file locks
+            Invoke-Command -Session $Session -ScriptBlock {
+                param($name)
+                if (Get-Service $name -ErrorAction SilentlyContinue) {
+                    Stop-Service $name -Force -ErrorAction SilentlyContinue
+                    Start-Sleep -Seconds 2
+                }
+            } -ArgumentList $ServiceName -ErrorAction SilentlyContinue
+        } catch {}
+
+        try {
+            Copy-Item @copyParams
+        } catch {
+            Start-Sleep -Seconds 2
+            Copy-Item @copyParams
+        }
             Install-Or-UpdateServiceRemote -Session $session -Target $targetName -ServiceName $serviceName -BinPath $serviceExe -DisplayName $displayName -Account $acct -Password $acctPassword -SkipStart:$SkipStart
             if (-not $SkipFirewall) { Set-FirewallAndUrlAcl -Port $Port -Account $acct -IsRemote $true -Session $session }
             if ($GrantLogonRight -and $acct -and $acct -ne 'LocalSystem') { Invoke-Command -Session $session -ScriptBlock ${function:Grant-ServiceLogonRight} -ArgumentList $acct }
@@ -538,7 +555,12 @@ try {
         Write-Note "Copying payload to $InstallDirectory"
         $copyParams = @{ Path = Join-Path $publishRoot '*'; Destination = $InstallDirectory; Recurse = $true; Force = $true; Exclude = @('logs','logs/*','logs/**') }
         if (-not $overwriteConfig) { $copyParams.Exclude = 'QuickMemoryServer.toml' }
-        Copy-Item @copyParams
+        try {
+            Copy-Item @copyParams
+        } catch {
+            Start-Sleep -Seconds 2
+            Copy-Item @copyParams
+        }
             Install-Or-UpdateServiceLocal -ServiceName $serviceName -BinPath $serviceExe -DisplayName $displayName -Account $acct -Password $acctPassword -SkipStart:$SkipStart
             if (-not $SkipFirewall) { Set-FirewallAndUrlAcl -Port $Port -Account $acct -IsRemote $false -Session $null }
             if ($GrantLogonRight -and $acct -and $acct -ne 'LocalSystem') { Grant-ServiceLogonRight -Account $acct }
@@ -557,7 +579,12 @@ try {
     catch {
         Write-Note "Error: $_"
         if (-not $targetIsRemote -and $backupZip -and -not $NoRollback) {
-            $doRollback = $Quiet ? $true : ((Read-Host "Start failed. Roll back to previous install? [Y/n]") -notmatch '^[nN]')
+            if ($Quiet) {
+                $doRollback = $true
+            }
+            else {
+                $doRollback = ((Read-Host "Start failed. Roll back to previous install? [Y/n]") -notmatch '^[nN]')
+            }
             if ($doRollback) {
                 Write-Note "Attempting rollback from backup"
                 Restore-Backup -Zip $backupZip -InstallDir $InstallDirectory

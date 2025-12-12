@@ -17,7 +17,7 @@
 ## Configuration & Authentication
 - Configuration stored in an INI/TOML file located alongside the service executable (e.g., `QuickMemoryServer.toml`).
 - File structure:
-  - `[global]`: service name, listening URLs, embedding model settings, backup cadence.
+  - `[global]`: service name, listening URLs, embedding model settings, backup cadence, optional backup target path.
   - `[endpoint.projectA]`: `slug`, `name`, `description`, `storagePath`, optional shared inheritance flags.
   - `[users.alice]`: `apiKey`, `tier` (e.g., `admin`, `curator`, `reader`).
   - `[permissions.projectA]`: per-user tier overrides; multiple users can point at multiple endpoints.
@@ -241,5 +241,5 @@ MemoryStores/
 ## Administrative Workflows
 1. **Manual Editing**: Update `entries.jsonl`, save; watcher reloads store, rebuilds indexes, logs success/failure.
 2. **MCP Mutations**: Use `upsertEntry`/`patchEntry` to mark `curationTier` or `isPermanent`; canonical changes recorded in audit log.
-3. **Backups**: Trigger `backupStore` (MCP) or run CLI `memoryctl backup projectA --mode full`; choose `differential` (default) or `full`.
+3. **Backups**: Trigger `backupStore` (MCP) or run CLI `memoryctl backup projectA --mode full`; choose `differential` (default) or `full`. Optional `global.backup.targetPath` can point to a writable local or UNC directory; when unset, backups write under the service install path. If the target is not writable, the backup is skipped, logged, and `/health` reports a degraded state.
 4. **Deployment**: Publish single-file `win-x64` executable; register via `sc create QuickMemoryServer binPath= "..." start= auto`.

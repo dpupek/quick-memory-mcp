@@ -1,0 +1,89 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2 class="h5 mb-0">Backup Management (Admin)</h2>
+  <div id="backup-health-chip" class="badge bg-secondary">…</div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-5">
+    <div class="card card-body shadow-sm mb-3">
+      <h3 class="h6">Settings</h3>
+      <div class="mb-2">
+        <label class="form-label">Target path (local or UNC)</label>
+        <input id="backup-target" type="text" class="form-control" placeholder="\\server\share or C:\backups">
+        <div class="form-text">Leave blank to use service install path.</div>
+      </div>
+      <div class="row g-2">
+        <div class="col-sm-6">
+          <label class="form-label">Differential cron</label>
+          <input id="backup-diff-cron" type="text" class="form-control" placeholder="0 1 * * *">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label">Full cron</label>
+          <input id="backup-full-cron" type="text" class="form-control" placeholder="0 3 * * Sun">
+        </div>
+      </div>
+      <div class="row g-2 mt-2">
+        <div class="col-sm-6">
+          <label class="form-label">Retention (days, diff)</label>
+          <input id="backup-retention" type="number" min="0" class="form-control" value="30">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label">Retention (days, full)</label>
+          <input id="backup-full-retention" type="number" min="0" class="form-control" value="90">
+        </div>
+      </div>
+      <div class="d-flex gap-2 mt-3">
+        <button id="backup-save" class="btn btn-primary btn-sm">Save</button>
+        <button id="backup-probe" class="btn btn-outline-secondary btn-sm">Test write</button>
+        <span id="backup-next-run" class="text-muted small ms-auto"></span>
+      </div>
+      <div id="backup-settings-status" class="text-muted small mt-2"></div>
+    </div>
+
+    <div class="card card-body shadow-sm">
+      <h3 class="h6">Manual backup</h3>
+      <div class="row g-2">
+        <div class="col-sm-7">
+          <label class="form-label">Endpoint</label>
+          <select id="backup-run-endpoint" class="form-select"></select>
+        </div>
+        <div class="col-sm-5">
+          <label class="form-label">Mode</label>
+          <select id="backup-run-mode" class="form-select">
+            <option value="Differential">Differential</option>
+            <option value="Full">Full</option>
+          </select>
+        </div>
+      </div>
+      <button id="backup-run" class="btn btn-outline-primary btn-sm mt-3">Run now</button>
+      <div id="backup-run-status" class="text-muted small mt-2"></div>
+    </div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card card-body shadow-sm">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h3 class="h6 mb-0">Recent activity</h3>
+        <div class="d-flex gap-2">
+          <div class="form-check form-switch small mt-1">
+            <input class="form-check-input" type="checkbox" id="backup-auto-refresh" checked>
+            <label class="form-check-label" for="backup-auto-refresh">Auto</label>
+          </div>
+          <input id="backup-activity-filter" class="form-control form-control-sm" style="width:160px" placeholder="Filter endpoint">
+          <button id="backup-activity-refresh" class="btn btn-outline-secondary btn-sm">Refresh</button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th>When (UTC)</th><th>Endpoint</th><th>Mode</th><th>Status</th><th>Duration</th><th>Message</th><th>By</th>
+            </tr>
+          </thead>
+          <tbody id="backup-activity-body"></tbody>
+        </table>
+      </div>
+      <div id="backup-activity-empty" class="text-muted small mt-2 d-none">No activity yet.</div>
+    </div>
+  </div>
+</div>

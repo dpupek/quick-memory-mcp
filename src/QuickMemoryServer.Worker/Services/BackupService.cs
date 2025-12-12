@@ -1,6 +1,8 @@
 using System.IO.Compression;
 using System.Reflection;
 using System.Threading.Channels;
+using System.Diagnostics;
+using System.IO;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -8,6 +10,7 @@ using NCrontab;
 using QuickMemoryServer.Worker.Configuration;
 using QuickMemoryServer.Worker.Diagnostics;
 using QuickMemoryServer.Worker.Memory;
+using QuickMemoryServer.Worker.Models;
 
 namespace QuickMemoryServer.Worker.Services;
 
@@ -17,7 +20,7 @@ public enum BackupMode
     Full
 }
 
-public sealed record BackupRequest(string Endpoint, BackupMode Mode);
+public sealed record BackupRequest(string Endpoint, BackupMode Mode, string? InitiatedBy);
 
 public sealed class BackupService : BackgroundService
 {
@@ -25,23 +28,30 @@ public sealed class BackupService : BackgroundService
     private readonly MemoryStoreFactory _storeFactory;
     private readonly IOptionsMonitor<ServerOptions> _optionsMonitor;
     private readonly ObservabilityMetrics _metrics;
+    private readonly HealthReporter _healthReporter;
+    private readonly BackupActivityStore _activityStore;
     private readonly ILogger<BackupService> _logger;
+    private readonly string _instanceId = $"{Environment.MachineName}:{Environment.ProcessId}";
 
     public BackupService(
         MemoryStoreFactory storeFactory,
         IOptionsMonitor<ServerOptions> optionsMonitor,
         ObservabilityMetrics metrics,
+        HealthReporter healthReporter,
+        BackupActivityStore activityStore,
         ILogger<BackupService> logger)
     {
         _storeFactory = storeFactory;
         _optionsMonitor = optionsMonitor;
         _metrics = metrics;
+        _healthReporter = healthReporter;
+        _activityStore = activityStore;
         _logger = logger;
     }
 
-    public ValueTask RequestBackupAsync(string endpoint, BackupMode mode, CancellationToken cancellationToken)
+    public ValueTask RequestBackupAsync(string endpoint, BackupMode mode, CancellationToken cancellationToken, string? initiatedBy = null)
     {
-        return _requests.Writer.WriteAsync(new BackupRequest(endpoint, mode), cancellationToken);
+        return _requests.Writer.WriteAsync(new BackupRequest(endpoint, mode, initiatedBy), cancellationToken);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -60,7 +70,7 @@ public sealed class BackupService : BackgroundService
     {
         await foreach (var request in _requests.Reader.ReadAllAsync(stoppingToken))
         {
-            await ExecuteBackupAsync(request.Endpoint, request.Mode, stoppingToken);
+            await ExecuteBackupAsync(request.Endpoint, request.Mode, stoppingToken, request.InitiatedBy);
         }
     }
 
@@ -92,7 +102,7 @@ public sealed class BackupService : BackgroundService
             {
                 try
                 {
-                    await ExecuteBackupAsync(endpoint, mode, stoppingToken);
+                    await ExecuteBackupAsync(endpoint, mode, stoppingToken, "scheduler");
                 }
                 catch (Exception ex)
                 {
@@ -104,16 +114,21 @@ public sealed class BackupService : BackgroundService
         }
     }
 
-    private async Task ExecuteBackupAsync(string endpoint, BackupMode mode, CancellationToken cancellationToken)
+    private async Task ExecuteBackupAsync(string endpoint, BackupMode mode, CancellationToken cancellationToken, string? initiatedBy = null)
     {
         var success = false;
+        var stopwatch = Stopwatch.StartNew();
+        string message = string.Empty;
         try
         {
             var store = _storeFactory.GetOrCreate(endpoint);
-            var basePath = AppContext.BaseDirectory;
+            var configuredTarget = _optionsMonitor.CurrentValue.Global.Backup.TargetPath;
+            var basePath = string.IsNullOrWhiteSpace(configuredTarget)
+                ? AppContext.BaseDirectory
+                : configuredTarget;
             var backupRoot = Path.Combine(basePath, "Backups");
 
-            Directory.CreateDirectory(backupRoot);
+            EnsureWritable(backupRoot);
 
             switch (mode)
             {
@@ -122,6 +137,7 @@ public sealed class BackupService : BackgroundService
                     var diffFolder = Path.Combine(diffRoot, DateTime.UtcNow.ToString("yyyyMMdd"), endpoint);
                     await CreateDifferentialBackupAsync(store, diffFolder, cancellationToken);
                     await PurgeOldBackupsAsync(diffRoot, _optionsMonitor.CurrentValue.Global.Backup.RetentionDays, mode);
+                    message = $"Differential backup to {diffFolder}";
                     break;
                 case BackupMode.Full:
                     var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
@@ -129,23 +145,28 @@ public sealed class BackupService : BackgroundService
                     var destFile = Path.Combine(fullRoot, $"{timestamp}-{endpoint}.zip");
                     await CreateFullBackupAsync(store, destFile, cancellationToken);
                     await PurgeOldBackupsAsync(fullRoot, _optionsMonitor.CurrentValue.Global.Backup.FullRetentionDays, mode);
+                    message = $"Full backup to {destFile}";
                     break;
             }
 
             success = true;
         }
-        catch
+        catch (Exception ex)
         {
+            _healthReporter.ReportIssue($"backup:{endpoint}", $"Last {mode} backup failed for {endpoint}: {ex.Message}");
             _metrics.BackupFailed(endpoint);
             ObservabilityEventSource.Log.ReportBackupFailure();
+            RecordActivity(endpoint, mode, BackupActivityStatus.Failure, ex.Message, stopwatch.Elapsed.TotalMilliseconds, initiatedBy);
             throw;
         }
         finally
         {
             if (success)
             {
+                _healthReporter.ClearIssue($"backup:{endpoint}");
                 _metrics.BackupSucceeded(endpoint);
                 ObservabilityEventSource.Log.ReportBackupSuccess();
+                RecordActivity(endpoint, mode, BackupActivityStatus.Success, message, stopwatch.Elapsed.TotalMilliseconds, initiatedBy);
             }
         }
     }
@@ -271,5 +292,43 @@ public sealed class BackupService : BackgroundService
         {
             return null;
         }
+    }
+
+    private void EnsureWritable(string backupRoot)
+    {
+        var issueKey = $"backup-target:{backupRoot}";
+        try
+        {
+            Directory.CreateDirectory(backupRoot);
+            var probePath = Path.Combine(backupRoot, ".write-probe");
+            using (var probe = new FileStream(probePath, FileMode.Create, FileAccess.Write, FileShare.None, 1, FileOptions.DeleteOnClose))
+            {
+                probe.WriteByte(0);
+            }
+
+            _healthReporter.ClearIssue(issueKey);
+        }
+        catch (Exception ex)
+        {
+            _healthReporter.ReportIssue(issueKey, $"Backup target '{backupRoot}' is not writable: {ex.Message}");
+            _logger.LogError(ex, "Backup target {BackupRoot} is not writable", backupRoot);
+            throw;
+        }
+    }
+
+    private void RecordActivity(string endpoint, BackupMode mode, BackupActivityStatus status, string message, double durationMs, string? initiatedBy)
+    {
+        var activity = new BackupActivity(
+            DateTime.UtcNow,
+            endpoint,
+            mode,
+            status,
+            message,
+            durationMs,
+            initiatedBy,
+            _instanceId);
+
+        _activityStore.Record(activity);
+        _healthReporter.RecordBackupAttempt(endpoint, status.ToString(), message, activity.TimestampUtc);
     }
 }

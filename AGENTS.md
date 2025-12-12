@@ -50,6 +50,8 @@
 ## Quick Memory Usage (MCP)
 
 - **Default project:** Use `qm-proj` unless the user says otherwise. Call `listProjects` if unsure.
+- **Project notes update:** Recent GH issue created for the Backup Management Blade is logged in `qm-project-notes` (entry id `qm-project-notes:a1e2fb9448a14c8ba568e27baec6d2e2`); include lessons about gh labels when creating issues.
+- **Admin UI is Razor-backed:** The SPA is served from `Views/Admin/Index.cshtml` (not just `/wwwroot/index.html`). Blades can be lazy-loaded from fragments (Backup uses `wwwroot/fragments/backup.html`). Update cshtml/nav + fragment + `wwwroot/js/app.js` when adding blades.
 - **First minute:** Run `health`, then `listProjects`, then `listRecentEntries { endpoint: "qm-proj", maxResults: 20 }` to catch up. Surface any gaps to fill.
 - **Cold start recipe (2025-12-09):** If `coldStart` fails on `qm-proj`, run `health` and `listProjects`, then call `coldStart` with `endpoint="qm-project-notes"` and `epicSlug="qm-proj"` (this returned the canonical cold-start entries: WSL/Windows .NET guidance, epic shaping, AAAA pattern, follow code smells).
 - **Recording lessons:** Use `upsertEntry` with `project = "qm-proj"`, leave `id` empty to auto-generate, pick a clear `kind` (`note`/`procedure`/`decision`), add 3–6 tags, and set `curationTier` (`provisional`→`curated`→`canonical`) as appropriate. Avoid `isPermanent=true` unless it is a long-lived rule; Admin is required to delete permanents.

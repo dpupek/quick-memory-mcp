@@ -41,6 +41,7 @@
           <button class="nav-link" data-tab="entities"><i class='bi bi-journal-text me-1'></i> Entities</button>
           <button class="nav-link" data-tab="users"><i class='bi bi-people me-1'></i> Users</button>
           <button class="nav-link" data-tab="config"><i class='bi bi-gear me-1'></i> Config (TOML)</button>
+          <button class="nav-link" data-tab="backup"><i class='bi bi-cloud-arrow-down me-1'></i> Backup</button>
           <button class="nav-link" data-tab="health"><i class='bi bi-heart-pulse me-1'></i> Health</button>
           <div class="mt-3 text-uppercase small text-white-50">Help</div>
           <button class="nav-link" data-tab="help">End User Help</button>
@@ -61,6 +62,7 @@
             <h1>Overview</h1>
           </div>
           <div id="overview-summary" class="card card-body bg-white shadow-sm mt-3"></div>
+          <div class="small text-muted ms-1" id="overview-version"></div>
           <div id="overview-config" class="card card-body bg-white shadow-sm mt-3"></div>
           <div class="row mt-3 g-3">
             <div class="col-lg-6">
@@ -419,6 +421,12 @@
             <div id="config-diff" class="mt-3" style="display:none;"></div>
           </div>
         </section>
+
+        <section id="backup" class="tab-pane">
+  <div id="backup-host"></div>
+</section>
+
+
         <section id="health" class="tab-pane">
           <h1>Health & Logs</h1>
           <div class="d-flex flex-wrap align-items-center gap-2 mb-3">

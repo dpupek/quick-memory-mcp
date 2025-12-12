@@ -11,6 +11,8 @@ differentialCron = "0 1 * * *"
 fullCron = "0 3 * * Sun"
 retentionDays = 30
 fullRetentionDays = 90
+# Optional: place backups on a different volume/UNC share
+# targetPath = "\\\\fileserver\\qms-backups"
 
 [endpoint.shared]
 slug = "shared"

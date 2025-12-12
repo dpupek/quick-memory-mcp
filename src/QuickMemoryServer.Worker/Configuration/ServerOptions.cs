@@ -112,6 +112,12 @@ public sealed class BackupOptions
     public int RetentionDays { get; set; } = 30;
 
     public int FullRetentionDays { get; set; } = 90;
+
+    /// <summary>
+    /// Optional override for where backups are written. Can be a local or UNC path.
+    /// When empty, defaults to the application base directory (AppContext.BaseDirectory).
+    /// </summary>
+    public string? TargetPath { get; set; }
 }
 
 public enum PermissionTier

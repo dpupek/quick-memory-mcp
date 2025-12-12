@@ -1,11 +1,11 @@
 <Project>
   <PropertyGroup>
-    <!-- Auto-increment build/revision on every compile for all projects in the solution. -->
-    <AssemblyVersion>1.0.*</AssemblyVersion>
-    <FileVersion>1.0.*</FileVersion>
-    <!-- Keep semantic version stable; informational version can carry commit if desired. -->
+    <!-- Semantic base version; informational version will carry commit for diagnostics. -->
     <Version>1.0.0</Version>
-    <!-- Allow wildcard versioning (non-deterministic) for build auto-increment. -->
-    <Deterministic>false</Deterministic>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <FileVersion>$(Version)</FileVersion>
+    <!-- Use git SHA when available; fallback to 'local'. -->
+    <AssemblyInformationalVersion>$(Version)+$(SourceRevisionId)</AssemblyInformationalVersion>
+    <SourceRevisionId Condition=" '$(SourceRevisionId)' == '' ">local</SourceRevisionId>
   </PropertyGroup>
 </Project>

@@ -132,7 +132,7 @@ public sealed class PromptToolsTests : IDisposable
     }
 }
 
-file private sealed class PromptTestContext : IDisposable
+internal sealed class PromptTestContext : IDisposable
 {
     private readonly string _tempDir;
     private readonly ServerOptions _options;
@@ -209,7 +209,11 @@ file private sealed class PromptTestContext : IDisposable
             }
         };
 
-        var json = System.Text.Json.JsonSerializer.Serialize(entry);
+        var json = System.Text.Json.JsonSerializer.Serialize(entry, new System.Text.Json.JsonSerializerOptions
+        {
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        });
         File.AppendAllText(path, json + "\n");
     }
 

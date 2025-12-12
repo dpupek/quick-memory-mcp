@@ -8,6 +8,7 @@ using Tomlyn;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using QuickMemoryServer.Worker.Models;
 
 namespace QuickMemoryServer.Worker.Configuration;
 
@@ -54,6 +55,18 @@ public sealed class AdminConfigService
         return MutateAsync(options =>
         {
             options.Users[username] = user;
+        }, cancellationToken);
+    }
+
+    public Task UpdateBackupSettingsAsync(BackupSettingsRequest request, CancellationToken cancellationToken = default)
+    {
+        return MutateAsync(options =>
+        {
+            options.Global.Backup.DifferentialCron = request.DifferentialCron;
+            options.Global.Backup.FullCron = request.FullCron;
+            options.Global.Backup.RetentionDays = request.RetentionDays;
+            options.Global.Backup.FullRetentionDays = request.FullRetentionDays;
+            options.Global.Backup.TargetPath = string.IsNullOrWhiteSpace(request.TargetPath) ? null : request.TargetPath.Trim();
         }, cancellationToken);
     }
 
@@ -274,6 +287,7 @@ public sealed class AdminConfigService
         AppendString(sb, "fullCron", global.Backup.FullCron);
         AppendInt(sb, "retentionDays", global.Backup.RetentionDays);
         AppendInt(sb, "fullRetentionDays", global.Backup.FullRetentionDays);
+        AppendString(sb, "targetPath", global.Backup.TargetPath ?? string.Empty);
         sb.AppendLine();
     }
 

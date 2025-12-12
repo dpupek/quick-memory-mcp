@@ -38,6 +38,14 @@ Field hints:
 - Validate before save; a diff shows changes vs. last loaded.
 - Config writes to the service TOML and triggers a reload; keep a backup for safety.
 
+## Backup (Admin)
+- Configure backup target path (local/UNC), differential/full cron, and retention.
+- Test write target with **Test write**; failures surface in health and inline status.
+- Run manual differential/full backups per endpoint; queued via server-side `BackupService`.
+- Review recent backup activity with status chips, duration, message, initiator; filter by endpoint.
+- Health chip reflects backup-related issues (e.g., last attempt failed, target unwritable).
+- Implementation note: the admin console is rendered via `Views/Admin/Index.cshtml` with static assets in `wwwroot`. The Backup blade is lazy-loaded from `wwwroot/fragments/backup.html`; handlers live in `wwwroot/js/app.js`. Add new blades by inserting a host div in the cshtml and loading a fragment + JS wiring.
+
 ## Health & Logs
 - Fetch `/health` to see status, issues, and store info.
 - Download recent log files as a zip; the service writes logs under `C:\Program Files\q-memory-mcp\logs`.

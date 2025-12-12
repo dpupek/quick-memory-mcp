@@ -160,6 +160,7 @@ builder.Services.AddSingleton<MemoryStoreFactory>();
 builder.Services.AddSingleton<MemoryRouter>();
 builder.Services.AddSingleton<ApiKeyAuthorizer>();
 builder.Services.AddHostedService<MemoryService>();
+builder.Services.AddSingleton<BackupActivityStore>();
 builder.Services.AddSingleton<BackupService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<BackupService>());
 
@@ -221,11 +222,9 @@ builder.Services.AddMcpServer()
             var apiKey = ExtractApiKey(httpContext);
             if (string.IsNullOrWhiteSpace(apiKey))
             {
-                // Return HTTP 401 with a clear hint for callers.
-                return new CallToolResult
+                return await Task.FromResult(new CallToolResult
                 {
                     IsError = true,
-                    HttpStatusCode = StatusCodes.Status401Unauthorized,
                     Content = new List<ContentBlock>
                     {
                         new TextContentBlock
@@ -233,7 +232,7 @@ builder.Services.AddMcpServer()
                             Text = "missing-api-key: include X-Api-Key header with a valid Quick Memory key"
                         }
                     }
-                };
+                });
             }
 
             var toolName = context.Params.Name;
@@ -286,10 +285,9 @@ builder.Services.AddMcpServer()
 
             if (!authorizer.TryAuthorize(apiKey, projectEndpoint, out var userScoped, out var tierScoped))
             {
-                return new CallToolResult
+                return await Task.FromResult(new CallToolResult
                 {
                     IsError = true,
-                    HttpStatusCode = StatusCodes.Status403Forbidden,
                     Content = new List<ContentBlock>
                     {
                         new TextContentBlock
@@ -297,7 +295,7 @@ builder.Services.AddMcpServer()
                             Text = $"unauthorized: api key is not permitted for endpoint '{projectEndpoint}'"
                         }
                     }
-                };
+                });
             }
 
             context.Items[McpAuthorizationContext.ApiKeyItem] = apiKey;
@@ -501,6 +499,132 @@ app.MapGet("/docs/schema", (HttpContext context, SchemaService schemaService) =>
 
     context.Response.Headers["ETag"] = etagValue;
     return Results.Content(schemaService.Json, "application/json");
+});
+
+app.MapGet("/admin/backup/settings", (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor, BackupActivityStore activityStore) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var backup = optionsMonitor.CurrentValue.Global.Backup;
+    var now = DateTime.UtcNow;
+    var diffNext = BackupServicePreview.NextRun(backup.DifferentialCron, now);
+    var fullNext = BackupServicePreview.NextRun(backup.FullCron, now);
+
+    return Results.Ok(new
+    {
+        settings = new
+        {
+            backup.DifferentialCron,
+            backup.FullCron,
+            backup.RetentionDays,
+            backup.FullRetentionDays,
+            backup.TargetPath
+        },
+        preview = new { differentialNextUtc = diffNext, fullNextUtc = fullNext }
+    });
+});
+
+app.MapPost("/admin/backup/settings", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor, CancellationToken cancellationToken) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<BackupSettingsRequest>(cancellationToken);
+    if (request is null)
+    {
+        return Results.BadRequest(new { error = "invalid-payload" });
+    }
+
+    var validation = BackupSettingsValidator.Validate(request);
+    if (!validation.IsValid)
+    {
+        return Results.BadRequest(new { errors = validation.Errors });
+    }
+
+    await adminService.UpdateBackupSettingsAsync(request, cancellationToken);
+
+    var now = DateTime.UtcNow;
+    var diffNext = BackupServicePreview.NextRun(request.DifferentialCron, now);
+    var fullNext = BackupServicePreview.NextRun(request.FullCron, now);
+
+    return Results.Ok(new
+    {
+        saved = true,
+        preview = new { differentialNextUtc = diffNext, fullNextUtc = fullNext }
+    });
+});
+
+app.MapPost("/admin/backup/probe", async (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor, BackupService backupService, CancellationToken cancellationToken) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<BackupProbeRequest>(cancellationToken) ?? new BackupProbeRequest(null);
+    var target = string.IsNullOrWhiteSpace(request.TargetPath)
+        ? optionsMonitor.CurrentValue.Global.Backup.TargetPath ?? AppContext.BaseDirectory
+        : request.TargetPath;
+
+    try
+    {
+        BackupServicePreview.ProbeWritable(target);
+        return Results.Ok(new { writable = true, targetPath = target });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { writable = false, targetPath = target, error = ex.Message });
+    }
+});
+
+app.MapPost("/admin/backup/run", async (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor, BackupService backupService, CancellationToken cancellationToken) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<BackupRunRequest>(cancellationToken);
+    if (request is null || string.IsNullOrWhiteSpace(request.Endpoint))
+    {
+        return Results.BadRequest(new { error = "missing-endpoint" });
+    }
+
+    var endpoint = request.Endpoint.Trim();
+    if (!optionsMonitor.CurrentValue.Endpoints.ContainsKey(endpoint))
+    {
+        return Results.NotFound(new { error = "unknown-endpoint", endpoint });
+    }
+
+    var mode = Enum.TryParse<BackupMode>(request.Mode ?? "Differential", true, out var parsed)
+        ? parsed
+        : BackupMode.Differential;
+
+    await backupService.RequestBackupAsync(endpoint, mode, cancellationToken, "admin-http");
+    return Results.Ok(new { queued = true, mode = mode.ToString(), endpoint });
+});
+
+app.MapGet("/admin/backup/activity", (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor, BackupActivityStore activityStore) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var take = int.TryParse(context.Request.Query["take"], out var t) ? Math.Clamp(t, 1, 200) : 50;
+    DateTime? after = null;
+    if (DateTime.TryParse(context.Request.Query["after"], out var parsedAfter))
+    {
+        after = parsedAfter.ToUniversalTime();
+    }
+
+    var items = activityStore.Latest(take, after);
+    return Results.Ok(new { items });
 });
 
 app.MapPost("/mcp/{endpoint}/ping", (string endpoint, HttpContext context, ApiKeyAuthorizer authorizer, MemoryRouter router) =>
@@ -720,7 +844,7 @@ app.MapPost("/mcp/{endpoint}/backup", async (
 
     var payload = await context.Request.ReadFromJsonAsync<BackupRequestPayload>(cancellationToken) ?? new BackupRequestPayload();
     var mode = Enum.TryParse<BackupMode>(payload.Mode ?? "Differential", true, out var parsed) ? parsed : BackupMode.Differential;
-    await backupService.RequestBackupAsync(endpoint, mode, cancellationToken);
+    await backupService.RequestBackupAsync(endpoint, mode, cancellationToken, "admin-endpoint");
     return Results.Accepted($"/mcp/{endpoint}/backup", new { queued = true, mode = mode.ToString() });
 });
 

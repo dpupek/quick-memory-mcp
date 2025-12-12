@@ -15,7 +15,16 @@ const state = {
   configEditor: null,
   monacoReady: null,
   lastConfigText: null,
-  monacoEditors: {}
+  monacoEditors: {},
+  backupActivity: [],
+  backupBusy: {
+    loading: false,
+    saving: false,
+    probing: false,
+    running: false
+  },
+  backupRefreshTimer: null,
+  backupLoaded: false
 };
 
 const KIND_SUGGESTIONS = [
@@ -47,6 +56,7 @@ const ICONS = {
   entities: 'bi-journal-text',
   users: 'bi-people',
   config: 'bi-gear',
+  backup: 'bi-cloud-arrow-down',
   health: 'bi-heart-pulse',
   help: 'bi-book',
   'agent-help': 'bi-robot',
@@ -118,6 +128,7 @@ const views = {
     },
     onShow() {
       loadOverview();
+      renderVersion();
     }
   },
   projects: {
@@ -243,6 +254,14 @@ const views = {
       loadConfig();
     }
   },
+  backup: {
+    id: 'backup',
+    init() {
+    },
+    onShow() {
+      ensureBackupLoaded();
+    }
+  },
   health: {
     id: 'health',
     init() {
@@ -341,6 +360,43 @@ function setActiveTab(tab) {
   if (view && typeof view.onShow === 'function') {
     view.onShow();
   }
+}
+
+async function ensureBackupLoaded() {
+  if (state.backupLoaded) {
+    loadBackupSettings();
+    loadBackupActivity();
+    startBackupAutoRefresh();
+    return;
+  }
+
+  try {
+    const host = document.getElementById('backup-host');
+    if (!host) return;
+    const res = await fetch('/fragments/backup.html', { credentials: 'same-origin' });
+    if (!res.ok) {
+      setStatus('Failed to load backup blade (auth?)', 'danger');
+      return;
+    }
+    host.innerHTML = await res.text();
+    wireBackupHandlers();
+    state.backupLoaded = true;
+    loadBackupSettings();
+    loadBackupActivity();
+    startBackupAutoRefresh();
+  } catch (err) {
+    console.error('backup load failed', err);
+    setStatus('Failed to load backup blade', 'danger');
+  }
+}
+
+function wireBackupHandlers() {
+  document.getElementById('backup-save')?.addEventListener('click', saveBackupSettings);
+  document.getElementById('backup-probe')?.addEventListener('click', probeBackupTarget);
+  document.getElementById('backup-activity-refresh')?.addEventListener('click', loadBackupActivity);
+  document.getElementById('backup-activity-filter')?.addEventListener('input', () => renderBackupActivity(state.backupActivity || []));
+  document.getElementById('backup-run')?.addEventListener('click', runManualBackup);
+  document.getElementById('backup-auto-refresh')?.addEventListener('change', toggleBackupAutoRefresh);
 }
 
 function handleProjectButton(event) {
@@ -634,6 +690,13 @@ function updateEntityProjectSelect() {
     importSelect.innerHTML = options;
     importSelect.value = state.allowedEndpoints[0].key;
   }
+}
+
+function updatePermissionsEndpointSelect() {
+  const select = document.getElementById('project-permission-filter');
+  if (!select) return;
+  // used only for filtering text input; ensure list renders with latest endpoints
+  renderProjectPermissionsList();
 }
 
 
@@ -2266,6 +2329,7 @@ async function loadOverview() {
     const report = await response.json();
     renderHealthReport(report);
     renderSummary(report);
+    renderVersion(report);
   } catch (error) {
     console.error(error);
     setStatus('Health endpoint unreachable', 'danger');
@@ -2284,6 +2348,14 @@ function renderSummary(report) {
     </div>
     <p class="small text-muted mb-0">Running for ${escapeHtml(report.uptime ?? 'n/a')}</p>
   `;
+}
+
+function renderVersion(report) {
+  const target = document.getElementById('overview-version');
+  if (!target) return;
+  const version = report?.version ?? 'unknown';
+  const build = report?.buildDateUtc ? ` | Built: ${report.buildDateUtc}` : '';
+  target.textContent = `Version: ${version}${build}`;
 }
 
 function renderHealthReport(report) {
@@ -2313,6 +2385,211 @@ function setStatus(message, variant = 'info') {
   selectors.status.textContent = message;
   selectors.status.className = `status-bar ${variant}`;
   if (variant === 'danger') { toast(message, 'error'); }
+}
+
+function formatApiError(err) {
+  if (!err) return 'unknown error';
+  if (err.error) return err.error;
+  if (typeof err === 'string') return err;
+  return JSON.stringify(err);
+}
+
+async function loadBackupSettings() {
+  setBackupBusy('loading', true);
+  try {
+    const res = await apiGet('/admin/backup/settings');
+    document.getElementById('backup-target').value = res.settings.targetPath || '';
+    document.getElementById('backup-diff-cron').value = res.settings.differentialCron;
+    document.getElementById('backup-full-cron').value = res.settings.fullCron;
+    document.getElementById('backup-retention').value = res.settings.retentionDays;
+    document.getElementById('backup-full-retention').value = res.settings.fullRetentionDays;
+    renderNextRun(res.preview);
+    refreshBackupHealthChip();
+    await loadEndpointsForBackup();
+  } catch (err) {
+    setBackupStatus(`Failed to load settings: ${formatApiError(err)}`, true);
+  } finally {
+    setBackupBusy('loading', false);
+  }
+}
+
+async function saveBackupSettings() {
+  if (state.backupBusy.saving) return;
+  setBackupBusy('saving', true);
+  const payload = {
+    differentialCron: document.getElementById('backup-diff-cron').value.trim(),
+    fullCron: document.getElementById('backup-full-cron').value.trim(),
+    retentionDays: parseInt(document.getElementById('backup-retention').value, 10),
+    fullRetentionDays: parseInt(document.getElementById('backup-full-retention').value, 10),
+    targetPath: document.getElementById('backup-target').value.trim() || null
+  };
+
+  try {
+    const res = await apiPost('/admin/backup/settings', payload);
+    renderNextRun(res.preview);
+    setBackupStatus('Settings saved', false);
+  } catch (err) {
+    setBackupStatus(`Save failed: ${formatApiError(err)}`, true);
+  } finally {
+    setBackupBusy('saving', false);
+  }
+}
+
+async function probeBackupTarget() {
+  if (state.backupBusy.probing) return;
+  setBackupBusy('probing', true);
+  const target = document.getElementById('backup-target').value.trim();
+  try {
+    const res = await apiPost('/admin/backup/probe', { targetPath: target || null });
+    setBackupStatus(`Probe OK for ${res.targetPath}`, false);
+  } catch (err) {
+    setBackupStatus(`Probe failed: ${formatApiError(err)}`, true);
+  } finally {
+    setBackupBusy('probing', false);
+  }
+}
+
+async function loadBackupActivity() {
+  try {
+    const res = await apiGet('/admin/backup/activity?take=100');
+    state.backupActivity = res.items || [];
+    renderBackupActivity(state.backupActivity);
+  } catch (err) {
+    setBackupRunStatus(`Activity load failed: ${formatApiError(err)}`, true);
+  }
+}
+
+async function loadEndpointsForBackup() {
+  const select = document.getElementById('backup-run-endpoint');
+  if (!select) return;
+  select.innerHTML = '';
+  try {
+    const res = await apiGet('/admin/endpoints/manage');
+    (res.endpoints || []).forEach((e) => {
+      const opt = document.createElement('option');
+      opt.value = e.key;
+      opt.textContent = e.key;
+      select.appendChild(opt);
+    });
+  } catch {
+    // fall back to any endpoints already loaded in state (may be limited by permissions)
+    (state.endpoints || []).forEach((e) => {
+      const opt = document.createElement('option');
+      opt.value = e.key;
+      opt.textContent = e.key;
+      select.appendChild(opt);
+    });
+    if (!select.options.length) {
+      setBackupRunStatus('No endpoints available (admin key required)', true);
+    }
+  }
+}
+
+async function runManualBackup() {
+  if (state.backupBusy.running) return;
+  setBackupBusy('running', true);
+  const endpoint = document.getElementById('backup-run-endpoint').value;
+  const mode = document.getElementById('backup-run-mode').value;
+  try {
+    await apiPost('/admin/backup/run', { endpoint, mode });
+    setBackupRunStatus(`Queued ${mode} backup for ${endpoint}`, false);
+    loadBackupActivity();
+  } catch (err) {
+    setBackupRunStatus(`Run failed: ${formatApiError(err)}`, true);
+  } finally {
+    setBackupBusy('running', false);
+  }
+}
+
+function renderNextRun(preview) {
+  const el = document.getElementById('backup-next-run');
+  if (!el) return;
+  const diff = preview?.differentialNextUtc ? `Diff: ${preview.differentialNextUtc}` : 'Diff: n/a';
+  const full = preview?.fullNextUtc ? `Full: ${preview.fullNextUtc}` : 'Full: n/a';
+  el.textContent = `${diff} | ${full}`;
+}
+
+function renderBackupActivity(items) {
+  const filter = document.getElementById('backup-activity-filter')?.value?.toLowerCase() || '';
+  const body = document.getElementById('backup-activity-body');
+  const empty = document.getElementById('backup-activity-empty');
+  if (!body) return;
+  body.innerHTML = '';
+  const filtered = items.filter((i) => !filter || i.endpoint.toLowerCase().includes(filter));
+  if (!filtered.length) {
+    empty?.classList.remove('d-none');
+    return;
+  }
+  empty?.classList.add('d-none');
+  filtered.forEach((item) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${item.timestampUtc}</td><td>${item.endpoint}</td><td>${item.mode}</td><td>${renderStatusChip(item.status)}</td><td>${item.durationMs?.toFixed?.(1) || ''} ms</td><td>${escapeHtml(item.message || '')}</td><td>${escapeHtml(item.initiatedBy || '')}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+function renderStatusChip(status) {
+  const map = { Success: 'bg-success', Failure: 'bg-danger', Skipped: 'bg-secondary' };
+  const cls = map[status] || 'bg-secondary';
+  return `<span class=\"badge ${cls}\">${status}</span>`;
+}
+
+function refreshBackupHealthChip() {
+  const chip = document.getElementById('backup-health-chip');
+  if (!chip) return;
+  apiGet('/health')
+    .then((res) => {
+      const backupIssues = (res.issues || []).filter((i) => i.toLowerCase().includes('backup'));
+      if (backupIssues.length) {
+        chip.className = 'badge bg-danger';
+        chip.textContent = 'Degraded';
+      } else {
+        chip.className = 'badge bg-success';
+        chip.textContent = 'Healthy';
+      }
+    })
+    .catch(() => {
+      chip.className = 'badge bg-secondary';
+      chip.textContent = 'Unknown';
+    });
+}
+
+function setBackupStatus(text, isError) {
+  const el = document.getElementById('backup-settings-status');
+  if (!el) return;
+  el.textContent = text;
+  el.className = isError ? 'text-danger small' : 'text-success small';
+}
+
+function setBackupRunStatus(text, isError) {
+  const el = document.getElementById('backup-run-status');
+  if (!el) return;
+  el.textContent = text;
+  el.className = isError ? 'text-danger small' : 'text-success small';
+}
+
+function setBackupBusy(key, value) {
+  state.backupBusy[key] = value;
+  document.getElementById('backup-save')?.toggleAttribute('disabled', state.backupBusy.saving);
+  document.getElementById('backup-probe')?.toggleAttribute('disabled', state.backupBusy.probing);
+  document.getElementById('backup-run')?.toggleAttribute('disabled', state.backupBusy.running);
+}
+
+function startBackupAutoRefresh() {
+  if (state.backupRefreshTimer) {
+    clearInterval(state.backupRefreshTimer);
+  }
+  const auto = document.getElementById('backup-auto-refresh');
+  if (auto && auto.checked) {
+    state.backupRefreshTimer = setInterval(() => {
+      loadBackupActivity();
+      refreshBackupHealthChip();
+    }, 15000);
+  }
+}
+
+function toggleBackupAutoRefresh() {
+  startBackupAutoRefresh();
 }
 
 function toast(message, icon = 'success') {
