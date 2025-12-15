@@ -61,6 +61,7 @@
 - [x] Auto-create the `prompts-repository` project at startup when missing so curated prompt entries are always reachable from the SPA and MCP tools.
 - [x] Add a delete button next to each entry row in the Entities table for quick single-entry deletion.
 - [x] Add entry selection checkboxes plus bulk delete actions in the Entities tab (with confirmation and permission checks).
+- [x] Add Entities table paging, sorting, and configurable columns (see GitHub #14).
 - [x] Fix New Entry tags control focus/reset behavior (Choices.js + select-backed hybrid; see GitHub #9).
 - [x] Align Entry detail/edit tags editor with the New Entry hybrid tag selector (see GitHub #16).
 

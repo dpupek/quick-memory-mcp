@@ -6,6 +6,14 @@ const state = {
   allowedEndpoints: [],
   entries: [],
   selectedEntryIds: new Set(),
+  entitiesUi: {
+    pageSize: 50,
+    fetchLimit: 40,
+    pageIndex: 0,
+    sortKey: 'updatedUtc',
+    sortDir: 'desc',
+    columns: []
+  },
   permissions: {},
   users: [],
   activeProjectKey: null,
@@ -41,6 +49,24 @@ const KIND_SUGGESTIONS = [
 ];
 
 const TIER_OPTIONS = ['Reader', 'Editor', 'Curator', 'Admin'];
+
+const ENTITIES_UI_SETTINGS_KEY = 'qms.entitiesUi.v1';
+
+const ENTITIES_OPTIONAL_COLUMN_KEYS = ['project', 'tagsCount', 'curationTier', 'isPermanent', 'pinned', 'confidence'];
+
+const ENTITIES_SORT_KEYS = [
+  'id',
+  'title',
+  'project',
+  'kind',
+  'curationTier',
+  'tagsCount',
+  'isPermanent',
+  'pinned',
+  'confidence',
+  'score',
+  'updatedUtc'
+];
 
 const CANONICAL_TAG_OPTIONS = [
   'glossary',
@@ -125,6 +151,50 @@ function handleEntryFormSubmit(event) {
   createEntry();
 }
 
+function loadEntitiesUiSettings() {
+  try {
+    const raw = localStorage.getItem(ENTITIES_UI_SETTINGS_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return;
+
+    if (Number.isFinite(parsed.pageSize) && parsed.pageSize > 0) state.entitiesUi.pageSize = parsed.pageSize;
+    if (Number.isFinite(parsed.fetchLimit) && parsed.fetchLimit > 0) state.entitiesUi.fetchLimit = parsed.fetchLimit;
+    if (Number.isFinite(parsed.pageIndex) && parsed.pageIndex >= 0) state.entitiesUi.pageIndex = parsed.pageIndex;
+    if (typeof parsed.sortKey === 'string' && ENTITIES_SORT_KEYS.includes(parsed.sortKey)) state.entitiesUi.sortKey = parsed.sortKey;
+    if (parsed.sortDir === 'asc' || parsed.sortDir === 'desc') state.entitiesUi.sortDir = parsed.sortDir;
+    if (Array.isArray(parsed.columns)) {
+      state.entitiesUi.columns = parsed.columns.filter((c) => typeof c === 'string' && ENTITIES_OPTIONAL_COLUMN_KEYS.includes(c));
+    }
+  } catch {
+    // ignore corrupted storage
+  }
+}
+
+function persistEntitiesUiSettings() {
+  try {
+    localStorage.setItem(ENTITIES_UI_SETTINGS_KEY, JSON.stringify(state.entitiesUi));
+  } catch {
+    // ignore quota or privacy mode errors
+  }
+}
+
+function applyEntitiesUiToControls() {
+  const pageSizeSelect = document.getElementById('entities-page-size');
+  if (pageSizeSelect) pageSizeSelect.value = String(state.entitiesUi.pageSize);
+
+  const fetchLimitSelect = document.getElementById('entities-fetch-limit');
+  if (fetchLimitSelect) fetchLimitSelect.value = String(state.entitiesUi.fetchLimit);
+
+  document.querySelectorAll('.entities-column').forEach((checkbox) => {
+    checkbox.checked = state.entitiesUi.columns.includes(checkbox.value);
+  });
+
+  applyEntitiesColumnVisibility();
+  updateEntitiesSortIndicators();
+  updateEntitiesPager();
+}
+
 const views = {
   overview: {
     id: 'overview',
@@ -189,6 +259,80 @@ const views = {
       if (projectSelect) {
         projectSelect.addEventListener('change', () => loadEntities());
       }
+
+      const pageSizeSelect = document.getElementById('entities-page-size');
+      if (pageSizeSelect) {
+        pageSizeSelect.addEventListener('change', () => {
+          state.entitiesUi.pageSize = parseInt(pageSizeSelect.value, 10) || 50;
+          state.entitiesUi.pageIndex = 0;
+          persistEntitiesUiSettings();
+          renderEntitiesTable();
+        });
+      }
+
+      const fetchLimitSelect = document.getElementById('entities-fetch-limit');
+      if (fetchLimitSelect) {
+        fetchLimitSelect.addEventListener('change', () => {
+          state.entitiesUi.fetchLimit = parseInt(fetchLimitSelect.value, 10) || 40;
+          state.entitiesUi.pageIndex = 0;
+          persistEntitiesUiSettings();
+          loadEntities();
+        });
+      }
+
+      const prev = document.getElementById('entities-page-prev');
+      if (prev) {
+        prev.addEventListener('click', () => {
+          if (state.entitiesUi.pageIndex > 0) {
+            state.entitiesUi.pageIndex -= 1;
+            persistEntitiesUiSettings();
+            renderEntitiesTable();
+          }
+        });
+      }
+
+      const next = document.getElementById('entities-page-next');
+      if (next) {
+        next.addEventListener('click', () => {
+          state.entitiesUi.pageIndex += 1;
+          persistEntitiesUiSettings();
+          renderEntitiesTable();
+        });
+      }
+
+      const columns = document.getElementById('entities-columns');
+      if (columns) {
+        columns.addEventListener('change', () => {
+          const selected = Array.from(document.querySelectorAll('.entities-column'))
+            .filter((checkbox) => checkbox.checked)
+            .map((checkbox) => checkbox.value);
+          state.entitiesUi.columns = selected;
+          persistEntitiesUiSettings();
+          renderEntitiesTable();
+        });
+      }
+
+      const table = document.getElementById('entities-table');
+      if (table) {
+        table.addEventListener('click', (event) => {
+          const th = event.target.closest('th[data-sort-key]');
+          if (!th) return;
+          const key = th.dataset.sortKey;
+          if (!key) return;
+
+          if (state.entitiesUi.sortKey === key) {
+            state.entitiesUi.sortDir = state.entitiesUi.sortDir === 'asc' ? 'desc' : 'asc';
+          } else {
+            state.entitiesUi.sortKey = key;
+            state.entitiesUi.sortDir = key === 'updatedUtc' || key === 'score' ? 'desc' : 'asc';
+          }
+
+          state.entitiesUi.pageIndex = 0;
+          persistEntitiesUiSettings();
+          renderEntitiesTable();
+        });
+      }
+
       const openEntryModal = document.getElementById('open-entry-modal');
       if (openEntryModal) {
         openEntryModal.addEventListener('click', showEntryModal);
@@ -220,6 +364,7 @@ const views = {
       }
     },
     onShow() {
+      applyEntitiesUiToControls();
       loadEntities();
     }
   },
@@ -325,6 +470,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
   selectors.loginForm.addEventListener('submit', handleLogin);
   document.getElementById('logout-btn').addEventListener('click', logout);
+  loadEntitiesUiSettings();
   initViews();
   // Backdrop close disabled to prevent accidental dismiss; use close/cancel buttons instead
   // document.getElementById('entry-modal').addEventListener('click', (event) => { ... });
@@ -1393,10 +1539,11 @@ async function loadEntities() {
     return;
   }
   const text = document.getElementById('entity-text').value.trim();
+  const maxResults = Number.isFinite(state.entitiesUi.fetchLimit) && state.entitiesUi.fetchLimit > 0 ? state.entitiesUi.fetchLimit : 40;
   const response = await fetch(`/mcp/${project}/searchEntries`, {
     method: 'POST',
     headers: authHeaders(true),
-    body: JSON.stringify({ text, maxResults: 40, includeShared: true })
+    body: JSON.stringify({ text, maxResults, includeShared: true })
   });
 
   if (response.status === 401) {
@@ -1411,37 +1558,171 @@ async function loadEntities() {
 
   const data = await response.json();
   state.entries = data.results ?? [];
+  state.entitiesUi.pageIndex = 0;
+  state.selectedEntryIds.clear();
+  persistEntitiesUiSettings();
   renderEntitiesTable();
+}
+
+function applyEntitiesColumnVisibility() {
+  const enabled = new Set(state.entitiesUi.columns);
+  ENTITIES_OPTIONAL_COLUMN_KEYS.forEach((key) => {
+    document.querySelectorAll(`.entities-col-${key}`).forEach((el) => {
+      el.classList.toggle('d-none', !enabled.has(key));
+    });
+  });
+}
+
+function updateEntitiesSortIndicators() {
+  const ths = document.querySelectorAll('#entities-table th[data-sort-key]');
+  ths.forEach((th) => {
+    const label = th.dataset.label || th.textContent.trim();
+    const key = th.dataset.sortKey;
+    if (!key) return;
+    if (key === state.entitiesUi.sortKey) {
+      th.textContent = `${label} ${state.entitiesUi.sortDir === 'asc' ? '▲' : '▼'}`;
+    } else {
+      th.textContent = label;
+    }
+  });
+}
+
+function updateEntitiesPager(totalCount = state.entries.length) {
+  const pageSize = Math.max(1, parseInt(state.entitiesUi.pageSize, 10) || 50);
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  if (state.entitiesUi.pageIndex >= totalPages) {
+    state.entitiesUi.pageIndex = totalPages - 1;
+  }
+  if (state.entitiesUi.pageIndex < 0) {
+    state.entitiesUi.pageIndex = 0;
+  }
+
+  const start = totalCount === 0 ? 0 : state.entitiesUi.pageIndex * pageSize + 1;
+  const end = Math.min((state.entitiesUi.pageIndex + 1) * pageSize, totalCount);
+
+  const summary = document.getElementById('entities-page-summary');
+  if (summary) {
+    summary.textContent = totalCount === 0
+      ? '0 entries'
+      : `Showing ${start}-${end} of ${totalCount} • Page ${state.entitiesUi.pageIndex + 1}/${totalPages}`;
+  }
+
+  const prev = document.getElementById('entities-page-prev');
+  if (prev) prev.disabled = state.entitiesUi.pageIndex <= 0;
+
+  const next = document.getElementById('entities-page-next');
+  if (next) next.disabled = state.entitiesUi.pageIndex >= totalPages - 1;
+}
+
+function getEntitiesSortValue(result, key) {
+  const entry = result.entry || {};
+  switch (key) {
+    case 'id':
+      return (entry.id || '').toString();
+    case 'title':
+      return (entry.title || entry.id || '').toString();
+    case 'project':
+      return (entry.project || '').toString();
+    case 'kind':
+      return (entry.kind || '').toString();
+    case 'curationTier':
+      return (entry.curationTier || '').toString();
+    case 'tagsCount':
+      return (entry.tags || []).length || 0;
+    case 'isPermanent':
+      return entry.isPermanent ? 1 : 0;
+    case 'pinned':
+      return entry.pinned ? 1 : 0;
+    case 'confidence':
+      return Number.isFinite(entry.confidence) ? entry.confidence : -1;
+    case 'score':
+      return Number.isFinite(result.score) ? result.score : 0;
+    case 'updatedUtc': {
+      const ts = entry.timestamps?.updatedUtc || entry.timestamps?.createdUtc;
+      const ms = ts ? Date.parse(ts) : 0;
+      return Number.isFinite(ms) ? ms : 0;
+    }
+    default:
+      return '';
+  }
+}
+
+function compareEntities(a, b) {
+  const key = state.entitiesUi.sortKey;
+  const dir = state.entitiesUi.sortDir === 'asc' ? 1 : -1;
+  const av = getEntitiesSortValue(a, key);
+  const bv = getEntitiesSortValue(b, key);
+
+  if (typeof av === 'number' && typeof bv === 'number') {
+    if (av === bv) return 0;
+    return av > bv ? dir : -dir;
+  }
+
+  const as = (av || '').toString();
+  const bs = (bv || '').toString();
+  const cmp = as.localeCompare(bs, undefined, { sensitivity: 'base' });
+  return cmp * dir;
 }
 
 function renderEntitiesTable() {
   const body = document.getElementById('entities-body');
   if (!state.entries.length) {
     state.selectedEntryIds.clear();
-    body.innerHTML = '<tr><td colspan="7" class="text-muted">No entries found.</td></tr>';
+    const optionalCount = state.entitiesUi.columns.length;
+    const colSpan = 7 + optionalCount; // checkbox + id + title + kind + score + updated + actions + optionals
+    body.innerHTML = `<tr><td colspan="${colSpan}" class="text-muted">No entries found.</td></tr>`;
     updateEntitiesSelectionSummary();
+    updateEntitiesPager(0);
+    updateEntitiesSortIndicators();
+    applyEntitiesColumnVisibility();
+    syncEntitiesSelectAllCheckbox();
     return;
   }
 
-  state.selectedEntryIds.clear();
+  const sorted = [...state.entries].sort(compareEntities);
+  const pageSize = Math.max(1, parseInt(state.entitiesUi.pageSize, 10) || 50);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  if (state.entitiesUi.pageIndex >= totalPages) state.entitiesUi.pageIndex = totalPages - 1;
+  if (state.entitiesUi.pageIndex < 0) state.entitiesUi.pageIndex = 0;
+  persistEntitiesUiSettings();
 
-  body.innerHTML = state.entries
+  const startIndex = state.entitiesUi.pageIndex * pageSize;
+  const pageRows = sorted.slice(startIndex, startIndex + pageSize);
+
+  const enabledColumns = new Set(state.entitiesUi.columns);
+  const columnClass = (key) => `entities-col entities-col-${key} ${enabledColumns.has(key) ? '' : 'd-none'}`;
+
+  body.innerHTML = pageRows
     .map((result) => {
       const entry = result.entry;
       const updated = entry.timestamps?.updatedUtc ? formatDate(entry.timestamps.updatedUtc) : 'never';
+      const tagsCount = (entry.tags || []).length || 0;
       return `
         <tr>
-          <td><input type="checkbox" class="entity-select form-check-input" data-entry-id="${escapeHtml(entry.id)}" /></td>
+          <td><input type="checkbox" class="entity-select form-check-input" data-entry-id="${escapeHtml(entry.id)}" ${state.selectedEntryIds.has(entry.id) ? 'checked' : ''} /></td>
           <td>${escapeHtml(entry.id)}</td>
           <td>${escapeHtml(entry.title || entry.id)}</td>
+          <td class="${columnClass('project')}">${escapeHtml(entry.project || '')}</td>
           <td>${escapeHtml(entry.kind)}</td>
+          <td class="${columnClass('curationTier')}">${escapeHtml(entry.curationTier || '')}</td>
+          <td class="${columnClass('tagsCount')}">${tagsCount}</td>
+          <td class="${columnClass('isPermanent')}">${entry.isPermanent ? '✓' : ''}</td>
+          <td class="${columnClass('pinned')}">${entry.pinned ? '✓' : ''}</td>
+          <td class="${columnClass('confidence')}">${Number.isFinite(entry.confidence) ? entry.confidence.toFixed(2) : ''}</td>
           <td>${(result.score ?? 0).toFixed(2)}</td>
           <td>${updated}</td>
-          <td><button class="btn btn-sm btn-outline-secondary" data-action="view-entry" data-entry-id="${entry.id}">View</button></td>
+          <td><button class="btn btn-sm btn-outline-secondary" data-action="view-entry" data-entry-id="${escapeHtml(entry.id)}">View</button></td>
         </tr>
       `;
     })
     .join('');
+
+  applyEntitiesColumnVisibility();
+  updateEntitiesSortIndicators();
+  updateEntitiesPager(sorted.length);
+  syncEntitiesSelectAllCheckbox();
+  updateEntitiesSelectionSummary();
 }
 
 async function createEntry() {
@@ -1928,13 +2209,12 @@ function handleEntitiesSelectAll(event) {
   const checked = event.target.checked;
   const checkboxes = Array.from(document.querySelectorAll('#entities-body .entity-select'));
 
-  state.selectedEntryIds.clear();
   checkboxes.forEach((cb) => {
     cb.checked = checked;
     const id = cb.dataset.entryId;
-    if (checked && id) {
-      state.selectedEntryIds.add(id);
-    }
+    if (!id) return;
+    if (checked) state.selectedEntryIds.add(id);
+    else state.selectedEntryIds.delete(id);
   });
 
   updateEntitiesSelectionSummary();

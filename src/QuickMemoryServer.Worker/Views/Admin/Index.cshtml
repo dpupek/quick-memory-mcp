@@ -256,24 +256,83 @@
               <label class="form-label">Project</label>
               <select id="entity-project" class="form-select"></select>
             </div>
-            <div class="col-md-5">
+            <div class="col-md-4">
               <label class="form-label">Search Text</label>
               <input id="entity-text" type="text" class="form-control" placeholder="Search or filter entries" />
             </div>
-            <div class="col-md-3 d-flex align-items-end">
+            <div class="col-md-2">
+              <label class="form-label">Page size</label>
+              <select id="entities-page-size" class="form-select">
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50" selected>50</option>
+                <option value="100">100</option>
+              </select>
+            </div>
+            <div class="col-md-2">
+              <label class="form-label">Fetch limit</label>
+              <select id="entities-fetch-limit" class="form-select">
+                <option value="40" selected>40</option>
+                <option value="100">100</option>
+                <option value="200">200</option>
+              </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
               <button id="entity-refresh" class="btn btn-primary w-100">Refresh entries</button>
             </div>
           </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <details id="entities-columns" class="small">
+              <summary class="text-primary" style="cursor:pointer;">Columns</summary>
+              <div class="border rounded p-2 mt-1 bg-white" style="min-width:260px;">
+                <div class="form-check">
+                  <input class="form-check-input entities-column" type="checkbox" value="project" id="entities-col-project" />
+                  <label class="form-check-label" for="entities-col-project">Project</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input entities-column" type="checkbox" value="tagsCount" id="entities-col-tagsCount" />
+                  <label class="form-check-label" for="entities-col-tagsCount">Tags count</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input entities-column" type="checkbox" value="curationTier" id="entities-col-curationTier" />
+                  <label class="form-check-label" for="entities-col-curationTier">Curation tier</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input entities-column" type="checkbox" value="isPermanent" id="entities-col-isPermanent" />
+                  <label class="form-check-label" for="entities-col-isPermanent">Permanent</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input entities-column" type="checkbox" value="pinned" id="entities-col-pinned" />
+                  <label class="form-check-label" for="entities-col-pinned">Pinned</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input entities-column" type="checkbox" value="confidence" id="entities-col-confidence" />
+                  <label class="form-check-label" for="entities-col-confidence">Confidence</label>
+                </div>
+              </div>
+            </details>
+            <div class="d-flex align-items-center gap-2">
+              <div id="entities-page-summary" class="small text-muted"></div>
+              <button type="button" id="entities-page-prev" class="btn btn-outline-secondary btn-sm">Prev</button>
+              <button type="button" id="entities-page-next" class="btn btn-outline-secondary btn-sm">Next</button>
+            </div>
+          </div>
           <div class="table-responsive">
-            <table class="table table-striped table-sm">
+            <table class="table table-striped table-sm" id="entities-table">
               <thead>
                 <tr>
                   <th style="width:1%;"><input type="checkbox" id="entities-select-all" /></th>
-                  <th>ID</th>
-                  <th>Title</th>
-                  <th>Kind</th>
-                  <th>Score</th>
-                  <th>Updated</th>
+                  <th data-sort-key="id" data-label="ID" style="cursor:pointer;">ID</th>
+                  <th data-sort-key="title" data-label="Title" style="cursor:pointer;">Title</th>
+                  <th class="entities-col entities-col-project d-none" data-sort-key="project" data-label="Project" style="cursor:pointer;">Project</th>
+                  <th data-sort-key="kind" data-label="Kind" style="cursor:pointer;">Kind</th>
+                  <th class="entities-col entities-col-curationTier d-none" data-sort-key="curationTier" data-label="Tier" style="cursor:pointer;">Tier</th>
+                  <th class="entities-col entities-col-tagsCount d-none" data-sort-key="tagsCount" data-label="Tags" style="cursor:pointer;">Tags</th>
+                  <th class="entities-col entities-col-isPermanent d-none" data-sort-key="isPermanent" data-label="Permanent" style="cursor:pointer;">Permanent</th>
+                  <th class="entities-col entities-col-pinned d-none" data-sort-key="pinned" data-label="Pinned" style="cursor:pointer;">Pinned</th>
+                  <th class="entities-col entities-col-confidence d-none" data-sort-key="confidence" data-label="Confidence" style="cursor:pointer;">Confidence</th>
+                  <th data-sort-key="score" data-label="Score" style="cursor:pointer;">Score</th>
+                  <th data-sort-key="updatedUtc" data-label="Updated" style="cursor:pointer;">Updated</th>
                   <th></th>
                 </tr>
               </thead>
