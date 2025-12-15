@@ -42,6 +42,12 @@ const KIND_SUGGESTIONS = [
 
 const TIER_OPTIONS = ['Reader', 'Editor', 'Curator', 'Admin'];
 
+const CANONICAL_TAG_OPTIONS = [
+  'glossary',
+  'category:cold-start',
+  'category:reference'
+];
+
 const selectors = {
   loginOverlay: document.getElementById('login-overlay'),
   loginForm: document.getElementById('login-form'),
@@ -1115,6 +1121,35 @@ async function loadCodexWorkspaceHelp() {
   document.getElementById('codex-workspace-help-content').innerHTML = html;
 }
 
+function normalizeTagList(tags) {
+  if (!Array.isArray(tags)) return [];
+  const seen = new Set();
+  const result = [];
+  tags
+    .map((t) => (t || '').toString().trim())
+    .filter(Boolean)
+    .forEach((tag) => {
+      const key = tag.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      result.push(tag);
+    });
+  return result;
+}
+
+function buildTagOptionsHtml(selectedTags) {
+  const normalizedSelected = normalizeTagList(selectedTags);
+  const selectedSet = new Set(normalizedSelected.map((t) => t.toLowerCase()));
+  const all = normalizeTagList([...CANONICAL_TAG_OPTIONS, ...normalizedSelected]);
+
+  return all
+    .map((tag) => {
+      const selected = selectedSet.has(tag.toLowerCase()) ? ' selected' : '';
+      return `<option value="${escapeHtml(tag)}"${selected}>${escapeHtml(tag)}</option>`;
+    })
+    .join('');
+}
+
 function renderEntryDetail(entry) {
   state.lastDetailEntry = entry;
   const bodyValue = entry.body
@@ -1122,6 +1157,8 @@ function renderEntryDetail(entry) {
       ? entry.body
       : JSON.stringify(entry.body, null, 2)
     : '';
+  const tagsValue = normalizeTagList(entry.tags || []);
+  const tagOptions = buildTagOptionsHtml(tagsValue);
 
   const container = document.getElementById('entity-detail');
   const updated = entry.timestamps?.updatedUtc ? formatDate(entry.timestamps.updatedUtc) : 'never';
@@ -1162,13 +1199,10 @@ function renderEntryDetail(entry) {
       </div>
       <div class="row g-2 mt-2">
         <div class="col-md-6">
-          <label class="form-label">Tags (comma separated)</label>
-          <input
-            id="detail-tags"
-            name="tags"
-            class="form-control"
-            value="${(entry.tags || []).join(', ')}"
-          />
+          <label class="form-label">Tags</label>
+          <select id="detail-tags" name="tags" class="form-select" multiple>
+            ${tagOptions}
+          </select>
         </div>
         <div class="col-md-6">
           <div class="d-flex justify-content-between align-items-center">
@@ -1257,11 +1291,7 @@ async function saveEntryDetail() {
 
   const form = document.getElementById('entry-detail-form');
   const title = form.querySelector('[name="title"]').value.trim();
-  const tags = form
-    .querySelector('[name="tags"]').value
-    .split(',')
-    .map((part) => part.trim())
-    .filter(Boolean);
+  const tags = normalizeTagList(getTagValues('detail-tags'));
   const tier = form.querySelector('[name="curationTier"]').value.trim();
   const bodyText = readMonacoField('detailBodyEditor', 'detail-body').trim();
   const kind = form.querySelector('[name="kind"]').value.trim();
@@ -1281,7 +1311,8 @@ async function saveEntryDetail() {
     payload.title = title;
   }
 
-  if (tags.length) {
+  const existingTags = normalizeTagList(state.lastDetailEntry.tags || []);
+  if (JSON.stringify(existingTags.map((t) => t.toLowerCase()).sort()) !== JSON.stringify(tags.map((t) => t.toLowerCase()).sort())) {
     payload.tags = tags;
   }
 
