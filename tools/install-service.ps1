@@ -192,6 +192,58 @@ function Should-OverwriteConfig {
     return $resp -in @('y','Y','yes','YES')
 }
 
+function Read-ExistingTomlSettings {
+    param(
+        [bool]$IsRemote,
+        [string]$InstallDir,
+        [System.Management.Automation.Runspaces.PSSession]$Session
+    )
+
+    $configPath = Join-Path $InstallDir 'QuickMemoryServer.toml'
+    $toml = $null
+
+    if ($IsRemote) {
+        $toml = Invoke-Command -Session $Session -ScriptBlock { param($p) if (Test-Path $p) { Get-Content -Raw -Path $p } else { $null } } -ArgumentList $configPath
+    }
+    else {
+        if (Test-Path $configPath) { $toml = Get-Content -Raw -Path $configPath }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($toml)) {
+        return [pscustomobject]@{
+            HasConfig = $false
+            HttpUrl = $null
+            Port = $null
+            DataDirectory = $null
+        }
+    }
+
+    $httpUrl = $null
+    $port = $null
+    $dataDir = $null
+
+    $httpMatch = [regex]::Match($toml, '(^|[\r\n])\s*httpUrl\s*=\s*\"([^\"]+)\"', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if ($httpMatch.Success) {
+        $httpUrl = $httpMatch.Groups[2].Value
+        try {
+            $uri = [Uri]$httpUrl
+            if ($uri.Port -gt 0) { $port = $uri.Port }
+        } catch {}
+    }
+
+    $sharedMatch = [regex]::Match($toml, '(?m)^\s*storagePath\s*=\s*\"([^\"]+)\\\\shared\"', [System.Text.RegularExpressions.RegexOptions]::IgnoreCase)
+    if ($sharedMatch.Success) {
+        try { $dataDir = Split-Path -Parent ($sharedMatch.Groups[1].Value + '\shared') } catch {}
+    }
+
+    return [pscustomobject]@{
+        HasConfig = $true
+        HttpUrl = $httpUrl
+        Port = $port
+        DataDirectory = $dataDir
+    }
+}
+
 function Backup-ExistingInstall {
     param(
         [string]$InstallDir
@@ -411,6 +463,7 @@ function Uninstall-Service {
     else { & $script $ServiceName $InstallDir }
 }
 
+$session = $null
 try {
     $dotnet = Resolve-DotNetPath
     Write-Note "Using dotnet at $dotnet"
@@ -419,21 +472,8 @@ try {
     $targetIsRemote = $targetName -ne "local" -and $targetName -ne '.' -and $targetName -ne $env:COMPUTERNAME
 
     $InstallDirectory = Prompt-IfMissing $InstallDirectory "Install directory" "C:\\Program Files\\q-memory-mcp"
-    $DataDirectory = Prompt-IfMissing $DataDirectory "Data directory" "C:\\ProgramData\\q-memory-mcp"
-    $initialPortInput = if ($Port -gt 0) { $Port.ToString() } else { $null }
-    $portInput = Prompt-IfMissing $initialPortInput "HTTP port" "5080"
-    $Port = [int]$portInput
-    if ($Port -le 0) { $Port = 5080 }
 
     Ensure-ElevationIfNeeded -Path $InstallDirectory -IsRemote $targetIsRemote
-
-    $ServiceAccount = Prompt-IfMissing $ServiceAccount "Service account (LocalSystem or DOMAIN\\user)" "LocalSystem"
-    $acct,$acctPassword = Prompt-CredentialIfNeeded -Account $ServiceAccount -Password $ServiceAccountPassword
-
-    $adminKeyInput = if ($Quiet) { '' } else { Read-Host "Admin API key (blank to auto-generate)" }
-    $readerKeyInput = if ($Quiet) { '' } else { Read-Host "Reader API key (blank to auto-generate)" }
-    $adminKey = if ([string]::IsNullOrWhiteSpace($adminKeyInput)) { New-RandomApiKey } else { $adminKeyInput }
-    $readerKey = if ([string]::IsNullOrWhiteSpace($readerKeyInput)) { New-RandomApiKey } else { $readerKeyInput }
 
     $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
     $repoRoot = Resolve-Path (Join-Path $scriptRoot '..')
@@ -445,15 +485,54 @@ try {
                 Write-Note "Opening remote session to $targetName"
                 $session = New-PSSession -ComputerName $targetName
                 Uninstall-Service -ServiceName 'QuickMemoryServer' -InstallDir $InstallDirectory -IsRemote $true -Session $session
-                Remove-PSSession $session
             }
-            else {
-                Uninstall-Service -ServiceName 'QuickMemoryServer' -InstallDir $InstallDirectory -IsRemote $false -Session $null
-            }
+            else { Uninstall-Service -ServiceName 'QuickMemoryServer' -InstallDir $InstallDirectory -IsRemote $false -Session $null }
             Write-Note "Uninstall complete"
         }
         return
     }
+
+    if ($targetIsRemote -and -not $session) {
+        Write-Note "Opening remote session to $targetName"
+        $session = New-PSSession -ComputerName $targetName
+    }
+
+    # If an install already exists, ask about config overwrite BEFORE prompting for config values.
+    $overwriteConfig = Should-OverwriteConfig -IsRemote $targetIsRemote -InstallDir $InstallDirectory -Session $session
+    $existingSettings = Read-ExistingTomlSettings -IsRemote $targetIsRemote -InstallDir $InstallDirectory -Session $session
+
+    $adminKey = $null
+    $readerKey = $null
+
+    if ($overwriteConfig) {
+        $DataDirectory = Prompt-IfMissing $DataDirectory "Data directory" "C:\\ProgramData\\q-memory-mcp"
+        $initialPortInput = if ($Port -gt 0) { $Port.ToString() } else { $null }
+        $portInput = Prompt-IfMissing $initialPortInput "HTTP port" "5080"
+        $Port = [int]$portInput
+        if ($Port -le 0) { $Port = 5080 }
+
+        $adminKeyInput = if ($Quiet) { '' } else { Read-Host "Admin API key (blank to auto-generate)" }
+        $readerKeyInput = if ($Quiet) { '' } else { Read-Host "Reader API key (blank to auto-generate)" }
+        $adminKey = if ([string]::IsNullOrWhiteSpace($adminKeyInput)) { New-RandomApiKey } else { $adminKeyInput }
+        $readerKey = if ([string]::IsNullOrWhiteSpace($readerKeyInput)) { New-RandomApiKey } else { $readerKeyInput }
+    }
+    else {
+        # Preserve existing QuickMemoryServer.toml; avoid prompting for config values (port/keys/etc).
+        if (-not $DataDirectory -and $existingSettings.DataDirectory) {
+            $DataDirectory = $existingSettings.DataDirectory
+        }
+
+        if (($Port -le 0) -and $existingSettings.Port) {
+            $Port = $existingSettings.Port
+        }
+
+        if ($Port -le 0) { $Port = 5080 }
+        $adminKey = '(unchanged)'
+        $readerKey = '(unchanged)'
+    }
+
+    $ServiceAccount = Prompt-IfMissing $ServiceAccount "Service account (LocalSystem or DOMAIN\\user)" "LocalSystem"
+    $acct,$acctPassword = Prompt-CredentialIfNeeded -Account $ServiceAccount -Password $ServiceAccountPassword
 
     $httpUrl = "http://0.0.0.0:$Port"
     Write-Note "HTTP URL: $httpUrl"
@@ -480,7 +559,9 @@ try {
         $configTemplate = if (Test-Path "$repoRoot/QuickMemoryServer.toml") { "$repoRoot/QuickMemoryServer.toml" } else { "$repoRoot/QuickMemoryServer.sample.toml" }
         $configTarget = Join-Path $publishRoot 'QuickMemoryServer.toml'
         Copy-Item $configTemplate -Destination $configTarget -Force
-        Update-TomlConfig -ConfigPath $configTarget -HttpUrl $httpUrl -DataDir $DataDirectory -AdminKey $adminKey -ReaderKey $readerKey
+        if ($overwriteConfig) {
+            Update-TomlConfig -ConfigPath $configTarget -HttpUrl $httpUrl -DataDir $DataDirectory -AdminKey $adminKey -ReaderKey $readerKey
+        }
 
         New-Item -ItemType Directory -Force -Path (Join-Path $publishRoot 'logs') | Out-Null
         New-Item -ItemType Directory -Force -Path (Join-Path $publishRoot 'Backups') | Out-Null
@@ -516,12 +597,11 @@ try {
         }
 
         if ($targetIsRemote) {
-            Write-Note "Opening remote session to $targetName"
-            $session = New-PSSession -ComputerName $targetName
-            $overwriteConfig = Should-OverwriteConfig -IsRemote $true -InstallDir $InstallDirectory -Session $session
             # Stop service before copying to avoid file-locks
             Invoke-Command -Session $session -ScriptBlock { param($svc) $s = Get-Service -Name $svc -ErrorAction SilentlyContinue; if ($s -and $s.Status -ne 'Stopped') { Stop-Service $svc -Force } } -ArgumentList $serviceName
-            Ensure-TargetStructure -BaseDir $InstallDirectory -DataDir $DataDirectory -IsRemote $true -Session $session
+            if ($overwriteConfig) {
+                Ensure-TargetStructure -BaseDir $InstallDirectory -DataDir $DataDirectory -IsRemote $true -Session $session
+            }
         Write-Note "Copying payload to ${targetName}:${InstallDirectory}"
         $copyParams = @{ Path = Join-Path $publishRoot '*'; Destination = $InstallDirectory; Recurse = $true; Force = $true; ToSession = $session; Exclude = @('logs','logs/*','logs/**') }
         if (-not $overwriteConfig) { $copyParams.Exclude = 'QuickMemoryServer.toml' }
@@ -545,13 +625,13 @@ try {
             Install-Or-UpdateServiceRemote -Session $session -Target $targetName -ServiceName $serviceName -BinPath $serviceExe -DisplayName $displayName -Account $acct -Password $acctPassword -SkipStart:$SkipStart
             if (-not $SkipFirewall) { Set-FirewallAndUrlAcl -Port $Port -Account $acct -IsRemote $true -Session $session }
             if ($GrantLogonRight -and $acct -and $acct -ne 'LocalSystem') { Invoke-Command -Session $session -ScriptBlock ${function:Grant-ServiceLogonRight} -ArgumentList $acct }
-            Remove-PSSession $session
         }
         else {
-            $overwriteConfig = Should-OverwriteConfig -IsRemote $false -InstallDir $InstallDirectory -Session $null
             $existingLocal = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
             if ($existingLocal -and $existingLocal.Status -ne 'Stopped') { Write-Note "Stopping $serviceName"; Stop-Service $serviceName -Force }
-            Ensure-TargetStructure -BaseDir $InstallDirectory -DataDir $DataDirectory -IsRemote $false
+            if ($overwriteConfig) {
+                Ensure-TargetStructure -BaseDir $InstallDirectory -DataDir $DataDirectory -IsRemote $false
+            }
         Write-Note "Copying payload to $InstallDirectory"
         $copyParams = @{ Path = Join-Path $publishRoot '*'; Destination = $InstallDirectory; Recurse = $true; Force = $true; Exclude = @('logs','logs/*','logs/**') }
         if (-not $overwriteConfig) { $copyParams.Exclude = 'QuickMemoryServer.toml' }
@@ -604,6 +684,9 @@ try {
     Write-Note "Reader API key: $readerKey"
 }
 finally {
+    if ($session) {
+        try { Remove-PSSession $session } catch {}
+    }
     Stop-Transcript | Out-Null
     Write-Host "Transcript saved to $transcriptPath"
 }
