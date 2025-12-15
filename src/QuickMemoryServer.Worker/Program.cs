@@ -360,15 +360,6 @@ app.MapGet("/health", (HealthReporter healthReporter) =>
 });
 
 // Friendly response for accidental GETs to the MCP endpoint (the MCP transport is POST-only).
-app.MapGet("/mcp", () =>
-{
-    return Results.Json(new
-    {
-        error = "MCP endpoint expects POST /mcp with JSON-RPC (initialize, tools/list, tools/call).",
-        hint = "Switch your client to POST /mcp and include the X-Api-Key header."
-    }, statusCode: StatusCodes.Status400BadRequest);
-});
-
 app.MapPost("/admin/login", async (HttpContext context) =>
 {
     var payload = await context.Request.ReadFromJsonAsync<LoginRequest>();
