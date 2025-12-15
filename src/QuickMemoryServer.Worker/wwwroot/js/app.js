@@ -2776,7 +2776,24 @@ function enhanceTagsInput(id) {
     shouldSort: false,
     shouldSortItems: false
   });
+  wireChoicesFocus(el._choices);
   return el;
+}
+
+function wireChoicesFocus(choices) {
+  if (!choices) return;
+  const outer = choices.containerOuter?.element;
+  if (!outer || outer.dataset.qmsFocusWired === '1') return;
+  outer.dataset.qmsFocusWired = '1';
+
+  const focusInput = () => {
+    const input = outer.querySelector('.choices__input--cloned');
+    if (input) input.focus();
+  };
+
+  // Make the whole control feel like a single input: click anywhere inside to focus typing.
+  outer.addEventListener('mousedown', () => focusInput());
+  outer.addEventListener('touchstart', () => focusInput(), { passive: true });
 }
 
 function clearTagsInput(id) {
