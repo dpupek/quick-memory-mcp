@@ -2699,9 +2699,69 @@ function setStatus(message, variant = 'info') {
 
 function formatApiError(err) {
   if (!err) return 'unknown error';
+  if (err instanceof Error) return err.message || 'unknown error';
   if (err.error) return err.error;
   if (typeof err === 'string') return err;
   return JSON.stringify(err);
+}
+
+async function apiGet(url) {
+  if (!ensureAuth()) {
+    throw new Error('auth-required');
+  }
+
+  const response = await fetch(url, { method: 'GET', headers: authHeaders(false), credentials: 'same-origin' });
+
+  if (response.status === 401) {
+    promptLogin('Insufficient privileges for admin operations.');
+    throw new Error('unauthorized');
+  }
+
+  let payload;
+  try {
+    payload = await response.json();
+  } catch {
+    const text = await response.text().catch(() => '');
+    throw new Error(text || `HTTP ${response.status}`);
+  }
+
+  if (!response.ok) {
+    throw payload;
+  }
+
+  return payload;
+}
+
+async function apiPost(url, payload) {
+  if (!ensureAuth()) {
+    throw new Error('auth-required');
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: authHeaders(true),
+    credentials: 'same-origin',
+    body: JSON.stringify(payload ?? {})
+  });
+
+  if (response.status === 401) {
+    promptLogin('Insufficient privileges for admin operations.');
+    throw new Error('unauthorized');
+  }
+
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    const text = await response.text().catch(() => '');
+    throw new Error(text || `HTTP ${response.status}`);
+  }
+
+  if (!response.ok) {
+    throw body;
+  }
+
+  return body;
 }
 
 async function loadBackupSettings() {
@@ -2775,7 +2835,8 @@ async function loadEndpointsForBackup() {
   select.innerHTML = '';
   try {
     const res = await apiGet('/admin/endpoints/manage');
-    (res.endpoints || []).forEach((e) => {
+    const endpoints = Array.isArray(res) ? res : (res.endpoints || []);
+    endpoints.forEach((e) => {
       const opt = document.createElement('option');
       opt.value = e.key;
       opt.textContent = e.key;
