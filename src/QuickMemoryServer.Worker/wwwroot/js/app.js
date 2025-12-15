@@ -93,17 +93,16 @@ function resetEntryForm() {
     return;
   }
 
-  document.getElementById('entry-form').reset();
   const projectSelect = document.getElementById('entry-project');
   if (projectSelect && state.allowedEndpoints.length) {
     projectSelect.value = state.allowedEndpoints[0].key;
   }
 
   document.getElementById('entry-kind').value = 'note';
-  enhanceTagsInput('entry-tags');
   document.getElementById('entry-tier').value = 'provisional';
   document.getElementById('entry-confidence').value = '0.5';
-  document.getElementById('entry-tags').value = '';
+  enhanceTagsInput('entry-tags');
+  clearTagsInput('entry-tags');
   document.getElementById('entry-body').value = '';
   mountMonacoField('entryBodyEditor', 'entry-body-editor', 'entry-body', '');
   document.getElementById('entry-id').value = '';
@@ -2768,13 +2767,34 @@ function enhanceTagsInput(id) {
   if (!el || !window.Choices) return el;
   if (el._choices) return el;
   el._choices = new Choices(el, {
+    addChoices: true,
     removeItemButton: true,
     duplicateItemsAllowed: false,
     delimiter: ',',
     placeholder: true,
-    placeholderValue: 'tags'
+    placeholderValue: 'tags',
+    shouldSort: false,
+    shouldSortItems: false
   });
   return el;
+}
+
+function clearTagsInput(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+
+  if (el._choices) {
+    el._choices.removeActiveItems();
+    el._choices.clearInput();
+    return;
+  }
+
+  if (el.tagName === 'SELECT') {
+    Array.from(el.options).forEach((option) => { option.selected = false; });
+    return;
+  }
+
+  el.value = '';
 }
 
 function getTagValues(id) {
