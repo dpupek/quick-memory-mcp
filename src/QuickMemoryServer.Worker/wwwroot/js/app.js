@@ -2008,6 +2008,9 @@ function renderProjectPermissionsList() {
     return;
   }
 
+  const allKeys = new Set(state.endpoints.map((endpoint) => endpoint.key));
+  state.selectedProjects = new Set([...state.selectedProjects].filter((key) => allKeys.has(key)));
+
   const filter = (state.projectFilter || '').toLowerCase();
   const filtered = state.endpoints.filter((endpoint) => {
     if (!filter) {
@@ -2017,15 +2020,9 @@ function renderProjectPermissionsList() {
     return haystack.includes(filter);
   });
 
-  const validKeys = new Set(filtered.map((endpoint) => endpoint.key));
-  state.selectedProjects = new Set([...state.selectedProjects].filter((key) => validKeys.has(key)));
-
-  if (!state.activeProjectKey || !validKeys.has(state.activeProjectKey)) {
+  const visibleKeys = new Set(filtered.map((endpoint) => endpoint.key));
+  if (!state.activeProjectKey || !visibleKeys.has(state.activeProjectKey)) {
     state.activeProjectKey = filtered.length ? filtered[0].key : null;
-  }
-
-  if (state.activeProjectKey) {
-    state.selectedProjects.add(state.activeProjectKey);
   }
 
   if (!filtered.length) {
@@ -2177,6 +2174,10 @@ function updateProjectSelectionCount() {
 }
 
 function handleProjectPermissionsListClick(event) {
+  if (event.target.closest('input[data-project-select]')) {
+    return;
+  }
+
   const item = event.target.closest('[data-project-key]');
   if (!item) {
     return;
@@ -2188,7 +2189,6 @@ function handleProjectPermissionsListClick(event) {
   }
 
   state.activeProjectKey = key;
-  state.selectedProjects.add(key);
   renderProjectPermissionsList();
   renderProjectPermissionsDetail();
   renderProjectPermissionsBulkControls();
@@ -2317,7 +2317,6 @@ function handleProjectSelectionChange(event) {
     return;
   }
 
-  event.stopPropagation();
   const key = checkbox.dataset.projectSelect;
   if (!key) {
     return;
@@ -2327,13 +2326,9 @@ function handleProjectSelectionChange(event) {
     state.selectedProjects.add(key);
   } else {
     state.selectedProjects.delete(key);
-    if (state.activeProjectKey === key) {
-      state.activeProjectKey = state.selectedProjects.values().next().value || null;
-    }
   }
 
   updateProjectSelectionCount();
-  renderProjectPermissionsDetail();
   renderProjectPermissionsBulkControls();
 }
 
