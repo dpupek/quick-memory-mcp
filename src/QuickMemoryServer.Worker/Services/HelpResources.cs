@@ -104,6 +104,7 @@ The latest recipes live in `docs/agent-usage.md` (copied alongside the binaries 
 - Search text/vector: `searchEntries` with { text, maxResults, includeShared }.
 - Fetch one/all: `getEntry`, `listEntries`.
 - Mutate: `upsertEntry`, `patchEntry` (permanent requires Admin).
+- Entry bodies: use `bodyTypeHint = markdown` for human-facing examples (especially code examples) so you can include narrative + fenced code blocks; reserve `json`/`xml`/`yaml`/`toml`/`csv` hints for actual structured payloads.
 - Graph: `relatedEntries` with { id, maxHops }.
 - Backup: `requestBackup` (Admin, mode: differential|full).
 - Health: `health` for overall/server issues.

@@ -161,6 +161,7 @@ MemoryStores/
 - `task`: `{ "summary": "Update docs", "status": "open", "assignee": "bob", "dueUtc": "2025-11-20T00:00:00Z" }`
 - Optional fields `epicSlug` and `epicCase`—use them to tag entries with the owning epic or case number, making filters first class without relying solely on tags.
 - Optional `bodyTypeHint` can be supplied to describe how editors/agents should treat the `body` payload (syntax mode only, not validation). Recommended values: `text`, `json`, `markdown`, `html`, `xml`, `yaml`, `toml`, `csv`.
+- Guidance: use `markdown` for human-facing examples (especially code examples) so you can include narrative text + fenced code blocks; reserve `json`/`xml`/`yaml`/`toml`/`csv` for actual structured payloads rather than “examples of JSON/XML”.
 
 ### Semantics
 - Missing `curationTier` defaults to `provisional`; `isPermanent` defaults to `false`.
