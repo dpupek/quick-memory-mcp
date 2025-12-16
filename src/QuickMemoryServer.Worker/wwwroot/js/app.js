@@ -74,6 +74,8 @@ const CANONICAL_TAG_OPTIONS = [
   'category:reference'
 ];
 
+const BODY_TYPE_HINT_OPTIONS = ['text', 'markdown', 'json', 'yaml', 'toml', 'csv', 'xml', 'html'];
+
 const selectors = {
   loginOverlay: document.getElementById('login-overlay'),
   loginForm: document.getElementById('login-form'),
@@ -136,7 +138,9 @@ function resetEntryForm() {
   enhanceTagsInput('entry-tags');
   clearTagsInput('entry-tags');
   document.getElementById('entry-body').value = '';
-  mountMonacoField('entryBodyEditor', 'entry-body-editor', 'entry-body', '');
+  const bodyHintSelect = document.getElementById('entry-body-type-hint');
+  if (bodyHintSelect) bodyHintSelect.value = 'text';
+  mountMonacoField('entryBodyEditor', 'entry-body-editor', 'entry-body', '', monacoLanguageForBodyTypeHint('text'));
   document.getElementById('entry-id').value = '';
   document.getElementById('entry-epic-slug').value = '';
   document.getElementById('entry-epic-case').value = '';
@@ -476,9 +480,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // document.getElementById('entry-modal').addEventListener('click', (event) => { ... });
   renderRelationsControl(document.getElementById('entry-relations'), []);
   renderSourceControl(document.getElementById('entry-source'), null);
-  document.getElementById('entry-body-mode')?.addEventListener('change', (event) => {
-    const mode = event.target.value === 'text' ? 'plaintext' : 'json';
-    mountMonacoField('entryBodyEditor', 'entry-body-editor', 'entry-body', readMonacoField('entryBodyEditor', 'entry-body'), mode);
+  document.getElementById('entry-body-type-hint')?.addEventListener('change', (event) => {
+    const hint = normalizeBodyTypeHintValue(event.target.value) ?? 'text';
+    mountMonacoField('entryBodyEditor', 'entry-body-editor', 'entry-body', readMonacoField('entryBodyEditor', 'entry-body'), monacoLanguageForBodyTypeHint(hint));
   });
   stopModalClickBubble();
   selectors.loginOverlay.classList.remove('hidden');
@@ -1309,6 +1313,26 @@ function renderEntryDetail(entry) {
   const container = document.getElementById('entity-detail');
   const updated = entry.timestamps?.updatedUtc ? formatDate(entry.timestamps.updatedUtc) : 'never';
   const isPromptsRepo = entry.project === 'prompts-repository';
+  const hintValue = typeof entry.bodyTypeHint === 'string' && entry.bodyTypeHint.trim() ? entry.bodyTypeHint.trim().toLowerCase() : '';
+  const inferredHint = hintValue || (entry.body && typeof entry.body === 'object' ? 'json' : 'text');
+  const hintLabels = {
+    '': 'Auto',
+    text: 'Text',
+    markdown: 'Markdown',
+    json: 'JSON',
+    yaml: 'YAML',
+    toml: 'TOML',
+    csv: 'CSV',
+    xml: 'XML',
+    html: 'HTML'
+  };
+  const hintOptionsHtml = [''].concat(BODY_TYPE_HINT_OPTIONS)
+    .map((value) => {
+      const label = hintLabels[value] || value;
+      const selected = value === hintValue ? ' selected' : (!value && !hintValue ? ' selected' : '');
+      return `<option value="${escapeHtml(value)}"${selected}>${escapeHtml(label)}</option>`;
+    })
+    .join('');
   container.innerHTML = `
     <div class="d-flex justify-content-between">
       <div>
@@ -1350,17 +1374,16 @@ function renderEntryDetail(entry) {
             ${tagOptions}
           </select>
         </div>
-        <div class="col-md-6">
-          <div class="d-flex justify-content-between align-items-center">
-            <label class="form-label mb-0">Body</label>
-            <select id="detail-body-mode" class="form-select form-select-sm body-mode-select">
-              <option value="json" selected>JSON</option>
-              <option value="text">Plain text</option>
-            </select>
-          </div>
-          <div id="detail-body-editor" class="monaco-field"></div>
-          <textarea id="detail-body" name="body" class="form-control d-none" rows="4">${escapeHtml(bodyValue)}</textarea>
-        </div>
+	        <div class="col-md-6">
+	          <div class="d-flex justify-content-between align-items-center">
+	            <label class="form-label mb-0">Body</label>
+	            <select id="detail-body-type-hint" class="form-select form-select-sm body-mode-select" title="Body type hint (syntax mode)">
+	              ${hintOptionsHtml}
+	            </select>
+	          </div>
+	          <div id="detail-body-editor" class="monaco-field"></div>
+	          <textarea id="detail-body" name="body" class="form-control d-none" rows="4">${escapeHtml(bodyValue)}</textarea>
+	        </div>
       </div>
       <div class="row g-2 mt-2">
         <div class="col-md-3">
@@ -1416,13 +1439,13 @@ function renderEntryDetail(entry) {
   renderRelationsControl(document.getElementById('detail-relations'), entry.relations || []);
   renderSourceControl(document.getElementById('detail-source'), entry.source || null);
   enhanceTagsInput('detail-tags');
-  mountMonacoField('detailBodyEditor', 'detail-body-editor', 'detail-body', bodyValue);
+  mountMonacoField('detailBodyEditor', 'detail-body-editor', 'detail-body', bodyValue, monacoLanguageForBodyTypeHint(inferredHint));
 
-  const modeSelect = document.getElementById('detail-body-mode');
-  if (modeSelect) {
-    modeSelect.addEventListener('change', (event) => {
-      const mode = event.target.value === 'text' ? 'plaintext' : 'json';
-      mountMonacoField('detailBodyEditor', 'detail-body-editor', 'detail-body', readMonacoField('detailBodyEditor', 'detail-body'), mode);
+  const hintSelect = document.getElementById('detail-body-type-hint');
+  if (hintSelect) {
+    hintSelect.addEventListener('change', (event) => {
+      const nextHint = normalizeBodyTypeHintValue(event.target.value) || (entry.body && typeof entry.body === 'object' ? 'json' : 'text');
+      mountMonacoField('detailBodyEditor', 'detail-body-editor', 'detail-body', readMonacoField('detailBodyEditor', 'detail-body'), monacoLanguageForBodyTypeHint(nextHint));
     });
   }
 }
@@ -1440,6 +1463,7 @@ async function saveEntryDetail() {
   const tags = normalizeTagList(getTagValues('detail-tags'));
   const tier = form.querySelector('[name="curationTier"]').value.trim();
   const bodyText = readMonacoField('detailBodyEditor', 'detail-body').trim();
+  const bodyTypeHint = normalizeBodyTypeHintValue(document.getElementById('detail-body-type-hint')?.value);
   const kind = form.querySelector('[name="kind"]').value.trim();
   const confidenceValue = parseFloat(form.querySelector('[name="confidence"]').value);
   const isPermanent = form.querySelector('[name="isPermanent"]').checked;
@@ -1466,12 +1490,13 @@ async function saveEntryDetail() {
     payload.curationTier = tier;
   }
 
+  const existingHint = normalizeBodyTypeHintValue(state.lastDetailEntry.bodyTypeHint);
+  if (bodyTypeHint !== existingHint) {
+    payload.bodyTypeHint = bodyTypeHint;
+  }
+
   if (bodyText) {
-    try {
-      payload.body = JSON.parse(bodyText);
-    } catch (err) {
-      payload.body = bodyText;
-    }
+    payload.body = parseBodyFromEditor(bodyText, bodyTypeHint);
   }
 
   if (!Number.isNaN(confidenceValue)) {
@@ -1745,15 +1770,10 @@ async function createEntry() {
   const title = document.getElementById('entry-title').value.trim();
   const tier = document.getElementById('entry-tier').value || 'provisional';
   const tags = getTagValues('entry-tags');
+  const bodyTypeHint = normalizeBodyTypeHintValue(document.getElementById('entry-body-type-hint')?.value) ?? 'text';
   const rawBody = readMonacoField('entryBodyEditor', 'entry-body').trim();
   let body;
-  if (rawBody) {
-    try {
-      body = JSON.parse(rawBody);
-    } catch (err) {
-      body = rawBody;
-    }
-  }
+  if (rawBody) body = parseBodyFromEditor(rawBody, bodyTypeHint);
 
   const idField = document.getElementById('entry-id').value.trim();
   const generatedId = (crypto.randomUUID && `${project}:${crypto.randomUUID()}`) || `${project}:${Date.now().toString(36)}`;
@@ -1762,6 +1782,7 @@ async function createEntry() {
     id: idField || generatedId,
     kind,
     title,
+    bodyTypeHint,
     curationTier: tier,
     tags,
     body,
@@ -3032,6 +3053,41 @@ function normalizeStoragePath(value) {
 
 function formatStoragePath(value) {
   return normalizeStoragePath(value);
+}
+
+function normalizeBodyTypeHintValue(value) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed) return null;
+  return trimmed;
+}
+
+function monacoLanguageForBodyTypeHint(bodyTypeHint) {
+  switch ((bodyTypeHint || '').toLowerCase()) {
+    case 'json':
+      return 'json';
+    case 'markdown':
+      return 'markdown';
+    case 'html':
+      return 'html';
+    case 'xml':
+      return 'xml';
+    default:
+      return 'plaintext';
+  }
+}
+
+function parseBodyFromEditor(text, bodyTypeHint) {
+  const hint = (bodyTypeHint || '').toLowerCase();
+  if (hint === 'json' || !hint) {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  }
+
+  return text;
 }
 
 function mountMonacoField(stateKey, containerId, fallbackId, value, language = 'json') {

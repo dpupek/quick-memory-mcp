@@ -181,17 +181,23 @@
                         <option value="category:reference">category:reference</option>
                       </select>
                     </div>
-                    <div class="col-md-6">
-                      <div class="d-flex justify-content-between align-items-center">
-                        <label class="form-label mb-0">Body</label>
-                        <select id="entry-body-mode" class="form-select form-select-sm body-mode-select">
-                          <option value="json" selected>JSON</option>
-                          <option value="text">Plain text</option>
-                        </select>
-                      </div>
-                      <div id="entry-body-editor" class="monaco-field"></div>
-                      <textarea id="entry-body" class="form-control d-none" rows="2"></textarea>
-                    </div>
+	                    <div class="col-md-6">
+	                      <div class="d-flex justify-content-between align-items-center">
+	                        <label class="form-label mb-0">Body</label>
+	                        <select id="entry-body-type-hint" class="form-select form-select-sm body-mode-select" title="Body type hint (syntax mode)">
+	                          <option value="text" selected>Text</option>
+	                          <option value="markdown">Markdown</option>
+	                          <option value="json">JSON</option>
+	                          <option value="yaml">YAML</option>
+	                          <option value="toml">TOML</option>
+	                          <option value="csv">CSV</option>
+	                          <option value="xml">XML</option>
+	                          <option value="html">HTML</option>
+	                        </select>
+	                      </div>
+	                      <div id="entry-body-editor" class="monaco-field"></div>
+	                      <textarea id="entry-body" class="form-control d-none" rows="2"></textarea>
+	                    </div>
                   </div>
                   <div class="row g-2 mt-2">
                     <div class="col-md-4">
