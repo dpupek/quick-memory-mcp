@@ -27,6 +27,7 @@ public sealed record EntryPatchRequest
     public bool? Pinned { get; init; }
     public double? Confidence { get; init; }
     public JsonNode? Body { get; init; }
+    public string? BodyTypeHint { get; init; }
     public string? EpicSlug { get; init; }
     public string? EpicCase { get; init; }
     public JsonNode? Relations { get; init; }

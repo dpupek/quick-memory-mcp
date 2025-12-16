@@ -18,6 +18,9 @@ public sealed record MemoryEntry
     public JsonNode? Body { get; init; }
         = null;
 
+    public string? BodyTypeHint { get; init; }
+        = null;
+
     public IReadOnlyList<string> Tags { get; init; }
         = Array.Empty<string>();
 

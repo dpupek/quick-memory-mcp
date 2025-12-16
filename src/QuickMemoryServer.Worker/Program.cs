@@ -955,20 +955,21 @@ app.MapPatch("/mcp/{endpoint}/entries/{id}", async (
         return Results.BadRequest(new { error = "invalid-patch" });
     }
 
-    var updated = existing with
-    {
-        Title = patch.Title ?? existing.Title,
-        Tags = patch.Tags ?? existing.Tags,
-        CurationTier = patch.CurationTier ?? existing.CurationTier,
-        IsPermanent = patch.IsPermanent ?? existing.IsPermanent,
-        Pinned = patch.Pinned ?? existing.Pinned,
-        Confidence = patch.Confidence ?? existing.Confidence,
-        Body = patch.Body ?? existing.Body,
-        EpicSlug = patch.EpicSlug ?? existing.EpicSlug,
-        EpicCase = patch.EpicCase ?? existing.EpicCase,
-        Relations = patch.Relations is null ? existing.Relations : patch.Relations.Deserialize<MemoryRelation[]>(new System.Text.Json.JsonSerializerOptions()),
-        Source = patch.Source is null ? existing.Source : patch.Source.Deserialize<MemorySource>(new System.Text.Json.JsonSerializerOptions())
-    };
+	    var updated = existing with
+	    {
+	        Title = patch.Title ?? existing.Title,
+	        Tags = patch.Tags ?? existing.Tags,
+	        CurationTier = patch.CurationTier ?? existing.CurationTier,
+	        IsPermanent = patch.IsPermanent ?? existing.IsPermanent,
+	        Pinned = patch.Pinned ?? existing.Pinned,
+	        Confidence = patch.Confidence ?? existing.Confidence,
+	        Body = patch.Body ?? existing.Body,
+	        BodyTypeHint = patch.BodyTypeHint ?? existing.BodyTypeHint,
+	        EpicSlug = patch.EpicSlug ?? existing.EpicSlug,
+	        EpicCase = patch.EpicCase ?? existing.EpicCase,
+	        Relations = patch.Relations is null ? existing.Relations : patch.Relations.Deserialize<MemoryRelation[]>(new System.Text.Json.JsonSerializerOptions()),
+	        Source = patch.Source is null ? existing.Source : patch.Source.Deserialize<MemorySource>(new System.Text.Json.JsonSerializerOptions())
+	    };
 
     if (updated.IsPermanent && tier != PermissionTier.Admin)
     {

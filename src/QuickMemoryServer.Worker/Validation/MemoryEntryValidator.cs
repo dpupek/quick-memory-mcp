@@ -12,6 +12,18 @@ public sealed class MemoryEntryValidator
         "provisional"
     };
 
+    private static readonly HashSet<string> CanonicalBodyTypeHints = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "text",
+        "json",
+        "markdown",
+        "html",
+        "xml",
+        "yaml",
+        "toml",
+        "csv"
+    };
+
     public MemoryEntry Normalize(MemoryEntry entry, int embeddingDimensions)
     {
         ArgumentNullException.ThrowIfNull(entry);
@@ -88,6 +100,11 @@ public sealed class MemoryEntryValidator
         }
 
         var source = entry.Source ?? new MemorySource();
+        var bodyTypeHint = string.IsNullOrWhiteSpace(entry.BodyTypeHint) ? null : entry.BodyTypeHint.Trim();
+        if (!string.IsNullOrWhiteSpace(bodyTypeHint) && CanonicalBodyTypeHints.Contains(bodyTypeHint))
+        {
+            bodyTypeHint = bodyTypeHint.ToLowerInvariant();
+        }
 
         return entry with
         {
@@ -99,7 +116,8 @@ public sealed class MemoryEntryValidator
             Confidence = confidence,
             CurationTier = tier.ToLowerInvariant(),
             Title = string.IsNullOrWhiteSpace(entry.Title) ? null : entry.Title.Trim(),
-            Source = source
+            Source = source,
+            BodyTypeHint = bodyTypeHint
         };
     }
 }

@@ -43,6 +43,11 @@ public sealed class SchemaService
             ["kind"] = CreateProperty("string"),
             ["title"] = CreateProperty("string"),
             ["body"] = CreateProperty("object"),
+            ["bodyTypeHint"] = new JsonObject
+            {
+                ["type"] = "string",
+                ["description"] = "Optional hint for how editors/agents should interpret the body payload (syntax mode only, not validation). Recommended values: text, json, markdown, html, xml, yaml, toml, csv."
+            },
             ["tags"] = new JsonObject
             {
                 ["type"] = "array",

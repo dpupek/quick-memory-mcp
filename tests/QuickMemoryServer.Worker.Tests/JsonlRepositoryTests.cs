@@ -12,6 +12,7 @@ public sealed class JsonlRepositoryTests
     [Fact]
     public async Task SaveAndLoad_RoundTripsEntries()
     {
+#region Arrange
         var tempDirectory = Directory.CreateTempSubdirectory();
         var path = Path.Combine(tempDirectory.FullName, "entries.jsonl");
 
@@ -23,6 +24,7 @@ public sealed class JsonlRepositoryTests
                 Project = "projectA",
                 Kind = "fact",
                 Body = null,
+                BodyTypeHint = " YAML ",
                 Tags = new[] { "search", "indexing" },
                 Embedding = new double[] { 0.1, 0.2, 0.3 },
                 CurationTier = "Canonical",
@@ -42,16 +44,27 @@ public sealed class JsonlRepositoryTests
             }
         };
 
+#endregion
+
+#region Assert (initial state)
+        Assert.Equal(" YAML ", entries[0].BodyTypeHint);
+#endregion
+
+#region Act
         await _repository.SaveAsync(path, entries, embeddingDimensions: 3, CancellationToken.None);
         var loaded = await _repository.LoadAsync(path, embeddingDimensions: 3, CancellationToken.None);
+#endregion
 
+#region Assert (post state)
         Assert.Equal(2, loaded.Count);
         Assert.Equal("projectA:1", loaded[0].Id);
         Assert.Equal("canonical", loaded[0].CurationTier);
+        Assert.Equal("yaml", loaded[0].BodyTypeHint);
         Assert.Equal(3, loaded[0].Embedding!.Count);
         Assert.True(loaded[0].Timestamps.CreatedUtc > DateTimeOffset.UnixEpoch);
         Assert.Equal("shared:2", loaded[1].Id);
         Assert.Equal("Sample", loaded[1].Title);
+#endregion
     }
 
     [Fact]

@@ -160,6 +160,7 @@ MemoryStores/
 - `question`: `{ "text": "Should we deploy?", "context": "QA is green", "relatedEntries": ["project:101"] }`
 - `task`: `{ "summary": "Update docs", "status": "open", "assignee": "bob", "dueUtc": "2025-11-20T00:00:00Z" }`
 - Optional fields `epicSlug` and `epicCase`—use them to tag entries with the owning epic or case number, making filters first class without relying solely on tags.
+- Optional `bodyTypeHint` can be supplied to describe how editors/agents should treat the `body` payload (syntax mode only, not validation). Recommended values: `text`, `json`, `markdown`, `html`, `xml`, `yaml`, `toml`, `csv`.
 
 ### Semantics
 - Missing `curationTier` defaults to `provisional`; `isPermanent` defaults to `false`.
