@@ -11,3 +11,6 @@ TestResults/
 *.suo
 *.userprefs
 .vs/
+
+# Local scratch artifacts
+.scratch/
