@@ -40,6 +40,52 @@
       <div id="backup-settings-status" class="text-muted small mt-2"></div>
     </div>
 
+    <div class="card card-body shadow-sm mb-3">
+      <h3 class="h6">Upload (Azure Blob)</h3>
+      <div class="form-check form-switch mb-2">
+        <input class="form-check-input" type="checkbox" id="backup-upload-enabled">
+        <label class="form-check-label" for="backup-upload-enabled">Enable uploads after local backup completes</label>
+      </div>
+      <div class="row g-2">
+        <div class="col-sm-12">
+          <label class="form-label">Storage account URL</label>
+          <input id="backup-upload-accountUrl" type="text" class="form-control" placeholder="https://{account}.blob.core.windows.net">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label">Container</label>
+          <input id="backup-upload-container" type="text" class="form-control" placeholder="backups">
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label">Prefix (optional)</label>
+          <input id="backup-upload-prefix" type="text" class="form-control" placeholder="quick-memory">
+        </div>
+      </div>
+      <div class="row g-2 mt-2">
+        <div class="col-sm-6">
+          <label class="form-label">Auth mode</label>
+          <select id="backup-upload-authMode" class="form-select">
+            <option value="sas">SAS (recommended)</option>
+            <option value="certificate" disabled>Certificate (future)</option>
+          </select>
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label">Certificate thumbprint (future)</label>
+          <input id="backup-upload-cert-thumb" type="text" class="form-control" placeholder="(not yet supported)" disabled>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 mt-3 flex-wrap">
+        <button id="backup-upload-save" class="btn btn-primary btn-sm">Save upload settings</button>
+        <button id="backup-upload-test" class="btn btn-outline-secondary btn-sm">Test connection</button>
+        <button id="backup-upload-set-sas" class="btn btn-outline-primary btn-sm">Set SAS token…</button>
+        <button id="backup-upload-clear-sas" class="btn btn-outline-danger btn-sm">Clear SAS</button>
+      </div>
+
+      <div id="backup-upload-sas-status" class="text-muted small mt-2"></div>
+      <div id="backup-upload-status" class="text-muted small mt-1"></div>
+      <div class="form-text">SAS tokens are stored encrypted on the server and are never displayed back to the UI.</div>
+    </div>
+
     <div class="card card-body shadow-sm">
       <h3 class="h6">Manual backup</h3>
       <div class="row g-2">

@@ -85,7 +85,9 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
     }
 });
 
-var httpUrl = builder.Configuration["global:httpUrl"]
+var httpUrl = builder.Configuration["urls"]
+              ?? builder.Configuration["ASPNETCORE_URLS"]
+              ?? builder.Configuration["global:httpUrl"]
               ?? builder.Configuration["Global:HttpUrl"]
               ?? "http://localhost:5080";
 
@@ -600,6 +602,44 @@ app.MapDelete("/admin/backup/upload/sas", async (HttpContext context, ApiKeyAuth
 
     await adminService.ClearBackupUploadSasTokenAsync(cancellationToken);
     return Results.Ok(new { cleared = true });
+});
+
+app.MapPost("/admin/backup/upload/test", async (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor, CancellationToken cancellationToken) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var upload = optionsMonitor.CurrentValue.Global.Backup.Upload;
+    if (!upload.Enabled)
+    {
+        return Results.BadRequest(new { ok = false, error = "upload-disabled" });
+    }
+
+    if (!AzureBlobBackupUploader.TryCreateContainerClient(upload, out var containerClient, out var clientError) || containerClient is null)
+    {
+        return Results.BadRequest(new { ok = false, error = clientError ?? "upload-config-missing" });
+    }
+
+    var blobName = BackupUploadNaming.BuildBlobName(upload.Prefix, "admin", "test", DateTime.UtcNow, $"upload-test-{Guid.NewGuid():N}.txt");
+    var blobClient = containerClient.GetBlobClient(blobName);
+    var payload = new BinaryData("QuickMemoryServer backup upload test");
+
+    await blobClient.UploadAsync(payload, overwrite: true, cancellationToken);
+
+    var deleted = false;
+    try
+    {
+        var deletedResult = await blobClient.DeleteIfExistsAsync(cancellationToken: cancellationToken);
+        deleted = deletedResult.Value;
+    }
+    catch
+    {
+        // best effort cleanup; a SAS may not include delete permissions
+    }
+
+    return Results.Ok(new { ok = true, blobUri = blobClient.Uri.ToString(), deleted });
 });
 
 app.MapPost("/admin/backup/settings", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor, CancellationToken cancellationToken) =>

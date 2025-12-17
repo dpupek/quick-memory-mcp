@@ -29,7 +29,11 @@ const state = {
     loading: false,
     saving: false,
     probing: false,
-    running: false
+    running: false,
+    uploadSaving: false,
+    uploadTesting: false,
+    uploadSasSaving: false,
+    uploadSasClearing: false
   },
   backupRefreshTimer: null,
   backupLoaded: false
@@ -548,6 +552,10 @@ async function ensureBackupLoaded() {
 function wireBackupHandlers() {
   document.getElementById('backup-save')?.addEventListener('click', saveBackupSettings);
   document.getElementById('backup-probe')?.addEventListener('click', probeBackupTarget);
+  document.getElementById('backup-upload-save')?.addEventListener('click', saveBackupUploadSettings);
+  document.getElementById('backup-upload-test')?.addEventListener('click', testBackupUploadConnection);
+  document.getElementById('backup-upload-set-sas')?.addEventListener('click', setBackupUploadSasToken);
+  document.getElementById('backup-upload-clear-sas')?.addEventListener('click', clearBackupUploadSasToken);
   document.getElementById('backup-activity-refresh')?.addEventListener('click', loadBackupActivity);
   document.getElementById('backup-activity-filter')?.addEventListener('input', () => renderBackupActivity(state.backupActivity || []));
   document.getElementById('backup-run')?.addEventListener('click', runManualBackup);
@@ -2780,6 +2788,33 @@ async function apiPost(url, payload) {
   return body;
 }
 
+async function apiDelete(url) {
+  if (!ensureAuth()) {
+    throw new Error('auth-required');
+  }
+
+  const response = await fetch(url, { method: 'DELETE', headers: authHeaders(false), credentials: 'same-origin' });
+
+  if (response.status === 401) {
+    promptLogin('Insufficient privileges for admin operations.');
+    throw new Error('unauthorized');
+  }
+
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    const text = await response.text().catch(() => '');
+    throw new Error(text || `HTTP ${response.status}`);
+  }
+
+  if (!response.ok) {
+    throw body;
+  }
+
+  return body;
+}
+
 async function loadBackupSettings() {
   setBackupBusy('loading', true);
   try {
@@ -2792,10 +2827,152 @@ async function loadBackupSettings() {
     renderNextRun(res.preview);
     refreshBackupHealthChip();
     await loadEndpointsForBackup();
+    await loadBackupUploadSettings();
   } catch (err) {
     setBackupStatus(`Failed to load settings: ${formatApiError(err)}`, true);
   } finally {
     setBackupBusy('loading', false);
+  }
+}
+
+function setBackupUploadStatus(text, isError) {
+  const el = document.getElementById('backup-upload-status');
+  if (!el) return;
+  el.textContent = text;
+  el.className = isError ? 'text-danger small' : 'text-success small';
+}
+
+function renderBackupUploadSasStatus(settings) {
+  const el = document.getElementById('backup-upload-sas-status');
+  if (!el) return;
+  const sas = settings?.sas;
+  const configured = sas?.configured ? 'Configured' : 'Missing';
+  const fp = sas?.fingerprintPrefix ? ` (${sas.fingerprintPrefix})` : '';
+  const updated = sas?.updatedUtc ? ` — updated ${sas.updatedUtc}` : '';
+  el.textContent = `SAS: ${configured}${fp}${updated}`;
+  el.className = sas?.configured ? 'text-success small' : 'text-warning small';
+}
+
+async function loadBackupUploadSettings() {
+  try {
+    const res = await apiGet('/admin/backup/upload');
+    const settings = res.settings || {};
+
+    document.getElementById('backup-upload-enabled').checked = !!settings.enabled;
+    document.getElementById('backup-upload-accountUrl').value = settings.accountUrl || '';
+    document.getElementById('backup-upload-container').value = settings.container || '';
+    document.getElementById('backup-upload-prefix').value = settings.prefix || '';
+    document.getElementById('backup-upload-authMode').value = (settings.authMode || 'sas').toLowerCase();
+
+    renderBackupUploadSasStatus(settings);
+    setBackupUploadStatus('', false);
+  } catch (err) {
+    setBackupUploadStatus(`Failed to load upload settings: ${formatApiError(err)}`, true);
+  }
+}
+
+async function saveBackupUploadSettings() {
+  if (state.backupBusy.uploadSaving) return;
+  setBackupBusy('uploadSaving', true);
+
+  const payload = {
+    enabled: !!document.getElementById('backup-upload-enabled').checked,
+    provider: 'azureBlob',
+    accountUrl: document.getElementById('backup-upload-accountUrl').value.trim() || null,
+    container: document.getElementById('backup-upload-container').value.trim() || null,
+    prefix: document.getElementById('backup-upload-prefix').value.trim() || null,
+    authMode: document.getElementById('backup-upload-authMode').value,
+    certificateThumbprint: null
+  };
+
+  try {
+    await apiPost('/admin/backup/upload/settings', payload);
+    setBackupUploadStatus('Upload settings saved', false);
+    await loadBackupUploadSettings();
+  } catch (err) {
+    const errors = err?.errors ? err.errors.join(', ') : formatApiError(err);
+    setBackupUploadStatus(`Save failed: ${errors}`, true);
+  } finally {
+    setBackupBusy('uploadSaving', false);
+  }
+}
+
+async function setBackupUploadSasToken() {
+  if (state.backupBusy.uploadSasSaving) return;
+
+  if (!window.Swal) {
+    setBackupUploadStatus('SAS entry requires SweetAlert2', true);
+    return;
+  }
+
+  const result = await Swal.fire({
+    title: 'Set SAS token',
+    input: 'textarea',
+    inputLabel: 'Paste the SAS token (starts with ?sv=...)',
+    inputPlaceholder: '?sv=...',
+    inputAttributes: { autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false' },
+    showCancelButton: true,
+    confirmButtonText: 'Save',
+    confirmButtonColor: '#0d6efd'
+  });
+
+  if (!result.isConfirmed) return;
+  const sasToken = (result.value || '').trim();
+  if (!sasToken) {
+    setBackupUploadStatus('SAS token is required', true);
+    return;
+  }
+
+  setBackupBusy('uploadSasSaving', true);
+  try {
+    await apiPost('/admin/backup/upload/sas', { sasToken });
+    setBackupUploadStatus('SAS token saved (encrypted)', false);
+    await loadBackupUploadSettings();
+  } catch (err) {
+    setBackupUploadStatus(`SAS save failed: ${formatApiError(err)}`, true);
+  } finally {
+    setBackupBusy('uploadSasSaving', false);
+  }
+}
+
+async function clearBackupUploadSasToken() {
+  if (state.backupBusy.uploadSasClearing) return;
+
+  if (window.Swal) {
+    const confirm = await Swal.fire({
+      title: 'Clear SAS token?',
+      text: 'This disables Azure uploads until a new SAS token is set.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Clear',
+      confirmButtonColor: '#dc3545'
+    });
+    if (!confirm.isConfirmed) return;
+  }
+
+  setBackupBusy('uploadSasClearing', true);
+  try {
+    await apiDelete('/admin/backup/upload/sas');
+    setBackupUploadStatus('SAS token cleared', false);
+    await loadBackupUploadSettings();
+  } catch (err) {
+    setBackupUploadStatus(`Clear failed: ${formatApiError(err)}`, true);
+  } finally {
+    setBackupBusy('uploadSasClearing', false);
+  }
+}
+
+async function testBackupUploadConnection() {
+  if (state.backupBusy.uploadTesting) return;
+  setBackupBusy('uploadTesting', true);
+  try {
+    const res = await apiPost('/admin/backup/upload/test', {});
+    const cleaned = res.deleted ? ' (cleaned up)' : ' (cleanup skipped)';
+    setBackupUploadStatus(`Test OK${cleaned}`, false);
+  } catch (err) {
+    setBackupUploadStatus(`Test failed: ${formatApiError(err)}`, true);
+  } finally {
+    setBackupBusy('uploadTesting', false);
   }
 }
 
@@ -2960,6 +3137,10 @@ function setBackupBusy(key, value) {
   document.getElementById('backup-save')?.toggleAttribute('disabled', state.backupBusy.saving);
   document.getElementById('backup-probe')?.toggleAttribute('disabled', state.backupBusy.probing);
   document.getElementById('backup-run')?.toggleAttribute('disabled', state.backupBusy.running);
+  document.getElementById('backup-upload-save')?.toggleAttribute('disabled', state.backupBusy.uploadSaving);
+  document.getElementById('backup-upload-test')?.toggleAttribute('disabled', state.backupBusy.uploadTesting);
+  document.getElementById('backup-upload-set-sas')?.toggleAttribute('disabled', state.backupBusy.uploadSasSaving);
+  document.getElementById('backup-upload-clear-sas')?.toggleAttribute('disabled', state.backupBusy.uploadSasClearing);
 }
 
 function startBackupAutoRefresh() {

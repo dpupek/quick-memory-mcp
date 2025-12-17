@@ -29,36 +29,10 @@ public sealed class AzureBlobBackupUploader : IBackupArtifactUploader
                 return new BackupUploadResult(false, null, "upload-disabled");
             }
 
-            if (!string.Equals(upload.Provider, "azureBlob", StringComparison.OrdinalIgnoreCase))
+            if (!TryCreateContainerClient(upload, out var containerClient, out var clientError) || containerClient is null)
             {
-                return new BackupUploadResult(false, null, "upload-provider-unsupported");
+                return new BackupUploadResult(false, null, clientError ?? "upload-config-missing");
             }
-
-            if (!string.Equals(upload.AuthMode, "sas", StringComparison.OrdinalIgnoreCase))
-            {
-                return new BackupUploadResult(false, null, "upload-authmode-unsupported");
-            }
-
-            if (!OperatingSystem.IsWindows())
-            {
-                return new BackupUploadResult(false, null, "upload-sas-platform-unsupported");
-            }
-
-            var accountUrl = upload.AccountUrl?.Trim().TrimEnd('/');
-            var container = upload.Container?.Trim();
-            if (string.IsNullOrWhiteSpace(accountUrl) || string.IsNullOrWhiteSpace(container))
-            {
-                return new BackupUploadResult(false, null, "upload-config-missing");
-            }
-
-            if (string.IsNullOrWhiteSpace(upload.SasTokenProtected))
-            {
-                return new BackupUploadResult(false, null, "upload-sas-missing");
-            }
-
-            var sas = DpapiSecretProtector.UnprotectFromBase64(upload.SasTokenProtected);
-            var serviceClient = new BlobServiceClient(new Uri(accountUrl), new AzureSasCredential(sas));
-            var containerClient = serviceClient.GetBlobContainerClient(container);
 
             var localPath = artifact.LocalPath;
             if (!File.Exists(localPath))
@@ -95,6 +69,49 @@ public sealed class AzureBlobBackupUploader : IBackupArtifactUploader
             _logger.LogError(ex, "Backup upload failed for {Endpoint} {Mode} ({Path})", artifact.Endpoint, artifact.Mode, artifact.LocalPath);
             return new BackupUploadResult(false, null, ex.Message);
         }
+    }
+
+    internal static bool TryCreateContainerClient(BackupUploadOptions upload, out BlobContainerClient? containerClient, out string? error)
+    {
+        containerClient = null;
+        error = null;
+
+        if (!string.Equals(upload.Provider, "azureBlob", StringComparison.OrdinalIgnoreCase))
+        {
+            error = "upload-provider-unsupported";
+            return false;
+        }
+
+        if (!string.Equals(upload.AuthMode, "sas", StringComparison.OrdinalIgnoreCase))
+        {
+            error = "upload-authmode-unsupported";
+            return false;
+        }
+
+        if (!OperatingSystem.IsWindows())
+        {
+            error = "upload-sas-platform-unsupported";
+            return false;
+        }
+
+        var accountUrl = upload.AccountUrl?.Trim().TrimEnd('/');
+        var container = upload.Container?.Trim();
+        if (string.IsNullOrWhiteSpace(accountUrl) || string.IsNullOrWhiteSpace(container))
+        {
+            error = "upload-config-missing";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(upload.SasTokenProtected))
+        {
+            error = "upload-sas-missing";
+            return false;
+        }
+
+        var sas = DpapiSecretProtector.UnprotectFromBase64(upload.SasTokenProtected);
+        var serviceClient = new BlobServiceClient(new Uri(accountUrl), new AzureSasCredential(sas));
+        containerClient = serviceClient.GetBlobContainerClient(container);
+        return true;
     }
 
     private static async Task<(string Sha256Hex, long SizeBytes)> ComputeSha256AndSizeAsync(string path, CancellationToken cancellationToken)
