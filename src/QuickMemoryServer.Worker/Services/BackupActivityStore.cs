@@ -17,7 +17,10 @@ public sealed record BackupActivity(
     string Message,
     double? DurationMs,
     string? InitiatedBy,
-    string? InstanceId);
+    string? InstanceId,
+    string? UploadStatus = null,
+    string? UploadBlobUri = null,
+    string? UploadError = null);
 
 public sealed class BackupActivityStore
 {

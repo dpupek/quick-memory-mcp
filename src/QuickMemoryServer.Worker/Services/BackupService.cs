@@ -27,6 +27,7 @@ public sealed class BackupService : BackgroundService
     private readonly Channel<BackupRequest> _requests = Channel.CreateUnbounded<BackupRequest>();
     private readonly MemoryStoreFactory _storeFactory;
     private readonly IOptionsMonitor<ServerOptions> _optionsMonitor;
+    private readonly IBackupArtifactUploader _uploader;
     private readonly ObservabilityMetrics _metrics;
     private readonly HealthReporter _healthReporter;
     private readonly BackupActivityStore _activityStore;
@@ -36,6 +37,7 @@ public sealed class BackupService : BackgroundService
     public BackupService(
         MemoryStoreFactory storeFactory,
         IOptionsMonitor<ServerOptions> optionsMonitor,
+        IBackupArtifactUploader uploader,
         ObservabilityMetrics metrics,
         HealthReporter healthReporter,
         BackupActivityStore activityStore,
@@ -43,6 +45,7 @@ public sealed class BackupService : BackgroundService
     {
         _storeFactory = storeFactory;
         _optionsMonitor = optionsMonitor;
+        _uploader = uploader;
         _metrics = metrics;
         _healthReporter = healthReporter;
         _activityStore = activityStore;
@@ -119,6 +122,9 @@ public sealed class BackupService : BackgroundService
         var success = false;
         var stopwatch = Stopwatch.StartNew();
         string message = string.Empty;
+        string? uploadStatus = null;
+        string? uploadBlobUri = null;
+        string? uploadError = null;
         try
         {
             var store = _storeFactory.GetOrCreate(endpoint);
@@ -127,6 +133,8 @@ public sealed class BackupService : BackgroundService
                 ? AppContext.BaseDirectory
                 : configuredTarget;
             var backupRoot = Path.Combine(basePath, "Backups");
+            var artifactTimeUtc = DateTime.UtcNow;
+            string? localArtifactPath = null;
 
             EnsureWritable(backupRoot);
 
@@ -134,19 +142,50 @@ public sealed class BackupService : BackgroundService
             {
                 case BackupMode.Differential:
                     var diffRoot = Path.Combine(backupRoot, "diff");
-                    var diffFolder = Path.Combine(diffRoot, DateTime.UtcNow.ToString("yyyyMMdd"), endpoint);
+                    var diffFolder = Path.Combine(diffRoot, artifactTimeUtc.ToString("yyyyMMdd"), endpoint);
                     await CreateDifferentialBackupAsync(store, diffFolder, cancellationToken);
                     await PurgeOldBackupsAsync(diffRoot, _optionsMonitor.CurrentValue.Global.Backup.RetentionDays, mode);
                     message = $"Differential backup to {diffFolder}";
+                    localArtifactPath = await CreateDifferentialArchiveAsync(backupRoot, endpoint, diffFolder, artifactTimeUtc, cancellationToken);
+                    await PurgeOldBackupsAsync(Path.Combine(backupRoot, "diff-zips"), _optionsMonitor.CurrentValue.Global.Backup.RetentionDays, BackupMode.Full);
                     break;
                 case BackupMode.Full:
-                    var timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+                    var timestamp = artifactTimeUtc.ToString("yyyyMMddHHmmss");
                     var fullRoot = Path.Combine(backupRoot, "full");
                     var destFile = Path.Combine(fullRoot, $"{timestamp}-{endpoint}.zip");
                     await CreateFullBackupAsync(store, destFile, cancellationToken);
                     await PurgeOldBackupsAsync(fullRoot, _optionsMonitor.CurrentValue.Global.Backup.FullRetentionDays, mode);
                     message = $"Full backup to {destFile}";
+                    localArtifactPath = destFile;
                     break;
+            }
+
+            if (!string.IsNullOrWhiteSpace(localArtifactPath))
+            {
+                var upload = await _uploader.TryUploadAsync(new BackupArtifact(endpoint, mode, localArtifactPath, artifactTimeUtc), cancellationToken);
+                if (upload.Uploaded)
+                {
+                    uploadStatus = "Uploaded";
+                    uploadBlobUri = upload.BlobUri;
+                    _healthReporter.ClearIssue($"backup-upload:{endpoint}");
+                }
+                else
+                {
+                    uploadError = upload.Error;
+                    if (string.Equals(upload.Error, "upload-disabled", StringComparison.OrdinalIgnoreCase))
+                    {
+                        uploadStatus = "Skipped";
+                    }
+                    else if (!string.IsNullOrWhiteSpace(upload.Error))
+                    {
+                        uploadStatus = "Failed";
+                        _healthReporter.ReportIssue($"backup-upload:{endpoint}", $"Upload failed for {endpoint}: {upload.Error}");
+                    }
+                    else
+                    {
+                        uploadStatus = "Skipped";
+                    }
+                }
             }
 
             success = true;
@@ -156,7 +195,7 @@ public sealed class BackupService : BackgroundService
             _healthReporter.ReportIssue($"backup:{endpoint}", $"Last {mode} backup failed for {endpoint}: {ex.Message}");
             _metrics.BackupFailed(endpoint);
             ObservabilityEventSource.Log.ReportBackupFailure();
-            RecordActivity(endpoint, mode, BackupActivityStatus.Failure, ex.Message, stopwatch.Elapsed.TotalMilliseconds, initiatedBy);
+            RecordActivity(endpoint, mode, BackupActivityStatus.Failure, ex.Message, stopwatch.Elapsed.TotalMilliseconds, initiatedBy, uploadStatus, uploadBlobUri, uploadError);
             throw;
         }
         finally
@@ -166,9 +205,25 @@ public sealed class BackupService : BackgroundService
                 _healthReporter.ClearIssue($"backup:{endpoint}");
                 _metrics.BackupSucceeded(endpoint);
                 ObservabilityEventSource.Log.ReportBackupSuccess();
-                RecordActivity(endpoint, mode, BackupActivityStatus.Success, message, stopwatch.Elapsed.TotalMilliseconds, initiatedBy);
+                RecordActivity(endpoint, mode, BackupActivityStatus.Success, message, stopwatch.Elapsed.TotalMilliseconds, initiatedBy, uploadStatus, uploadBlobUri, uploadError);
             }
         }
+    }
+
+    private static async Task<string> CreateDifferentialArchiveAsync(string backupRoot, string endpoint, string sourceDirectory, DateTime artifactTimeUtc, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(backupRoot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(endpoint);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceDirectory);
+
+        var archiveRoot = Path.Combine(backupRoot, "diff-zips");
+        Directory.CreateDirectory(archiveRoot);
+        var fileName = $"{artifactTimeUtc:yyyyMMddHHmmss}-{endpoint}.zip";
+        var destination = Path.Combine(archiveRoot, fileName);
+
+        // ZipFile APIs are sync; run on a worker thread.
+        await Task.Run(() => ZipFile.CreateFromDirectory(sourceDirectory, destination, CompressionLevel.Fastest, includeBaseDirectory: false), cancellationToken);
+        return destination;
     }
 
     private async Task CreateDifferentialBackupAsync(IMemoryStore store, string destinationDirectory, CancellationToken cancellationToken)
@@ -316,7 +371,7 @@ public sealed class BackupService : BackgroundService
         }
     }
 
-    private void RecordActivity(string endpoint, BackupMode mode, BackupActivityStatus status, string message, double durationMs, string? initiatedBy)
+    private void RecordActivity(string endpoint, BackupMode mode, BackupActivityStatus status, string message, double durationMs, string? initiatedBy, string? uploadStatus, string? uploadBlobUri, string? uploadError)
     {
         var activity = new BackupActivity(
             DateTime.UtcNow,
@@ -326,7 +381,10 @@ public sealed class BackupService : BackgroundService
             message,
             durationMs,
             initiatedBy,
-            _instanceId);
+            _instanceId,
+            uploadStatus,
+            uploadBlobUri,
+            uploadError);
 
         _activityStore.Record(activity);
         _healthReporter.RecordBackupAttempt(endpoint, status.ToString(), message, activity.TimestampUtc);

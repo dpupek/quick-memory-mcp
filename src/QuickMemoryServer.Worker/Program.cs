@@ -161,6 +161,7 @@ builder.Services.AddSingleton<MemoryRouter>();
 builder.Services.AddSingleton<ApiKeyAuthorizer>();
 builder.Services.AddHostedService<MemoryService>();
 builder.Services.AddSingleton<BackupActivityStore>();
+builder.Services.AddSingleton<IBackupArtifactUploader, AzureBlobBackupUploader>();
 builder.Services.AddSingleton<BackupService>();
 builder.Services.AddHostedService(sp => sp.GetRequiredService<BackupService>());
 

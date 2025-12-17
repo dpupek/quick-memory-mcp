@@ -73,7 +73,7 @@
 
 ## Epic #19 – Azure Blob Backup Uploads (local-first)
 - [x] #20 Backup uploads: config + secure credential storage (DPAPI-protected SAS + redacted admin endpoints).
-- [ ] #21 Backup uploads: Azure Blob uploader backend.
+- [x] #21 Backup uploads: Azure Blob uploader backend.
 - [ ] #22 Backup uploads: Backup blade UI + test connection.
 - [ ] #23 Backup uploads: show upload status in activity.
 - [ ] #24 Backup uploads: hardening (resume/idempotency/retries).
