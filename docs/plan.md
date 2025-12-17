@@ -71,6 +71,13 @@
 - [x] PowerShell installer/updater helper for manual Windows deployments (`tools/install-service.ps1`).
 - [x] Installer UX: prompt whether to overwrite `QuickMemoryServer.toml` before asking config questions; preserve existing config when not overwriting (see GitHub #15).
 
+## Epic #19 – Azure Blob Backup Uploads (local-first)
+- [x] #20 Backup uploads: config + secure credential storage (DPAPI-protected SAS + redacted admin endpoints).
+- [ ] #21 Backup uploads: Azure Blob uploader backend.
+- [ ] #22 Backup uploads: Backup blade UI + test connection.
+- [ ] #23 Backup uploads: show upload status in activity.
+- [ ] #24 Backup uploads: hardening (resume/idempotency/retries).
+
 ## MCP Command Implementation Checklist
 1. Keep DTOs/validators synced with generated JSON Schema and describe payload.
 2. Route `/mcp/{project}/...` commands through `MemoryRouter`, reusing permission+tier logic.
