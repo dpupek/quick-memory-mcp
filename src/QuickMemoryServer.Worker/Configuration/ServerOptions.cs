@@ -118,6 +118,54 @@ public sealed class BackupOptions
     /// When empty, defaults to the application base directory (AppContext.BaseDirectory).
     /// </summary>
     public string? TargetPath { get; set; }
+
+    public BackupUploadOptions Upload { get; set; } = new();
+}
+
+public sealed class BackupUploadOptions
+{
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// Upload provider. Currently supported: "azureBlob".
+    /// </summary>
+    public string Provider { get; set; } = "azureBlob";
+
+    /// <summary>
+    /// Storage account blob endpoint URL (e.g., https://{account}.blob.core.windows.net).
+    /// </summary>
+    public string? AccountUrl { get; set; }
+
+    public string? Container { get; set; }
+
+    /// <summary>
+    /// Optional blob prefix for uploaded artifacts (e.g., "quick-memory").
+    /// </summary>
+    public string? Prefix { get; set; }
+
+    /// <summary>
+    /// Auth mode. Supported: "sas", "certificate" (future).
+    /// </summary>
+    public string AuthMode { get; set; } = "sas";
+
+    /// <summary>
+    /// SAS token encrypted/protected for the current machine. Never return this to clients.
+    /// </summary>
+    public string? SasTokenProtected { get; set; }
+
+    /// <summary>
+    /// SHA256 fingerprint of the SAS token (non-secret) for status and audits.
+    /// </summary>
+    public string? SasFingerprint { get; set; }
+
+    public DateTimeOffset? SasUpdatedUtc { get; set; }
+
+    /// <summary>
+    /// Optional Windows certificate thumbprint for future certificate-based auth.
+    /// </summary>
+    public string? CertificateThumbprint { get; set; }
+
+    public DateTimeOffset? CertificateUpdatedUtc { get; set; }
 }
 
 public enum PermissionTier

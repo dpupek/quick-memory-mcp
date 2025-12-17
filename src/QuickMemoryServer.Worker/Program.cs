@@ -518,6 +518,89 @@ app.MapGet("/admin/backup/settings", (HttpContext context, ApiKeyAuthorizer auth
     });
 });
 
+app.MapGet("/admin/backup/upload", (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var upload = optionsMonitor.CurrentValue.Global.Backup.Upload;
+    var redacted = BackupUploadRedactor.Redact(upload);
+    return Results.Ok(new { settings = redacted });
+});
+
+app.MapPost("/admin/backup/upload/settings", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor, CancellationToken cancellationToken) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<BackupUploadSettingsRequest>(cancellationToken);
+    if (request is null)
+    {
+        return Results.BadRequest(new { error = "invalid-payload" });
+    }
+
+    var current = optionsMonitor.CurrentValue.Global.Backup.Upload;
+    var hasExistingSasToken = !string.IsNullOrWhiteSpace(current.SasTokenProtected);
+    var validation = BackupUploadSettingsValidator.Validate(request, hasExistingSasToken);
+    if (!validation.IsValid)
+    {
+        return Results.BadRequest(new { errors = validation.Errors });
+    }
+
+    if (request.Enabled && string.Equals(request.AuthMode, "sas", StringComparison.OrdinalIgnoreCase) && !OperatingSystem.IsWindows())
+    {
+        return Results.BadRequest(new { errors = new[] { "upload-sas-platform-unsupported" } });
+    }
+
+    await adminService.UpdateBackupUploadSettingsAsync(request, cancellationToken);
+    return Results.Ok(new { saved = true });
+});
+
+app.MapPost("/admin/backup/upload/sas", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor, CancellationToken cancellationToken) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var request = await context.Request.ReadFromJsonAsync<BackupUploadSasRequest>(cancellationToken);
+    if (request is null || string.IsNullOrWhiteSpace(request.SasToken))
+    {
+        return Results.BadRequest(new { error = "sas-token-missing" });
+    }
+
+    try
+    {
+        await adminService.SetBackupUploadSasTokenAsync(request.SasToken, cancellationToken);
+        var upload = optionsMonitor.CurrentValue.Global.Backup.Upload;
+        var redacted = BackupUploadRedactor.Redact(upload);
+        return Results.Ok(new { saved = true, settings = redacted });
+    }
+    catch (PlatformNotSupportedException)
+    {
+        return Results.BadRequest(new { error = "dpapi-platform-unsupported" });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+});
+
+app.MapDelete("/admin/backup/upload/sas", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor, CancellationToken cancellationToken) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    await adminService.ClearBackupUploadSasTokenAsync(cancellationToken);
+    return Results.Ok(new { cleared = true });
+});
+
 app.MapPost("/admin/backup/settings", async (HttpContext context, ApiKeyAuthorizer authorizer, AdminConfigService adminService, IOptionsMonitor<ServerOptions> optionsMonitor, CancellationToken cancellationToken) =>
 {
     if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))

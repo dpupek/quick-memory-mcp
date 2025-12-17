@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using QuickMemoryServer.Worker.Models;
+using QuickMemoryServer.Worker.Services;
 
 namespace QuickMemoryServer.Worker.Configuration;
 
@@ -67,6 +68,55 @@ public sealed class AdminConfigService
             options.Global.Backup.RetentionDays = request.RetentionDays;
             options.Global.Backup.FullRetentionDays = request.FullRetentionDays;
             options.Global.Backup.TargetPath = string.IsNullOrWhiteSpace(request.TargetPath) ? null : request.TargetPath.Trim();
+        }, cancellationToken);
+    }
+
+    public Task UpdateBackupUploadSettingsAsync(BackupUploadSettingsRequest request, CancellationToken cancellationToken = default)
+    {
+        return MutateAsync(options =>
+        {
+            var upload = options.Global.Backup.Upload;
+            upload.Enabled = request.Enabled;
+
+            var normalized = BackupUploadSettingsValidator.Normalize(request);
+            upload.Provider = normalized.Provider;
+            upload.AccountUrl = normalized.AccountUrl;
+            upload.Container = normalized.Container;
+            upload.Prefix = normalized.Prefix;
+            upload.AuthMode = normalized.AuthMode;
+            upload.CertificateThumbprint = normalized.CertificateThumbprint;
+            if (upload.CertificateThumbprint is not null)
+            {
+                upload.CertificateUpdatedUtc = DateTimeOffset.UtcNow;
+            }
+        }, cancellationToken);
+    }
+
+    public Task SetBackupUploadSasTokenAsync(string sasToken, CancellationToken cancellationToken = default)
+    {
+        return MutateAsync(options =>
+        {
+            var token = (sasToken ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw new InvalidOperationException("sas-token-missing");
+            }
+
+            var protectedToken = DpapiSecretProtector.ProtectToBase64(token);
+            var fingerprint = BackupUploadCrypto.ComputeSha256Fingerprint(token);
+            options.Global.Backup.Upload.SasTokenProtected = protectedToken;
+            options.Global.Backup.Upload.SasFingerprint = fingerprint;
+            options.Global.Backup.Upload.SasUpdatedUtc = DateTimeOffset.UtcNow;
+        }, cancellationToken);
+    }
+
+    public Task ClearBackupUploadSasTokenAsync(CancellationToken cancellationToken = default)
+    {
+        return MutateAsync(options =>
+        {
+            options.Global.Backup.Upload.SasTokenProtected = null;
+            options.Global.Backup.Upload.SasFingerprint = null;
+            options.Global.Backup.Upload.SasUpdatedUtc = null;
         }, cancellationToken);
     }
 
@@ -288,6 +338,38 @@ public sealed class AdminConfigService
         AppendInt(sb, "retentionDays", global.Backup.RetentionDays);
         AppendInt(sb, "fullRetentionDays", global.Backup.FullRetentionDays);
         AppendString(sb, "targetPath", global.Backup.TargetPath ?? string.Empty);
+        sb.AppendLine();
+
+        AppendBackupUpload(sb, global.Backup.Upload);
+    }
+
+    private static void AppendBackupUpload(StringBuilder sb, BackupUploadOptions upload)
+    {
+        if (!upload.Enabled
+            && string.IsNullOrWhiteSpace(upload.AccountUrl)
+            && string.IsNullOrWhiteSpace(upload.Container)
+            && string.IsNullOrWhiteSpace(upload.Prefix)
+            && string.IsNullOrWhiteSpace(upload.SasTokenProtected)
+            && string.IsNullOrWhiteSpace(upload.CertificateThumbprint))
+        {
+            return;
+        }
+
+        sb.AppendLine("[global.backup.upload]");
+        if (upload.Enabled)
+        {
+            AppendBool(sb, "enabled", true);
+        }
+        AppendString(sb, "provider", upload.Provider);
+        AppendString(sb, "accountUrl", upload.AccountUrl ?? string.Empty);
+        AppendString(sb, "container", upload.Container ?? string.Empty);
+        AppendString(sb, "prefix", upload.Prefix ?? string.Empty);
+        AppendString(sb, "authMode", upload.AuthMode);
+        AppendString(sb, "sasTokenProtected", upload.SasTokenProtected ?? string.Empty);
+        AppendString(sb, "sasFingerprint", upload.SasFingerprint ?? string.Empty);
+        AppendString(sb, "sasUpdatedUtc", upload.SasUpdatedUtc?.ToString("O") ?? string.Empty);
+        AppendString(sb, "certificateThumbprint", upload.CertificateThumbprint ?? string.Empty);
+        AppendString(sb, "certificateUpdatedUtc", upload.CertificateUpdatedUtc?.ToString("O") ?? string.Empty);
         sb.AppendLine();
     }
 
