@@ -75,7 +75,7 @@
 - [x] #20 Backup uploads: config + secure credential storage (DPAPI-protected SAS + redacted admin endpoints).
 - [x] #21 Backup uploads: Azure Blob uploader backend.
 - [x] #22 Backup uploads: Backup blade UI + test connection.
-- [ ] #23 Backup uploads: show upload status in activity.
+- [x] #23 Backup uploads: show upload status in activity.
 - [ ] #24 Backup uploads: hardening (resume/idempotency/retries).
 
 ## MCP Command Implementation Checklist

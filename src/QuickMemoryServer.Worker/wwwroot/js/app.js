@@ -3086,8 +3086,9 @@ function renderBackupActivity(items) {
   }
   empty?.classList.add('d-none');
   filtered.forEach((item) => {
+    const uploadCell = renderBackupUploadCell(item);
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${item.timestampUtc}</td><td>${item.endpoint}</td><td>${item.mode}</td><td>${renderStatusChip(item.status)}</td><td>${item.durationMs?.toFixed?.(1) || ''} ms</td><td>${escapeHtml(item.message || '')}</td><td>${escapeHtml(item.initiatedBy || '')}</td>`;
+    tr.innerHTML = `<td>${item.timestampUtc}</td><td>${item.endpoint}</td><td>${item.mode}</td><td>${renderStatusChip(item.status)}</td><td>${uploadCell}</td><td>${item.durationMs?.toFixed?.(1) || ''} ms</td><td>${escapeHtml(item.message || '')}</td><td>${escapeHtml(item.initiatedBy || '')}</td>`;
     body.appendChild(tr);
   });
 }
@@ -3096,6 +3097,30 @@ function renderStatusChip(status) {
   const map = { Success: 'bg-success', Failure: 'bg-danger', Skipped: 'bg-secondary' };
   const cls = map[status] || 'bg-secondary';
   return `<span class=\"badge ${cls}\">${status}</span>`;
+}
+
+function renderBackupUploadCell(item) {
+  const status = item?.uploadStatus;
+  const uri = item?.uploadBlobUri;
+  const error = item?.uploadError;
+
+  if (!status) {
+    return '';
+  }
+
+  const normalized = String(status);
+  const map = { Uploaded: 'bg-success', Skipped: 'bg-secondary', Failed: 'bg-danger' };
+  const cls = map[normalized] || 'bg-secondary';
+  const safeError = error ? escapeHtml(String(error)) : '';
+  const title = safeError ? ` title=\"${safeError}\"` : '';
+
+  const badge = `<span class=\"badge ${cls}\"${title}>${escapeHtml(normalized)}</span>`;
+  if (normalized === 'Uploaded' && uri) {
+    const safeUri = escapeHtml(String(uri));
+    return `${badge} <a href=\"${safeUri}\" target=\"_blank\" rel=\"noopener\" class=\"small\">open</a>`;
+  }
+
+  return badge;
 }
 
 function refreshBackupHealthChip() {
