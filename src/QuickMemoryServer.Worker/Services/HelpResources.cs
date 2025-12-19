@@ -98,17 +98,41 @@ The latest recipes live in `docs/agent-usage.md` (copied alongside the binaries 
         var text = """
 # Quick Memory MCP Cheatsheet
 
-- Base URL: http://localhost:5080/mcp (header: X-Api-Key)
-- Discover scope: call `listProjects` (projects returned = allowed endpoints).
-- Cold start browse: `listRecentEntries` (top N by updated time).
-- Search text/vector: `searchEntries` with { text, maxResults, includeShared }.
-- Fetch one/all: `getEntry`, `listEntries`.
-- Mutate: `upsertEntry`, `patchEntry` (permanent requires Admin).
-- Entry bodies: use `bodyTypeHint = markdown` for human-facing examples (especially code examples) so you can include narrative + fenced code blocks; reserve `json`/`xml`/`yaml`/`toml`/`csv` hints for actual structured payloads.
-- Graph: `relatedEntries` with { id, maxHops }.
-- Backup: `requestBackup` (Admin, mode: differential|full).
-- Health: `health` for overall/server issues.
-- Config snippets + recipes live in `resource://quick-memory/help` and `resource://quick-memory/end-user-help`.
+## Start of session
+- Endpoint selection: call `listProjects` once per session, then pick the correct endpoint key (e.g., `nc-7-x` for NexPort 7.0).
+- Lifecycle guidance: prefer `searchEntries` before creating a new note to avoid duplicates; use `upsertEntry` for ongoing work; use `patchEntry` for small deltas.
+- Pitfalls / retry tip: if a call fails with “Transport closed”, retry once; if it repeats, call `health` and then retry.
+
+## Writing entries (recommended template)
+When logging progress, include:
+- Progress
+- Decisions (what + why)
+- Validation (command + result)
+- Files (primary touchpoints)
+- Next steps (3–6 bullets)
+
+Keep it cross-session useful; never include credentials, tokens, connection strings, or customer data.
+
+## Tags & conventions
+- Always include `progress`.
+- Add area tags as applicable: `oauth`, `manage-campus`, `ui-tests`, `playwright`.
+- Add a case ID tag when relevant (e.g., `230723`).
+- Cross-links: include the primary docs/roadmap file you updated for traceability (e.g., `docs/plan.md` or an epic folder under `docs/`).
+
+## Tool map (“do X → call Y”)
+- Discover scope → `listProjects`
+- Browse latest → `listRecentEntries`
+- Find existing work → `searchEntries` (usually before `upsertEntry`)
+- Create/update entry → `upsertEntry`
+- Small edits → `patchEntry`
+- Fetch specific entry / list all → `getEntry` / `listEntries`
+- Explore links → `relatedEntries`
+- Backups (Admin) → `requestBackup`
+- Server state → `health`
+
+## Body formatting
+- For code examples: use `bodyTypeHint = markdown` with descriptive text around fenced code blocks.
+- Reserve `json`/`yaml`/`toml`/`xml`/`html`/`csv` for structured payloads, not examples of those formats.
 """;
         return Task.FromResult(text);
     }
