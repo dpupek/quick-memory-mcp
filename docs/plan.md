@@ -76,7 +76,7 @@
 - [x] #21 Backup uploads: Azure Blob uploader backend.
 - [x] #22 Backup uploads: Backup blade UI + test connection.
 - [x] #23 Backup uploads: show upload status in activity.
-- [ ] #24 Backup uploads: hardening (resume/idempotency/retries).
+- [x] #24 Backup uploads: hardening (resume/idempotency/retries).
 
 ## MCP Command Implementation Checklist
 1. Keep DTOs/validators synced with generated JSON Schema and describe payload.
