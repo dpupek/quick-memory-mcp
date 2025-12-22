@@ -170,6 +170,8 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<BackupService>());
 builder.Services.AddSingleton<ObservabilityMetrics>();
 builder.Services.AddSingleton<IMemoryStoreProvider>(sp => sp.GetRequiredService<MemoryStoreFactory>());
 builder.Services.AddSingleton<HealthReporter>();
+builder.Services.AddSingleton<HealthMetricsStore>();
+builder.Services.AddHostedService<HealthMetricsBackgroundService>();
 builder.Services.AddSingleton<AdminConfigService>();
 builder.Services.AddSingleton<DocumentService>();
 builder.Services.AddSingleton<SchemaService>();
@@ -313,6 +315,7 @@ builder.Services.AddMcpServer()
 
 var app = builder.Build();
 var observabilityMetrics = app.Services.GetRequiredService<ObservabilityMetrics>();
+var healthMetricsStore = app.Services.GetRequiredService<HealthMetricsStore>();
 
 // Startup banner with version info reaches configured Serilog sinks.
 Log.Information("Starting {ServiceName} version {Version} (informational {InfoVersion}) listening at {HttpUrl} (BaseDir: {BaseDir})",
@@ -349,6 +352,10 @@ app.Use(async (context, next) =>
         {
             var (endpoint, command) = ResolveMcpLabels(remaining);
             observabilityMetrics.TrackMcpRequest(endpoint, command, context.Response.StatusCode, stopwatch.Elapsed.TotalMilliseconds);
+            if (string.Equals(command, "searchEntries", StringComparison.OrdinalIgnoreCase))
+            {
+                healthMetricsStore.RecordSearchDuration(endpoint, stopwatch.Elapsed.TotalMilliseconds, context.Response.StatusCode);
+            }
             ObservabilityEventSource.Log.RecordMcpRequest(stopwatch.Elapsed.TotalMilliseconds);
         }
     });
@@ -360,6 +367,20 @@ app.MapGet("/health", (HealthReporter healthReporter) =>
 {
     var report = healthReporter.GetReport();
     return Results.Ok(report);
+});
+
+app.MapGet("/admin/health/metrics", (HttpContext context, ApiKeyAuthorizer authorizer, IOptionsMonitor<ServerOptions> optionsMonitor, HealthMetricsStore metricsStore) =>
+{
+    if (!TryAuthorizeAdmin(context, authorizer, optionsMonitor))
+    {
+        return Results.Unauthorized();
+    }
+
+    var days = int.TryParse(context.Request.Query["days"], out var parsedDays) ? parsedDays : 14;
+    var bucketMinutes = int.TryParse(context.Request.Query["bucketMinutes"], out var parsedBucket) ? parsedBucket : 60;
+
+    var snapshot = metricsStore.GetSnapshot(days, bucketMinutes);
+    return Results.Ok(snapshot);
 });
 
 // Friendly response for accidental GETs to the MCP endpoint (the MCP transport is POST-only).

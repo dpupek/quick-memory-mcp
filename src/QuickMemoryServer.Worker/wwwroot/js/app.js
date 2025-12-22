@@ -1153,6 +1153,7 @@ async function loadHealthBlade() {
     }
     const report = await response.json();
     renderHealthBlade(report);
+    loadHealthMetrics();
     setHealthStatus('Updated', 'success');
   } catch (error) {
     console.error('health load failed', error);
@@ -1196,6 +1197,134 @@ function renderHealthBlade(report) {
     .join('');
 
   issues.innerHTML = content;
+}
+
+async function loadHealthMetrics() {
+  const host = document.getElementById('health-metrics');
+  if (!host) return;
+  host.innerHTML = '<div class="text-muted small">Loading metrics…</div>';
+
+  try {
+    const metrics = await apiGet('/admin/health/metrics?days=14&bucketMinutes=60');
+    renderHealthMetrics(metrics);
+  } catch (err) {
+    host.innerHTML = `<div class="text-muted small">Metrics unavailable: ${escapeHtml(formatApiError(err))}</div>`;
+  }
+}
+
+function renderHealthMetrics(metrics) {
+  const host = document.getElementById('health-metrics');
+  if (!host) return;
+  if (!metrics) {
+    host.innerHTML = '';
+    return;
+  }
+
+  const proc = metrics.currentProcess;
+  const cpu = proc?.cpuPercent ?? 0;
+  const ws = proc?.workingSetBytes ?? 0;
+  const gc = proc?.gcHeapBytes ?? 0;
+  const procSeries = Array.isArray(metrics.processSeries) ? metrics.processSeries : [];
+
+  const cpuSpark = sparkline(procSeries.map((p) => p.cpuPercent ?? 0));
+  const memSpark = sparkline(procSeries.map((p) => (p.workingSetBytes ?? 0) / (1024 * 1024)));
+
+  const searchByEndpoint = metrics.searchP95SeriesByEndpoint || {};
+  const currentSearch = metrics.currentSearchByEndpoint || {};
+
+  const rows = Object.keys(searchByEndpoint)
+    .sort((a, b) => (currentSearch[b]?.p95Ms ?? 0) - (currentSearch[a]?.p95Ms ?? 0))
+    .map((endpoint) => {
+      const series = Array.isArray(searchByEndpoint[endpoint]) ? searchByEndpoint[endpoint] : [];
+      const p95Series = series.map((p) => p.p95Ms ?? 0);
+      const current = currentSearch[endpoint];
+      const p95 = current?.p95Ms ?? 0;
+      const count = current?.count ?? 0;
+      const errors = current?.errorCount ?? 0;
+      const spark = sparkline(p95Series);
+      return `<tr>
+        <td>${escapeHtml(endpoint)}</td>
+        <td>${spark}</td>
+        <td>${p95 ? `${p95.toFixed(0)} ms` : ''}</td>
+        <td>${count}</td>
+        <td>${errors ? `<span class="text-danger">${errors}</span>` : '0'}</td>
+      </tr>`;
+    })
+    .join('');
+
+  host.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h5 class="mb-0">Metrics (last 14 days)</h5>
+      <div class="text-muted small">Hourly rollups; p95 is approximate.</div>
+    </div>
+    <div class="row g-3">
+      <div class="col-lg-6">
+        <div class="border rounded p-2">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-semibold">Process</div>
+              <div class="text-muted small">CPU p95 is not tracked; CPU shown is sampled %.</div>
+            </div>
+            <div class="text-end small">
+              <div>CPU: ${cpu.toFixed(1)}%</div>
+              <div>Working set: ${formatBytes(ws)}</div>
+              <div>GC heap: ${formatBytes(gc)}</div>
+            </div>
+          </div>
+          <div class="mt-2 d-flex gap-3 flex-wrap small">
+            <div>CPU ${cpuSpark}</div>
+            <div>Mem ${memSpark}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div class="border rounded p-2">
+          <div class="fw-semibold mb-2">Search latency (p95) by project</div>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead><tr><th>Project</th><th>Trend</th><th>p95</th><th>n</th><th>errors</th></tr></thead>
+              <tbody>${rows || '<tr><td colspan="5" class="text-muted small">No data yet.</td></tr>'}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function formatBytes(bytes) {
+  const n = Number(bytes || 0);
+  if (!n) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const idx = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
+  const val = n / Math.pow(1024, idx);
+  return `${val.toFixed(idx === 0 ? 0 : 1)} ${units[idx]}`;
+}
+
+function sparkline(values) {
+  const w = 140;
+  const h = 26;
+  const data = Array.isArray(values) ? values.filter((v) => Number.isFinite(v)) : [];
+  if (data.length < 2) {
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="vertical-align:middle"><path d="" fill="none" stroke="#bbb" /></svg>`;
+  }
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const span = max - min || 1;
+
+  const step = (w - 2) / (data.length - 1);
+  const points = data
+    .map((v, i) => {
+      const x = 1 + i * step;
+      const y = h - 1 - ((v - min) / span) * (h - 2);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(' ');
+
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="vertical-align:middle">
+    <polyline points="${points}" fill="none" stroke="#0d6efd" stroke-width="1.5" />
+  </svg>`;
 }
 
 function setHealthStatus(message, tone) {

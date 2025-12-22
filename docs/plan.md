@@ -49,7 +49,7 @@
 - [x] Persist login across page refreshes using the server-side session-backed `/admin/login` + `/admin/session` flow.
 - [x] Add a Config blade for viewing/editing the raw TOML configuration with validation and a safe-apply flow.
 - [x] Add a Health blade that surfaces `/health` details and exposes one-click log download from the server.
-- [ ] Add MCP usage cheatsheet resource (`resource://quick-memory/cheatsheet`) with concise “do X → call Y” guidance.
+- [x] Add MCP usage cheatsheet resource (`resource://quick-memory/cheatsheet`) with concise “do X → call Y” guidance.
 - [x] Add MCP `listRecentEntries`-style browse behavior to the Entities tab when no query is provided.
 - [x] UI polish: integrate Bootstrap Icons for nav/buttons and SweetAlert2 for confirmations/toasts; enhance tags input with Choices.js.
 - [x] Rename “Endpoint permissions” to “Project permissions” across nav labels, API payloads, and docs to match user vocabulary.
