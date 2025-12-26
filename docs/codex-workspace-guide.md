@@ -24,7 +24,26 @@ Create it if it does not exist. All examples below go into that file.
 
 ----------------------------------------------------------------------------
 
-## 2. Recommended: `mcp-proxy` (no Node, supports headers)
+## 2. Recommended: direct Streamable HTTP (rmcp client)
+
+```toml
+[features]
+rmcp_client = true
+
+[mcp_servers.quick-memory]
+url = "http[s]://<server-url>/mcp"
+experimental_use_rmcp_client = true
+http_headers = { "X-Api-Key" = "<api-key>" }
+```
+
+Notes:
+- `rmcp_client` enables Codex’s Streamable HTTP client.
+- `experimental_use_rmcp_client` is still accepted in some builds; keep it until all your client environments support `rmcp_client` without it.
+- `http_headers` passes the API key directly (Quick Memory prefers `X-Api-Key`).
+
+----------------------------------------------------------------------------
+
+## 3. Optional bridge: `mcp-proxy` (no Node, supports headers)
 
 ```toml
 [mcp_servers.quick-memory]
@@ -74,7 +93,7 @@ value must be quoted.
 
 ----------------------------------------------------------------------------
 
-## 3. Alternative: `mcp-remote` (Node bridge)
+## 4. Alternative: `mcp-remote` (Node bridge)
 
 ```toml
 [mcp_servers.quick-memory]
@@ -100,7 +119,7 @@ Tips:
 
 ----------------------------------------------------------------------------
 
-## 4. Handling multiple projects without workspace configs (mcp-remote)
+## 5. Handling multiple projects without workspace configs (mcp-remote)
 
 Because Codex only reads the global config, create **multiple server
 entries**—one per project key—and give them unique names:
@@ -140,7 +159,7 @@ Workflow:
 
 ----------------------------------------------------------------------------
 
-## 5. Keeping secrets out of version control
+## 6. Keeping secrets out of version control
 
 - The config lives in your home directory, so it is already outside your
   Git repos. Do **not** copy it into individual projects.
@@ -151,9 +170,9 @@ Workflow:
 
 ----------------------------------------------------------------------------
 
-## 6. Quick checklist
+## 7. Quick checklist
 
-- [ ] Update `~/.codex/config.toml` with either the `mcp-proxy` or  `mcp-remote` block.
+- [ ] Update `~/.codex/config.toml` with either the direct Streamable HTTP block or an optional bridge (`mcp-proxy` / `mcp-remote`).
 - [ ] Create/rotate project-scoped API keys in the Admin Web UI.
 - [ ] Export the API keys as environment variables before launching Codex (or use a credential manager).
 - [ ] Restart Codex so it picks up the new configuration.

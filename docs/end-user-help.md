@@ -10,23 +10,35 @@ Use these steps when accessing the Quick Memory MCP server or the Admin Web UI (
 
 ## Codex MCP quick start (global config)
 1. Install the Quick Memory service and confirm `GET /health` returns `"status": "Healthy"`.
-2. From a WSL terminal, install `mcp-proxy` with `uv tool install mcp-proxy` so it is on your Linux `PATH`.
-3. Open `~/.codex/config.toml` and add:
+2. In the Admin Web UI, issue a project-limited API key (Users + Project Permissions).
+3. Open `~/.codex/config.toml` and add the direct Streamable HTTP config:
    ```toml
+   [features]
+   rmcp_client = true
+
    [mcp_servers.quick-memory]
-   command = "mcp-proxy"
-   args = [
-     "http://localhost:5080/mcp",
-     "--transport", "streamablehttp",
-     "--no-verify-ssl",
-     "--headers", "X-Api-Key", "<your-api-key>",
-     "--stateless"
-   ]
-   timeout_ms = 60000
-   startup_timeout_ms = 60000
+   url = "http[s]://<server-url>/mcp"
+   experimental_use_rmcp_client = true
+   http_headers = { "X-Api-Key" = "<api-key>" }
    ```
-4. In the Admin Web UI, issue a project-limited API key (Users + Project Permissions) and paste it in place of `<your-api-key>`.
-5. Restart Codex, verify the **Quick Memory** MCP server is listed, then call `listProjects` to confirm the endpoints (projects) that key can see.
+   Note: `experimental_use_rmcp_client` is still accepted in some Codex builds; keep it until all client environments work without it.
+4. Restart Codex, verify the **Quick Memory** MCP server is listed, then call `listProjects` to confirm the endpoints (projects) that key can see.
+
+### Optional: bridge via mcp-proxy
+If direct Streamable HTTP is unavailable in your environment, you can still use a bridge:
+```toml
+[mcp_servers.quick-memory]
+command = "mcp-proxy"
+args = [
+  "http://localhost:5080/mcp",
+  "--transport", "streamablehttp",
+  "--no-verify-ssl",
+  "--headers", "X-Api-Key", "<your-api-key>",
+  "--stateless"
+]
+timeout_ms = 60000
+startup_timeout_ms = 60000
+```
 
 `mcp-proxy` also supports a `--debug` flag for verbose logging if you
 need to troubleshoot MCP startup or HTTP calls. For more detailed
@@ -99,9 +111,9 @@ agent using Quick Memory effectively.
 ## Installing in Codex
 - Copy the `QuickMemoryServer.sample.toml` snippet, fill in your API key, and paste it into `QuickMemoryServer.toml` (same directory as the service exe). Restart the worker when you edit the file directly; the Admin Web UI Users tab writes this file for you after CRUD operations and each change is reloaded automatically.
 - Codex accesses the Quick Memory MCP server using globally configured MCP
-  servers in `~/.codex/config.toml`. For up-to-date examples using
-  `mcp-proxy` (recommended) or `mcp-remote`, refer to the Codex MCP
-  guide (`docs/codex-workspace-guide.md` or
+  servers in `~/.codex/config.toml`. Direct Streamable HTTP is preferred;
+  `mcp-proxy` remains an optional bridge if needed. For more examples,
+  see the Codex MCP guide (`docs/codex-workspace-guide.md` or
   `resource://quick-memory/codex-workspace`).
 - To scope an agent to a single project, issue a project-limited API
   key (via Users + Project Permissions) and use separate Codex server
