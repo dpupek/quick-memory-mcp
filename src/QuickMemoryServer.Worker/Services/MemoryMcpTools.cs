@@ -27,7 +27,7 @@ public static class MemoryMcpTools
 [McpMeta("description", "Hybrid text + vector search across the endpoint (optionally including shared memory).")]
 [McpMeta("tier", "reader")]
 [McpMeta("recipe", "POST with { text, embedding, includeShared, tags, maxResults } (maxResults ≤ 200).")]
-public static SearchEntriesResponse SearchEntries(
+public static object SearchEntries(
         string endpoint,
         SearchRequest? request,
         MemoryRouter router,
@@ -43,7 +43,7 @@ public static SearchEntriesResponse SearchEntries(
 
         if (router.ResolveStore(endpoint) is not MemoryStore primaryStore)
         {
-            return new SearchEntriesResponse(Array.Empty<SearchEntryResult>());
+            return EndpointNotAvailable(endpoint, optionsMonitor);
         }
 
         var stores = new List<MemoryStore> { primaryStore };
@@ -96,7 +96,8 @@ public static SearchEntriesResponse SearchEntries(
 public static object RelatedEntries(
         string endpoint,
         RelatedRequest request,
-        MemoryRouter router)
+        MemoryRouter router,
+        IOptionsMonitor<ServerOptions> optionsMonitor)
     {
         if (request is null || string.IsNullOrWhiteSpace(request.Id))
         {
@@ -111,7 +112,7 @@ public static object RelatedEntries(
 
         if (router.ResolveStore(endpoint) is not MemoryStore primaryStore)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
+            return EndpointNotAvailable(endpoint, optionsMonitor);
         }
 
         var includeShared = request.IncludeShared ?? true;
@@ -147,11 +148,15 @@ public static object RelatedEntries(
 [McpServerTool(Name = "getEntry", Title = "Get entry details", ReadOnly = true)]
 [McpMeta("description", "Fetch a single entry, including body, tiers, and metadata.")]
 [McpMeta("tier", "reader")]
-public static object GetEntry(string endpoint, string id, MemoryRouter router)
+public static object GetEntry(
+        string endpoint,
+        string id,
+        MemoryRouter router,
+        IOptionsMonitor<ServerOptions> optionsMonitor)
     {
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
+            return EndpointNotAvailable(endpoint, optionsMonitor);
         }
 
         var entry = store.FindEntry(id);
@@ -166,11 +171,14 @@ public static object GetEntry(string endpoint, string id, MemoryRouter router)
 [McpServerTool(Name = "listEntries", Title = "List all entries", ReadOnly = true)]
 [McpMeta("description", "Return the full snapshot of entries for the project (includes shared data when included).")]
 [McpMeta("tier", "reader")]
-public static object ListEntries(string endpoint, MemoryRouter router)
+public static object ListEntries(
+        string endpoint,
+        MemoryRouter router,
+        IOptionsMonitor<ServerOptions> optionsMonitor)
     {
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
+            return EndpointNotAvailable(endpoint, optionsMonitor);
         }
 
         return store.Snapshot();
@@ -179,11 +187,15 @@ public static object ListEntries(string endpoint, MemoryRouter router)
 [McpServerTool(Name = "listRecentEntries", Title = "List recent entries", ReadOnly = true)]
 [McpMeta("description", "Browse the most recently updated entries without specifying a query.")]
 [McpMeta("tier", "reader")]
-public static object ListRecentEntries(string endpoint, int? maxResults, MemoryRouter router)
+public static object ListRecentEntries(
+        string endpoint,
+        int? maxResults,
+        MemoryRouter router,
+        IOptionsMonitor<ServerOptions> optionsMonitor)
     {
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
+            return EndpointNotAvailable(endpoint, optionsMonitor);
         }
 
         var take = maxResults is > 0 and <= 200 ? maxResults.Value : 20;
@@ -210,6 +222,7 @@ public static async Task<object> UpsertEntry(
         string endpoint,
         MemoryEntry entry,
         MemoryRouter router,
+        IOptionsMonitor<ServerOptions> optionsMonitor,
         RequestContext<CallToolRequestParams> context,
         CancellationToken cancellationToken)
     {
@@ -218,10 +231,10 @@ public static async Task<object> UpsertEntry(
         return ErrorResult("invalid-entry: entry payload was null. Ensure you pass an object matching the MemoryEntry shape.");
     }
 
-    if (!TryPrepareEntry(endpoint, entry, out var prepared, out var prepareError))
+    if (!TryPrepareEntry(endpoint, entry, out var prepared, out var prepareError, out var projectNote))
     {
         return ErrorResult(prepareError ??
-            "invalid-entry: check that entry.project matches the endpoint, and that required fields (id/title/body/tags) are well-formed.");
+            "invalid-entry: check that required fields (id/title/body/tags) are well-formed.");
     }
     entry = prepared;
 
@@ -245,10 +258,15 @@ public static async Task<object> UpsertEntry(
 
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
+            return EndpointNotAvailable(endpoint, optionsMonitor);
         }
 
         await store.UpsertAsync(entry, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(projectNote))
+        {
+            return new { updated = true, id = entry.Id, notes = new[] { projectNote } };
+        }
+
         return new { updated = true, id = entry.Id };
     }
 
@@ -260,12 +278,13 @@ public static async Task<object> UpsertEntry(
         string id,
         EntryPatchRequest patch,
         MemoryRouter router,
+        IOptionsMonitor<ServerOptions> optionsMonitor,
         RequestContext<CallToolRequestParams> context,
         CancellationToken cancellationToken)
     {
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
+            return EndpointNotAvailable(endpoint, optionsMonitor);
         }
 
         var existing = store.FindEntry(id);
@@ -297,11 +316,15 @@ public static async Task<object> UpsertEntry(
             Body = patch.Body ?? existing.Body,
             EpicSlug = patch.EpicSlug ?? existing.EpicSlug,
             EpicCase = patch.EpicCase ?? existing.EpicCase,
-            Relations = patch.Relations is null ? existing.Relations : patch.Relations.Deserialize<MemoryRelation[]>(JsonOptions),
-            Source = patch.Source is null ? existing.Source : patch.Source.Deserialize<MemorySource>(JsonOptions)
+            Relations = patch.Relations is null
+                ? existing.Relations
+                : patch.Relations.Deserialize<MemoryRelation[]>(JsonOptions) ?? existing.Relations,
+            Source = patch.Source is null
+                ? existing.Source
+                : patch.Source.Deserialize<MemorySource>(JsonOptions) ?? existing.Source
         };
 
-        var promptValidationError = ValidatePromptEntry(updated);
+        var promptValidationError = ValidatePromptEntry(endpoint, updated);
         if (promptValidationError is not null)
         {
             return ErrorResult(promptValidationError);
@@ -326,6 +349,7 @@ public static async Task<object> DeleteEntry(
         string id,
         bool force,
         MemoryRouter router,
+        IOptionsMonitor<ServerOptions> optionsMonitor,
         RequestContext<CallToolRequestParams> context,
         CancellationToken cancellationToken)
     {
@@ -336,7 +360,7 @@ public static async Task<object> DeleteEntry(
 
         if (router.ResolveStore(endpoint) is not MemoryStore store)
         {
-            return ErrorResult($"Endpoint '{endpoint}' is not available.");
+            return EndpointNotAvailable(endpoint, optionsMonitor);
         }
 
         var tier = McpAuthorizationContext.GetTier(context);
@@ -413,7 +437,7 @@ public static object ColdStart(
 {
     if (router.ResolveStore(endpoint) is not MemoryStore store)
     {
-        return ErrorResult($"Endpoint '{endpoint}' is not available. Use listProjects to discover valid endpoint keys and pass the key, not the display name.");
+        return EndpointNotAvailable(endpoint, optionsMonitor);
     }
 
     var snapshot = store.Snapshot();
@@ -630,6 +654,41 @@ public static object GetPromptTemplate(
         };
     }
 
+    private static CallToolResult EndpointNotAvailable(string endpoint, IOptionsMonitor<ServerOptions> optionsMonitor)
+    {
+        var options = optionsMonitor.CurrentValue;
+        var endpoints = options.Endpoints;
+
+        if (endpoints.Count == 0)
+        {
+            return ErrorResult($"unknown-endpoint: '{endpoint}' is not configured. No endpoints are configured in QuickMemoryServer.toml.");
+        }
+
+        var match = endpoints
+            .FirstOrDefault(kvp =>
+                string.Equals(kvp.Value.Slug, endpoint, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(kvp.Value.Name, endpoint, StringComparison.OrdinalIgnoreCase));
+
+        var message = $"unknown-endpoint: '{endpoint}' is not a configured endpoint key.";
+        if (!string.IsNullOrWhiteSpace(match.Key))
+        {
+            message += $" Did you mean '{match.Key}' (slug '{match.Value.Slug}')?";
+        }
+
+        var knownKeys = endpoints.Keys
+            .OrderBy(key => key, StringComparer.OrdinalIgnoreCase)
+            .Take(6)
+            .ToArray();
+        var suffix = endpoints.Count > knownKeys.Length ? ", ..." : string.Empty;
+        var keyList = knownKeys.Length > 0 ? string.Join(", ", knownKeys) + suffix : "none";
+
+        message += $" Use listProjects to see valid endpoint keys and slugs. Available keys: {keyList}.";
+        message += " The tool expects the endpoint key, not the slug or display name.";
+        message += " If you expected access to a different endpoint, verify your API key and project permissions in the Admin Web UI.";
+
+        return ErrorResult(message);
+    }
+
     public sealed record SearchEntriesResponse(
         [property: JsonPropertyName("results")] IReadOnlyList<SearchEntryResult> Results);
     public sealed record SearchEntryResult(double Score, string? Snippet, MemoryEntry Entry);
@@ -690,9 +749,9 @@ public static object GetPromptTemplate(
         [property: JsonPropertyName("arguments")] IReadOnlyList<PromptArgument> Arguments,
         [property: JsonPropertyName("messages")] IReadOnlyList<PromptMessage> Messages);
 
-    private static string? ValidatePromptEntry(MemoryEntry entry)
+    private static string? ValidatePromptEntry(string endpoint, MemoryEntry entry)
     {
-        if (!string.Equals(entry.Project, PromptsEndpointKey, StringComparison.OrdinalIgnoreCase))
+        if (!string.Equals(endpoint, PromptsEndpointKey, StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }
@@ -895,28 +954,24 @@ private static string? ValidateSource(object? source)
         return true;
     }
 
-internal static bool TryPrepareEntry(string endpoint, MemoryEntry entry, out MemoryEntry prepared, out string? error)
+internal static bool TryPrepareEntry(string endpoint, MemoryEntry entry, out MemoryEntry prepared, out string? error, out string? note)
 {
     ArgumentException.ThrowIfNullOrWhiteSpace(endpoint);
     ArgumentNullException.ThrowIfNull(entry);
 
-    var project = string.IsNullOrWhiteSpace(entry.Project) ? endpoint : entry.Project;
-    if (!string.Equals(project, endpoint, StringComparison.OrdinalIgnoreCase))
+    note = null;
+    var hadProject = !string.IsNullOrWhiteSpace(entry.Project);
+
+    if (hadProject)
     {
-        prepared = entry;
-        error = "project-mismatch: set entry.project to the endpoint you are calling";
-        return false;
+        note = "entry.project has been removed and is ignored; omit it and use the endpoint + epicSlug instead.";
     }
 
-    var normalized = entry;
-    if (!string.Equals(entry.Project, project, StringComparison.OrdinalIgnoreCase))
-    {
-        normalized = normalized with { Project = project };
-    }
+    var normalized = entry with { Project = endpoint };
 
     if (string.IsNullOrWhiteSpace(normalized.Id))
     {
-        var generatedId = $"{project}:{Guid.NewGuid():N}";
+        var generatedId = $"{endpoint}:{Guid.NewGuid():N}";
         normalized = normalized with { Id = generatedId };
     }
 
@@ -927,7 +982,7 @@ internal static bool TryPrepareEntry(string endpoint, MemoryEntry entry, out Mem
         return false;
     }
 
-    var promptValidationError = ValidatePromptEntry(normalized);
+    var promptValidationError = ValidatePromptEntry(endpoint, normalized);
     if (promptValidationError is not null)
     {
         prepared = entry;

@@ -187,6 +187,7 @@ builder.Services.AddMcpServer()
     })
     .WithHttpTransport(options =>
     {
+        options.Stateless = true;
         options.ConfigureSessionOptions = (httpContext, serverOptions, cancellationToken) =>
         {
             var serviceNameSetting = builder.Configuration["global:serviceName"]
@@ -297,7 +298,7 @@ builder.Services.AddMcpServer()
                     {
                         new TextContentBlock
                         {
-                            Text = $"unauthorized: api key is not permitted for endpoint '{projectEndpoint}'"
+                            Text = $"unauthorized: api key is not permitted for endpoint '{projectEndpoint}'. Verify the X-Api-Key header and confirm your user has access in the Admin Web UI (Projects > permissions). If the endpoint key is unknown, call listProjects with a valid key to confirm it."
                         }
                     }
                 });
@@ -344,8 +345,46 @@ app.Use(async (context, next) =>
     await next();
 });
 app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/mcp"))
     {
-        var stopwatch = Stopwatch.StartNew();
+        if (context.Request.Headers.TryGetValue("X-Qms-Require-Session", out var requireSession) &&
+            requireSession.Count > 0 &&
+            requireSession.ToString().Equals("true", StringComparison.OrdinalIgnoreCase))
+        {
+            Log.Warning("Rejected MCP request because X-Qms-Require-Session=true while server is in stateless mode.");
+            context.Response.StatusCode = StatusCodes.Status409Conflict;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new
+            {
+                error = "stateless-disabled",
+                message = "Stateless MCP session recovery is enabled by default. Remove X-Qms-Require-Session or set it to false to allow stateless handling. Use listProjects to confirm endpoints after reconnect."
+            });
+            return;
+        }
+
+        var hasSessionHeader = context.Request.Headers.ContainsKey("MCP-Session-Id");
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers["X-Qms-Session-Mode"] = "stateless";
+            if (hasSessionHeader)
+            {
+                context.Response.Headers["X-Qms-Session-Note"] = "ignored-mcp-session-id";
+            }
+            return Task.CompletedTask;
+        });
+
+        if (hasSessionHeader)
+        {
+            Log.Information("Ignoring MCP-Session-Id header because stateless MCP mode is enabled.");
+        }
+    }
+
+    await next();
+});
+app.Use(async (context, next) =>
+{
+    var stopwatch = Stopwatch.StartNew();
         await next();
 
         if (context.Request.Path.StartsWithSegments("/mcp", out var remaining))
@@ -1055,7 +1094,7 @@ app.MapPost("/mcp/{endpoint}/entries", async (
         return Results.BadRequest(new { error = "invalid-entry" });
     }
 
-    if (!MemoryMcpTools.TryPrepareEntry(endpoint, entry, out entry, out var prepError))
+    if (!MemoryMcpTools.TryPrepareEntry(endpoint, entry, out entry, out var prepError, out var projectNote))
     {
         return Results.BadRequest(new { error = prepError ?? "invalid-entry" });
     }
@@ -1066,6 +1105,11 @@ app.MapPost("/mcp/{endpoint}/entries", async (
     }
 
     await store.UpsertAsync(entry, cancellationToken);
+    if (!string.IsNullOrWhiteSpace(projectNote))
+    {
+        return Results.Ok(new { updated = true, id = entry.Id, notes = new[] { projectNote } });
+    }
+
     return Results.Ok(new { updated = true, id = entry.Id });
 });
 
@@ -1610,7 +1654,7 @@ app.MapPost("/admin/import/{endpoint}", async (string endpoint, HttpContext cont
 
     foreach (var (index, entry) in entries)
     {
-        if (!MemoryMcpTools.TryPrepareEntry(endpoint, entry, out var prepared, out var prepareError))
+        if (!MemoryMcpTools.TryPrepareEntry(endpoint, entry, out var prepared, out var prepareError, out _))
         {
             errors.Add(new { index, id = entry.Id, message = prepareError ?? "invalid-entry" });
             continue;

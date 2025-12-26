@@ -57,7 +57,7 @@ Agents should be able to:
 All curated prompts live in the `prompts-repository` endpoint and use a
 consistent shape:
 
-- `project` – must be `prompts-repository`.
+- `endpoint` – must be `prompts-repository`.
 - `kind` – must be `"prompt"` to be eligible for `prompts/*`.
 - `tags` – must include:
   - `prompt-template` (marks the entry as a prompt), and

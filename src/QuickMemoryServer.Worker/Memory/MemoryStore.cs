@@ -69,14 +69,11 @@ public class MemoryStore : IMemoryStore, IDisposable
         }
 
         var entries = await _repository.LoadAsync(EntryFilePath, _embeddingDimensions, cancellationToken);
-        var filtered = entries.Where(e => string.Equals(e.Project, Project, StringComparison.OrdinalIgnoreCase)).ToList();
+        var normalized = entries
+            .Select(entry => entry with { Project = Project })
+            .ToList();
 
-        if (filtered.Count != entries.Count)
-        {
-            _logger.LogWarning("Store {Store} skipping {Skipped} entries that belong to other projects.", Name, entries.Count - filtered.Count);
-        }
-
-        var enriched = await EnsureEmbeddingsAsync(filtered, cancellationToken);
+        var enriched = await EnsureEmbeddingsAsync(normalized, cancellationToken);
         lock (_sync)
         {
             _entries = enriched.ToImmutableArray();
@@ -115,7 +112,7 @@ public class MemoryStore : IMemoryStore, IDisposable
 
     public async ValueTask AppendAsync(MemoryEntry entry, CancellationToken cancellationToken)
     {
-        var normalized = _validator.Normalize(entry, _embeddingDimensions);
+        var normalized = _validator.Normalize(entry with { Project = Project }, _embeddingDimensions);
         var enriched = await _embeddingService.EnsureEmbeddingAsync(normalized, cancellationToken);
 
         lock (_sync)
@@ -129,7 +126,7 @@ public class MemoryStore : IMemoryStore, IDisposable
 
     public async ValueTask UpsertAsync(MemoryEntry entry, CancellationToken cancellationToken)
     {
-        var normalized = _validator.Normalize(entry, _embeddingDimensions);
+        var normalized = _validator.Normalize(entry with { Project = Project }, _embeddingDimensions);
         var enriched = await _embeddingService.EnsureEmbeddingAsync(normalized, cancellationToken);
 
         lock (_sync)

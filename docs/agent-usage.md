@@ -1,11 +1,13 @@
 # Quick Memory Server MCP Usage (MCP-first)
 
+This guide is **for agents** using Quick Memory. It is not end-user help; it exists to tell you how to retrieve, store, and update memory safely and consistently while you work.
+
 ## MCP Quickstart
 - `listProjects` – discover allowed projects (endpoints) for the current API key.
 - `listRecentEntries` with `{ endpoint, maxResults }` – browse latest entries in that project (no query needed).
 - `searchEntries` with `{ endpoint, text, includeShared, maxResults }` – focused retrieval.
 - `getEntry` / `listEntries` – fetch one or all entries in a project.
-- `upsertEntry` / `patchEntry` / `deleteEntry` – mutate entries (permanent requires Admin; `entry.project` must match endpoint).
+- `upsertEntry` / `patchEntry` / `deleteEntry` – mutate entries (permanent requires Admin).
 - `relatedEntries` with `{ id, maxHops }` – graph walk.
 - `requestBackup` with `{ endpoint, mode }` (Admin) – queue backup.
 - `health` – server health report.
@@ -38,8 +40,8 @@ time in a repo, use this flow to “prime” it before doing real work:
    - Fetch `resource://quick-memory/help` and skim the quickstart and
      recipes.
    - Fetch `resource://quick-memory/entry-fields` and summarize the
-     `MemoryEntry field reference` so you understand how `id`, `project`,
-     `kind`, `tags`, `confidence`, `curationTier`, and `isPermanent`
+     `MemoryEntry field reference` so you understand how `id`, `kind`,
+     `tags`, `confidence`, `curationTier`, and `isPermanent`
      affect behavior.
 4. **Warm up with recent entries**
    - Call `listRecentEntries { endpoint: <default>, maxResults: 20 }`
@@ -78,7 +80,6 @@ time in a repo, use this flow to “prime” it before doing real work:
 upsertEntry {
   endpoint: "projectA",
   entry: {
-    project: "projectA",
     id: "projectA:kb-firewall",
     kind: "procedure",
     title: "Update firewall rule",
@@ -90,7 +91,7 @@ upsertEntry {
   }
 }
 ```
-Notes: project must equal endpoint; permanent entries require Admin.
+Notes: `entry.project` is deprecated/ignored; permanent entries require Admin.
 
 ### Patch an entry
 `patchEntry { endpoint, id, title?, tags?, curationTier?, relations?, source? }`
@@ -127,7 +128,6 @@ entries, and propose new entries when appropriate.
 |-------|-------------|
 | `schemaVersion` | Positive integer for versioning the entry format (current value `1`). Reserved for future migrations; agents normally leave this alone. |
 | `id` | Stable identifier in the form `project:key`. Used as the primary key in JSONL, search results, relations, and MCP calls. If omitted during `upsertEntry`, the server generates `<project>:<guid>`, then you can use that ID for future updates/links. |
-| `project` | Logical store the entry belongs to (e.g., `projectA`). Must match the endpoint/key you call; the router uses it to pick the correct `MemoryStore` and to filter cross-project results. Defaults to the endpoint if left blank. |
 | `kind` | Category of memory (`note`, `fact`, `procedure`, `conversationTurn`, `timelineEvent`, `codeSnippet`, `decision`, `observation`, `question`, `task`, etc.). Used to drive UI hints and query semantics (e.g., agents can ask “only tasks” or “only timeline events”). |
 | `title` | Short human-readable label. Shown in Admin Web UI tables, search results, and graph visualizations; if empty the UI falls back to `id`, which is much harder to scan. |
 | `body` | The actual content of the memory. Can be plain text or a JSON object. When JSON, try to keep a consistent shape per `kind` (`steps` for procedures, `snippet` for code, etc.) so agents can parse/augment it safely. Changes to `body` drive embedding recomputation and can change search ranking. |
@@ -146,7 +146,7 @@ entries, and propose new entries when appropriate.
 | `pinned` | Soft flag that UIs and agents can use to emphasize important entries in lists or summaries (e.g., “show pinned items first”). Does not change search semantics by itself but is intended for UX/agent sorting hints. |
 
 **Notes**
-- `upsertEntry` enforces `project` equality and fills `id`, `timestamps`, and `curationTier` defaults automatically.
+- `upsertEntry` ignores `entry.project` and fills `id`, `timestamps`, and `curationTier` defaults automatically.
 - `patchEntry` accepts the same fields but only replaces those present; relations/source payloads must remain valid JSON objects/arrays.
 - Permanent entries can only be deleted with `deleteEntry(..., force: true)` by Admin-tier keys.
 

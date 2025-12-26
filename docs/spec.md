@@ -124,7 +124,6 @@ MemoryStores/
 {
   "schemaVersion": 1,
   "id": "projA:7f3c1c32-9a02-4a5f-a59e-5952b4202f23",
-  "project": "projA",
   "kind": "fact",
   "title": "Search index rebuild guard",
   "body": { "statement": "..." },
@@ -167,6 +166,7 @@ MemoryStores/
 - Missing `curationTier` defaults to `provisional`; `isPermanent` defaults to `false`.
 - `embedding` length is tied to the configured model; loader validates and rejects mismatches.
 - `relations` referencing other stores use canonical IDs (`project:id`).
+- `entry.project` is deprecated: the server ignores it on ingest and does not persist it. Use the endpoint plus the `id` prefix (e.g., `projA:...`) instead.
 - `ttlUtc` ignored if `isPermanent` is true.
 - Embeddings are produced locally through a configurable model (e.g., ONNX) defined in the `[global]` section; CLI tools can regenerate vectors when the model changes.
 - Installer bundles default ONNX models; runtime verifies hashes during startup to guard against tampering.
@@ -181,16 +181,16 @@ MemoryStores/
 ## MCP Command Surface
 | Command | Description | Request Payload | Response Payload | Notes |
 |---------|-------------|-----------------|------------------|-------|
-| `listEntries` | Enumerate entries for a store (paged/filterable). | `{ "project": "projA", "filter": { "tags": [], "tier": "curated" }, "page": { "size": 50, "cursor": null } }` | `{ "items": [MemoryEntrySummary], "nextCursor": null }` | Supports filtering by tags, `curationTier`, `kind`, time range. |
+| `listEntries` | Enumerate entries for a store (paged/filterable). | `{ "endpoint": "projA", "filter": { "tags": [], "tier": "curated" }, "page": { "size": 50, "cursor": null } }` | `{ "items": [MemoryEntrySummary], "nextCursor": null }` | Supports filtering by tags, `curationTier`, `kind`, time range. |
 | `getEntry` | Fetch full entry by ID. | `{ "id": "projA:7f3c..." }` | `{ "entry": MemoryEntry }` | Returns 404 if missing. |
 | `upsertEntry` | Create or update entry (full replacement). | `{ "entry": MemoryEntry }` | `{ "version": "etag", "updated": true }` | Validates schema version; canonical updates logged. |
 | `patchEntry` | Partial update (for curated/permanent toggles). | `{ "id": "...", "patch": { "curationTier": "canonical" } }` | `{ "entry": MemoryEntry }` | Enforces tier enum & bool toggles. |
 | `deleteEntry` | Remove entry (unless permanent). | `{ "id": "...", "force": false }` | `{ "deleted": true }` | Rejects if `isPermanent` true and `force` false. |
-| `searchEntries` | Hybrid keyword/vector search. | `{ "project": "projA", "query": { "text": "...", "embedding": [..], "maxResults": 25, "includeShared": true } }` | `{ "results": [ScoredEntry] }` | Re-ranks with tier/confidence. |
-| `relatedEntries` | Graph traversal for cross references. | `{ "id": "...", "maxHops": 2, "project": "projA" }` | `{ "nodes": [...], "edges": [...] }` | Optionally include shared store neighbors. |
-| `summaries` | Return precomputed or generated summaries. | `{ "project": "projA", "ids": ["..."] }` | `{ "summaries": [{ "id": "...", "summary": "..." }] }` | Uses cached `summaries.json` when available. |
-| `listCurated` | List canonical/curated entries. | `{ "project": "projA", "tier": "canonical" }` | `{ "items": [MemoryEntrySummary] }` | Shortcut building on `listEntries`. |
-| `bulkImport` | Append multiple entries at once. | `{ "project": "projA", "entries": [MemoryEntry] }` | `{ "imported": 5, "skipped": 1 }` | Batches writes for atomicity. |
+| `searchEntries` | Hybrid keyword/vector search. | `{ "endpoint": "projA", "query": { "text": "...", "embedding": [..], "maxResults": 25, "includeShared": true } }` | `{ "results": [ScoredEntry] }` | Re-ranks with tier/confidence. |
+| `relatedEntries` | Graph traversal for cross references. | `{ "endpoint": "projA", "id": "...", "maxHops": 2 }` | `{ "nodes": [...], "edges": [...] }` | Optionally include shared store neighbors. |
+| `summaries` | Return precomputed or generated summaries. | `{ "endpoint": "projA", "ids": ["..."] }` | `{ "summaries": [{ "id": "...", "summary": "..." }] }` | Uses cached `summaries.json` when available. |
+| `listCurated` | List canonical/curated entries. | `{ "endpoint": "projA", "tier": "canonical" }` | `{ "items": [MemoryEntrySummary] }` | Shortcut building on `listEntries`. |
+| `bulkImport` | Append multiple entries at once. | `{ "endpoint": "projA", "entries": [MemoryEntry] }` | `{ "imported": 5, "skipped": 1 }` | Batches writes for atomicity. |
 | `health` | Report store/server status. | `{}` | `{ "status": "Healthy", "stores": [{ "name": "...", "entries": 1200, "loaded": true }] }` | Used by supervisors. |
 | `describe` | Return catalog of supported commands, required auth tiers, sample payloads. | `{}` | `{ "commands": [ { "name": "searchEntries", "tier": "reader", "requestSchema": {"text": "string"} } ], "kinds": [...], "docUrl": "/docs/agent-usage" }` | First-call hint for autonomous agents. |
 | `getUsageDoc` | Provide Markdown onboarding for agents. | `{ "format": "markdown" }` | `{ "content": "# Quick Memory Server..." }` | Mirrors `docs/agent-usage.md`; cache client-side. |

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
 using QuickMemoryServer.Worker.Models;
 using QuickMemoryServer.Worker.Validation;
@@ -91,8 +92,17 @@ public sealed class JsonlRepository
             foreach (var entry in materialized)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var json = JsonSerializer.Serialize(entry, SerializerOptions);
-                await writer.WriteLineAsync(json.AsMemory(), cancellationToken);
+                var jsonNode = JsonSerializer.SerializeToNode(entry, SerializerOptions) as JsonObject;
+                if (jsonNode is not null)
+                {
+                    jsonNode.Remove("project");
+                    var json = jsonNode.ToJsonString(SerializerOptions);
+                    await writer.WriteLineAsync(json.AsMemory(), cancellationToken);
+                    continue;
+                }
+
+                var fallbackJson = JsonSerializer.Serialize(entry, SerializerOptions);
+                await writer.WriteLineAsync(fallbackJson.AsMemory(), cancellationToken);
             }
         }
 

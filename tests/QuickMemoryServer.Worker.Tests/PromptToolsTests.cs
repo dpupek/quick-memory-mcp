@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Text.Json.Nodes;
 using System.Threading;
 using ModelContextProtocol.Protocol;
@@ -47,6 +46,7 @@ public sealed class PromptToolsTests : IDisposable
         };
 
         var context = PromptTestContext.CreateRequestContext(PermissionTier.Editor);
+        var optionsMonitor = _ctx.OptionsMonitor;
         #endregion
 
         #region Act
@@ -54,6 +54,7 @@ public sealed class PromptToolsTests : IDisposable
             endpoint: "prompts-repository",
             entry: entry,
             router: null!,
+            optionsMonitor: optionsMonitor,
             context: context,
             cancellationToken: CancellationToken.None);
         #endregion
@@ -108,6 +109,7 @@ public sealed class PromptToolsTests : IDisposable
         };
 
         var context = PromptTestContext.CreateRequestContext(PermissionTier.Reader);
+        var optionsMonitor = _ctx.OptionsMonitor;
         #endregion
 
         #region Act
@@ -115,6 +117,7 @@ public sealed class PromptToolsTests : IDisposable
             endpoint: "prompts-repository",
             entry: entry,
             router: null!,
+            optionsMonitor: optionsMonitor,
             context: context,
             cancellationToken: CancellationToken.None);
         #endregion
@@ -140,8 +143,10 @@ internal sealed class PromptTestContext : IDisposable
     private readonly MemoryRouter _router;
     private readonly JsonlRepository _repository;
     private readonly EmbeddingService _embeddingService;
+    private readonly IOptionsMonitor<ServerOptions> _optionsMonitor;
 
     public MemoryRouter Router => _router;
+    public IOptionsMonitor<ServerOptions> OptionsMonitor => _optionsMonitor;
 
     public PromptTestContext()
     {
@@ -167,7 +172,7 @@ internal sealed class PromptTestContext : IDisposable
             }
         };
 
-        var optionsMonitor = new TestOptionsMonitor(_options);
+        _optionsMonitor = new TestOptionsMonitor(_options);
         var validator = new MemoryEntryValidator();
         _repository = new JsonlRepository(validator, NullLogger<JsonlRepository>.Instance);
         var embeddingGenerator = new FakeEmbeddingGenerator(_options.Global.EmbeddingDims);
@@ -175,14 +180,14 @@ internal sealed class PromptTestContext : IDisposable
         var searchEngine = new SearchEngine(NullLoggerFactory.Instance);
 
         _storeFactory = new MemoryStoreFactory(
-            optionsMonitor,
+            _optionsMonitor,
             _repository,
             validator,
             _embeddingService,
             searchEngine,
             NullLoggerFactory.Instance);
 
-        _router = new MemoryRouter(_storeFactory, optionsMonitor, NullLogger<MemoryRouter>.Instance);
+        _router = new MemoryRouter(_storeFactory, _optionsMonitor, NullLogger<MemoryRouter>.Instance);
     }
 
     public void WritePromptEntry(string id, string body, string[] tags)
@@ -225,13 +230,65 @@ internal sealed class PromptTestContext : IDisposable
 
     public static RequestContext<CallToolRequestParams> CreateRequestContext(PermissionTier tier)
     {
-        var context = (RequestContext<CallToolRequestParams>)FormatterServices.GetUninitializedObject(typeof(RequestContext<CallToolRequestParams>));
-        var itemsField = typeof(RequestContext<CallToolRequestParams>).GetField("<Items>k__BackingField", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-        itemsField?.SetValue(context, new Dictionary<string, object>
-        {
-            { McpAuthorizationContext.TierItem, tier }
-        });
+        var context = new RequestContext<CallToolRequestParams>(
+            new TestMcpServer(),
+            new JsonRpcRequest { Method = "tools/call" });
+        context.Items[McpAuthorizationContext.TierItem] = tier;
         return context;
+    }
+
+    private sealed class TestMcpServer : McpServer
+    {
+        private static readonly IServiceProvider EmptyServices = new EmptyServiceProvider();
+        private static readonly ClientCapabilities EmptyCapabilities = new();
+        private static readonly Implementation EmptyClientInfo = new()
+        {
+            Name = "test-client",
+            Version = "0.0"
+        };
+        private static readonly McpServerOptions EmptyOptions = new();
+
+        public override IServiceProvider Services => EmptyServices;
+        public override McpServerOptions ServerOptions => EmptyOptions;
+        public override ClientCapabilities ClientCapabilities => EmptyCapabilities;
+        public override Implementation ClientInfo => EmptyClientInfo;
+        public override string SessionId => "test-session";
+        public override string NegotiatedProtocolVersion => "2025-06-18";
+        public override LoggingLevel? LoggingLevel => null;
+
+        public override Task RunAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public override Task<JsonRpcResponse> SendRequestAsync(JsonRpcRequest request, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new JsonRpcResponse
+            {
+                Id = request.Id,
+                Result = JsonValue.Create("ok")
+            });
+        }
+
+        public override Task SendMessageAsync(JsonRpcMessage message, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        public override IAsyncDisposable RegisterNotificationHandler(string method, Func<JsonRpcNotification, CancellationToken, ValueTask> handler)
+        {
+            return NullAsyncDisposable.Instance;
+        }
+
+        public override ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+        private sealed class NullAsyncDisposable : IAsyncDisposable
+        {
+            public static readonly NullAsyncDisposable Instance = new();
+            public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        }
+
+        private sealed class EmptyServiceProvider : IServiceProvider
+        {
+            public object? GetService(Type serviceType) => null;
+        }
     }
 
     public void Dispose()

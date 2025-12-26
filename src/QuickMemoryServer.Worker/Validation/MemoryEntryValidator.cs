@@ -38,11 +38,6 @@ public sealed class MemoryEntryValidator
             throw new MemoryValidationException("id is required.");
         }
 
-        if (string.IsNullOrWhiteSpace(entry.Project))
-        {
-            throw new MemoryValidationException("project is required.");
-        }
-
         if (string.IsNullOrWhiteSpace(entry.Kind))
         {
             throw new MemoryValidationException("kind is required.");

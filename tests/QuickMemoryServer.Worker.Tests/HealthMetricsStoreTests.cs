@@ -71,7 +71,7 @@ public sealed class HealthMetricsStoreTests
                 store.RecordSearchDuration("proj-a", i, statusCode: 200);
             }
             var now = DateTime.UtcNow;
-            var sample1 = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0, DateTimeKind.Utc);
+            var sample1 = new DateTime(now.Year, now.Month, now.Day, now.Hour, 0, 0, DateTimeKind.Utc);
             store.CaptureAndPersistMinuteSample(sample1, CancellationToken.None);
 
             for (var i = 101; i <= 200; i++)

@@ -5,11 +5,10 @@
   - Behavior: return an error similar to other tools
     (`Endpoint '<key>' is not available.`).
 
-- **Project mismatch**
-  - Entries contain `project` values that differ from the target
-    endpoint.
-  - Behavior: `TryPrepareEntry` rejects them with a
-    `project-mismatch` error; they appear in the error summary.
+- **Deprecated `entry.project` field**
+  - Entries include a legacy `project` value (matching or not).
+  - Behavior: the server ignores the field and imports the entry into
+    the target endpoint. Clients should remove `entry.project` usage.
 
 - **Invalid schema**
   - Entries fail `MemoryEntryValidator.Normalize` (invalid
@@ -32,4 +31,3 @@
   - Behavior: rely on existing `MemoryStore` locking; imports use the
     same write path (`UpsertAsync` / `DeleteAsync`) and thus serialize
     with other writers.
-

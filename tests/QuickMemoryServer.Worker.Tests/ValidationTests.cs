@@ -84,20 +84,24 @@ public class ValidationTests
     public void TryPrepareEntry_AssignsProjectAndId()
     {
         var entry = new MemoryEntry { Project = string.Empty, Id = string.Empty, Kind = "note" };
-        var success = MemoryMcpTools.TryPrepareEntry("projectA", entry, out var prepared, out var error);
+        var success = MemoryMcpTools.TryPrepareEntry("projectA", entry, out var prepared, out var error, out var note);
         Assert.True(success);
         Assert.Null(error);
+        Assert.Null(note);
         Assert.Equal("projectA", prepared.Project);
         Assert.StartsWith("projectA:", prepared.Id, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void TryPrepareEntry_RejectsMismatchedProject()
+    public void TryPrepareEntry_IgnoresProject()
     {
         var entry = new MemoryEntry { Project = "other", Id = "other:1", Kind = "note" };
-        var success = MemoryMcpTools.TryPrepareEntry("projectA", entry, out _, out var error);
-        Assert.False(success);
-        Assert.Contains("project-mismatch", error);
+        var success = MemoryMcpTools.TryPrepareEntry("projectA", entry, out var prepared, out var error, out var note);
+        Assert.True(success);
+        Assert.Null(error);
+        Assert.NotNull(note);
+        Assert.Equal("projectA", prepared.Project);
+        Assert.Equal("other:1", prepared.Id);
     }
 
 }

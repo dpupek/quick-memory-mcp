@@ -21,7 +21,6 @@ public sealed class JsonlRepositoryTests
             new MemoryEntry
             {
                 Id = "projectA:1",
-                Project = "projectA",
                 Kind = "fact",
                 Body = null,
                 BodyTypeHint = " YAML ",
@@ -37,7 +36,6 @@ public sealed class JsonlRepositoryTests
             new MemoryEntry
             {
                 Id = "shared:2",
-                Project = "shared",
                 Kind = "note",
                 Title = "  Sample  ",
                 Embedding = new double[] { 0.4, 0.5, 0.6 }
@@ -57,6 +55,8 @@ public sealed class JsonlRepositoryTests
 
 #region Assert (post state)
         Assert.Equal(2, loaded.Count);
+        var rawLines = await File.ReadAllLinesAsync(path);
+        Assert.All(rawLines, line => Assert.DoesNotContain("\"project\"", line));
         Assert.Equal("projectA:1", loaded[0].Id);
         Assert.Equal("canonical", loaded[0].CurationTier);
         Assert.Equal("yaml", loaded[0].BodyTypeHint);
@@ -88,7 +88,6 @@ public sealed class JsonlRepositoryTests
         var entry = new MemoryEntry
         {
             Id = "projectA:bad",
-            Project = "projectA",
             Kind = "fact",
             Embedding = new double[] { 0.1, 0.2 }
         };

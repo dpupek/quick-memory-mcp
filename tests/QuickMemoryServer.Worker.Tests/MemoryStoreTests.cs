@@ -25,7 +25,7 @@ public sealed class MemoryStoreTests
             var path = Path.Combine(dir.FullName, "entries.jsonl");
             await File.WriteAllLinesAsync(path, new[]
             {
-                "{\"id\":\"proj:1\",\"project\":\"proj\",\"kind\":\"note\",\"curationTier\":\"curated\",\"confidence\":0.9}"
+                "{\"id\":\"proj:1\",\"kind\":\"note\",\"curationTier\":\"curated\",\"confidence\":0.9}"
             });
 
             var repository = new JsonlRepository(_validator, NullLogger<JsonlRepository>.Instance);
@@ -68,7 +68,6 @@ public sealed class MemoryStoreTests
             var entry = new MemoryEntry
             {
                 Id = "proj:2",
-                Project = "proj",
                 Kind = "note",
                 Embedding = new double[] { 0.1, 0.2, 0.3 }
             };

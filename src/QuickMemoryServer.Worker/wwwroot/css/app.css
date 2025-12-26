@@ -10,7 +10,8 @@ body {
 }
 
 .sidebar {
-  width: 220px;
+  min-width: 240px;
+  width: 240px;
   background: #11152c;
   color: #fff;
   display: flex;
@@ -21,6 +22,7 @@ body {
 .sidebar-brand {
   font-weight: 600;
   letter-spacing: 0.05em;
+  white-space: nowrap;
 }
 
 .brand-logo {
@@ -35,6 +37,9 @@ body {
   border: none;
   text-align: left;
   padding: 0.5rem 0.75rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .nav-link.active,

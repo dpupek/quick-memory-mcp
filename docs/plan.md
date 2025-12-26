@@ -42,6 +42,8 @@
 - [x] **Task 8.5:** Update `docs/spec.md`, `docs/agent-usage.md`, and the README with Streamable transport details, tool listings, and configuration samples (TOML + `.codex/config.toml`).
 - [x] **Task 8.6:** Document MCP command recipes (search, entry checks, project changes) within `docs/agent-usage.md`, including payload examples, canonical/permanent behaviors, and curation tier matrix.
 - [x] **Task 8.7:** Fix Streamable MCP `/mcp` GET route ambiguity that caused SSE disconnects (remove duplicate GET handler; see GitHub #5).
+- [x] **Task 8.8:** Document direct Codex Streamable HTTP config (rmcp client + headers) and note `mcp-proxy` as optional in user docs.
+- [x] **Task 8.9:** Deprecate `entry.project` (ignored on ingest, not persisted) and return actionable endpoint errors (unknown endpoint + auth guidance).
 
 ## Phase 9 – Embedded Admin Web UI
 - [x] Reload blade content from the server whenever switching tabs (Overview/Projects/Entities/Users/Help/Health) via per-tab view controllers.

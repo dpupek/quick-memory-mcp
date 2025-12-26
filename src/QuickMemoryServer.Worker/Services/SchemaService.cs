@@ -39,7 +39,6 @@ public sealed class SchemaService
         {
             ["schemaVersion"] = CreateProperty("integer"),
             ["id"] = CreateProperty("string"),
-            ["project"] = CreateProperty("string"),
             ["kind"] = CreateProperty("string"),
             ["title"] = CreateProperty("string"),
             ["body"] = CreateProperty("object"),
@@ -111,7 +110,7 @@ public sealed class SchemaService
         {
             ["type"] = "object",
             ["properties"] = properties,
-            ["required"] = new JsonArray("schemaVersion", "id", "project", "kind")
+            ["required"] = new JsonArray("schemaVersion", "id", "kind")
         };
     }
 
