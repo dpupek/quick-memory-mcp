@@ -1,7 +1,7 @@
 # Quick Memory Server
 
 <p align="left">
-  <img src="assets/brain_logo_256.png" alt="Quick Memory Server logo" width="128" />
+  <img src="assets/robot_logo_512.png" alt="Quick Memory Server logo" width="128" />
 </p>
 
 This repository contains the Windows-service-based MCP memory server described in `docs/spec.md`. The current codebase targets **.NET 9**, so you will need the .NET 9 SDK preview (or newer) installed to build and run locally.
