@@ -58,6 +58,7 @@
 - **Prompts:** Prefer the curated prompts in `prompts-repository` via `prompts/list` + `prompts/get` (e.g., `onboarding:first-time`, `cold-start:project`). They already include argument metadata and categories.
 - **Graph & search:** Use `searchEntries { endpoint: "qm-proj", text, includeShared }` for retrieval and `relatedEntries { endpoint: "qm-proj", id, maxHops }` for curated links. Shared inclusion follows the project’s defaults; override per call when needed.
 - **Backups & audits:** `requestBackup` is Admin-only; permission edits are logged to the audit trail. When rotating keys, update Codex config and restart the client to pick up new headers.
+- **Epics tracking:** Epics for this project are tracked against GitHub issues; use the GitHub CLI to search for and edit those issues when you need epic details or updates (e.g., `gh issue list`, `gh issue view`, `gh issue edit`).
 
 ## Roslyn Code Navigator (MCP) – How to use
 

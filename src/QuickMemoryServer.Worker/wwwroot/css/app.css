@@ -23,6 +23,12 @@ body {
   letter-spacing: 0.05em;
 }
 
+.brand-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
 .nav-link {
   color: rgba(255, 255, 255, 0.75);
   background: transparent;
