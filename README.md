@@ -4,33 +4,68 @@
   <img src="assets/robot_logo_512.png" alt="Quick Memory Server logo" width="128" />
 </p>
 
-This repository contains the Windows-service-based MCP memory server described in `docs/spec.md`. The current codebase targets **.NET 9**, so you will need the .NET 9 SDK preview (or newer) installed to build and run locally.
+Quick Memory Server is a lightweight, self-hosted memory service for MCP tools and agents. Use it to keep durable, searchable context across sessions and handoffs: decisions, procedures, investigations, and operational runbooks that shouldn’t live only in chat scrollback.
+
+This repository contains a Windows-service-hosted ASP.NET Core worker that exposes:
+- An embedded Admin SPA for projects/users/entries/config/health.
+- Streamable HTTP MCP endpoints for agent/tool integrations.
+- Per-project memory stores (plus optional shared memory) with hybrid search and graph relations.
+
+## Why you’d use this
+- **Agents forget; teams churn.** Persist “what we learned” so the next session/agent doesn’t redo investigations.
+- **Keep ops knowledge close to the system.** Health, logs, metrics, and backups live alongside the memory store.
+- **Project isolation.** Separate memory stores by project/branch while still allowing shared, cross-project reference entries.
+
+## Docs (start here)
+- [`docs/spec.md`](docs/spec.md) – architecture and command surface
+- [`docs/plan.md`](docs/plan.md) – implementation plan / phases / epics
+- [`docs/end-user-help.md`](docs/end-user-help.md) – end-user guide + Codex setup
+- [`docs/agent-usage.md`](docs/agent-usage.md) – MCP-first recipes and payload shapes
+- [`docs/codex-workspace-guide.md`](docs/codex-workspace-guide.md) – Codex configuration patterns (`mcp-proxy` / `mcp-remote`)
+- [`docs/admin-ui-help.md`](docs/admin-ui-help.md) – Admin SPA walkthrough (blades, where code lives)
 
 ## Getting Started
 
-1. Install the .NET 9 SDK preview.
-2. Copy `QuickMemoryServer.sample.toml` to `QuickMemoryServer.toml` and update the endpoint, user, and model settings for your environment.
-3. From the repository root, run:
+### Prereqs
+- Install the **.NET 9 SDK preview (or newer)**.
+
+### Run locally (dev)
+1. Copy `QuickMemoryServer.sample.toml` to `QuickMemoryServer.toml` and adjust endpoints/users for your environment.
+2. Build from the repository root:
    ```bash
    dotnet build QuickMemoryServer.sln
    ```
-4. To run as a console app for development:
+   WSL note: if you’re working under `/mnt/*`, see [`AGENTS.md`](AGENTS.md) for the recommended Windows `dotnet.exe` + Git setup to avoid slow I/O.
+3. Optional: run tests:
+   ```bash
+   dotnet test
+   ```
+4. Run the worker as a console app:
    ```bash
    dotnet run --project src/QuickMemoryServer.Worker
    ```
-5. Hit `http://localhost:5080/health` to confirm the service is listening. Use `POST /mcp/{endpoint}/ping` with header `X-Api-Key` to exercise the placeholder MCP endpoint routing.
-6. Open `http://localhost:5080/` in a browser to unlock the embedded admin SPA, log in with your API key (the SPA will discover which projects you have rights to), and manage projects, entries, users, and permissions through the existing MCP/admin APIs.
-6. Queue a backup via MCP (`POST /mcp/{endpoint}/backup`) or the CLI helper:
-   ```bash
-   dotnet run --project tools/MemoryCtl -- backup shared --mode full --api-key YOUR_KEY
-   ```
-7. Observe metrics at `http://localhost:5080/metrics` (Prometheus format) and tail structured logs under `logs/quick-memory-server-*.log`.
-8. The runtime JSON Schema for the exposed structs lives at `http://localhost:5080/docs/schema` (ETag + short cache).
-8. Optional: run k6 scenarios in `load-tests/` to stress MCP endpoints (requires `QMS_API_KEY`).
+5. Confirm it’s up:
+   - `GET /health` for server status and store inventory
+   - `GET /metrics` for Prometheus metrics
+   - `GET /docs/schema` for the runtime JSON Schema (cached with ETag)
+6. Open the Admin SPA at `/` to:
+   - Create/edit projects (endpoints)
+   - Create/edit users + project permissions (API keys)
+   - Browse/search/edit memory entries
+   - View Health & Logs and download log bundles
+
+### Connect an agent (Codex)
+The canonical, copy/paste-ready Codex setup lives in:
+- [`docs/end-user-help.md`](docs/end-user-help.md) (quick start)
+- [`docs/codex-workspace-guide.md`](docs/codex-workspace-guide.md) (multiple patterns, env-var options)
+
+At a minimum, you’ll need:
+- MCP base URL: `http://localhost:5080/mcp`
+- Auth header: `X-Api-Key: <your key>` (create keys via the Admin SPA)
 
 ## Windows installer/updater
 
-For Windows deployments use the PowerShell helper `tools/install-service.ps1` (run in an elevated prompt):
+For Windows deployments, use the PowerShell helper [`tools/install-service.ps1`](tools/install-service.ps1) (run in an elevated prompt):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools/install-service.ps1
@@ -41,7 +76,17 @@ powershell -ExecutionPolicy Bypass -File tools/install-service.ps1
 - If `QuickMemoryServer.toml` already exists, it asks before overwriting; data files are never overwritten.
 - Stops the service before copy to avoid file locks; restarts it unless `-SkipStart` is used. Copies `docs/` so admin/agent help render.
 
-The service is pre-configured to run as a Windows service (`AddWindowsService`) when published and installed with WiX (see `docs/plan.md`).
+The service is pre-configured to run as a Windows service (`AddWindowsService`) when published and installed with WiX (see [`docs/plan.md`](docs/plan.md)).
+
+## Key URLs
+- `/` – Admin SPA
+- `/health` – JSON health report
+- `/metrics` – Prometheus metrics
+- `/mcp` – MCP base route (streamable HTTP)
+- `/docs/schema` – runtime JSON Schema (cached + ETag)
+- `/admin/help/end-user` – end-user help
+- `/admin/help/agent` – agent help (field guide + recipes)
+- `/admin/help/codex-workspace` – Codex workspace guide
 
 ## Repository Layout
 
@@ -51,10 +96,8 @@ The service is pre-configured to run as a Windows service (`AddWindowsService`) 
 - `QuickMemoryServer.sample.toml` – Sample configuration file.
 - `AGENTS.md` – Contributor guide for day-to-day development details.
 - `tools/MemoryCtl` – Lightweight CLI for invoking MCP maintenance commands (e.g., backups).
-- `logs/` – Rolling structured logs (created at runtime).
+- `src/QuickMemoryServer.Worker/logs/` – Rolling structured logs (created at runtime, dev-only).
 
 ## Next Steps
 
-- Flesh out the MCP endpoints and memory storage pipeline as outlined in the plan.
-- Implement ONNX-based embedding and summarization services.
-- Author the WiX installer near the end of the implementation (Phase 8).
+See [`docs/plan.md`](docs/plan.md) and GitHub Issues for the active roadmap. Epics for this repo are tracked as GitHub issues; use the GitHub CLI (`gh issue view`, `gh issue edit`) during development to keep scope and acceptance criteria up to date.
