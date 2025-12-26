@@ -26,7 +26,7 @@
 - **Prompt body too large**
   - Long recipes (or multiple messages) exceed model input size in
     some clients.
-  - Behavior: we may need a soft size guidance in docs and SPA to keep
+  - Behavior: we may need a soft size guidance in docs and the Admin Web UI to keep
     prompt entries relatively small and focused.
 
 - **Concurrent edits**
@@ -47,4 +47,3 @@
   - Prompts must be included in backups and restored with other data.
   - Behavior: confirm that `qm-prompts` participates in the existing
     backup pipeline; consider adding a test entry to verify.
-

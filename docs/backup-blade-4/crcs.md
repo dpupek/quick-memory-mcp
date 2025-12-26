@@ -4,4 +4,4 @@
 - `HealthReporter` (existing): stores health issues; exposes in `/health` and `health` tool.
 - `AdminConfigController` (new/extended): read/write `global.backup` settings; probe target path.
 - `BackupActivityStore` (new): append-only audit-style log (bounded, persists if audit sink present) with endpoint, mode, status, message, duration, initiatedBy, timestamp, instanceId.
-- SPA Backup Blade (new UI): surfaces config, probes, activity feed, manual run actions; calls AdminConfig + Backup endpoints.
+- Admin Web UI Backup Blade: surfaces config, probes, activity feed, manual run actions; calls AdminConfig + Backup endpoints.

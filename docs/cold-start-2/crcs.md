@@ -20,11 +20,10 @@
 - **Collaborators**
   - `ColdStart` tool for read-only queries.
 
-## Admin SPA
+## Admin Web UI
 
 - **Responsibilities**
   - Allow admins to tag entries as `category:cold-start` and set
     `curationTier` appropriately.
 - **Collaborators**
   - Existing Entities editor (no special UI required beyond tags).
-

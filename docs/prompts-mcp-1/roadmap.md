@@ -42,7 +42,7 @@
   - [x] Cold start.
   - [x] Recording a new lesson.
   - [x] Investigation / troubleshooting flows.
-- [x] Update the Admin SPA to:
+- [x] Update the Admin Web UI to:
   - [x] Show `qm-prompts` in a system/locked view.
   - [x] Provide minimal helpers/snippets for `prompt-args` blocks and
         category tags.

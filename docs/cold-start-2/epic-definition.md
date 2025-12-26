@@ -27,7 +27,7 @@ they can summarize and act on.
   - Live in the project’s store (or in shared/project notes).
   - Use a `category:cold-start` tag and `curationTier = "curated"` (or
     `canonical`).
-  - Are easy to create/edit via the SPA.
+  - Are easy to create/edit via the Admin Web UI.
 - Documentation:
   - Explains how to mark entries as cold-start recipes.
   - Shows agents how to use `coldStart` instead of ad-hoc sequences of
@@ -41,4 +41,3 @@ they can summarize and act on.
   tag combinations, time windows, or kinds).
 - Per-client UI wiring; this epic focuses on server behavior and
   documentation.
-

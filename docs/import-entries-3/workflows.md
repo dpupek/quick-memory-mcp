@@ -2,7 +2,7 @@
 
 ## Workflow 1 – Dry-Run Import into a Project
 
-1. Admin selects a target project (endpoint) in the SPA or CLI.
+1. Admin selects a target project (endpoint) in the Admin Web UI or CLI.
 2. Admin prepares a JSONL or JSON file containing entries.
 3. Admin calls the import feature with:
    - `endpoint = "<project-key>"`,
@@ -49,4 +49,3 @@
    - Writes a new JSONL file to disk (atomic swap) containing only the
      imported entries.
 4. Summary confirms the replacement; logs record the operation.
-

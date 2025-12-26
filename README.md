@@ -7,7 +7,7 @@
 Quick Memory Server is a lightweight, self-hosted memory service for MCP tools and agents. Use it to keep durable, searchable context across sessions and handoffs: decisions, procedures, investigations, and operational runbooks that shouldn’t live only in chat scrollback.
 
 This repository contains a Windows-service-hosted ASP.NET Core worker that exposes:
-- An embedded Admin SPA for projects/users/entries/config/health.
+- An embedded Admin Web UI for projects/users/entries/config/health.
 - Streamable HTTP MCP endpoints for agent/tool integrations.
 - Per-project memory stores (plus optional shared memory) with hybrid search and graph relations.
 
@@ -22,7 +22,7 @@ This repository contains a Windows-service-hosted ASP.NET Core worker that expos
 - [`docs/end-user-help.md`](docs/end-user-help.md) – end-user guide + Codex setup
 - [`docs/agent-usage.md`](docs/agent-usage.md) – MCP-first recipes and payload shapes
 - [`docs/codex-workspace-guide.md`](docs/codex-workspace-guide.md) – Codex configuration patterns (`mcp-proxy` / `mcp-remote`)
-- [`docs/admin-ui-help.md`](docs/admin-ui-help.md) – Admin SPA walkthrough (blades, where code lives)
+- [`docs/admin-ui-help.md`](docs/admin-ui-help.md) – Admin Web UI walkthrough (blades, where code lives)
 
 ## Getting Started
 
@@ -48,7 +48,7 @@ This repository contains a Windows-service-hosted ASP.NET Core worker that expos
    - `GET /health` for server status and store inventory
    - `GET /metrics` for Prometheus metrics
    - `GET /docs/schema` for the runtime JSON Schema (cached with ETag)
-6. Open the Admin SPA at `/` to:
+6. Open the Admin Web UI at `/` to:
    - Create/edit projects (endpoints)
    - Create/edit users + project permissions (API keys)
    - Browse/search/edit memory entries
@@ -61,7 +61,7 @@ The canonical, copy/paste-ready Codex setup lives in:
 
 At a minimum, you’ll need:
 - MCP base URL: `http://localhost:5080/mcp`
-- Auth header: `X-Api-Key: <your key>` (create keys via the Admin SPA)
+- Auth header: `X-Api-Key: <your key>` (create keys via the Admin Web UI)
 
 ## Windows installer/updater
 
@@ -79,7 +79,7 @@ powershell -ExecutionPolicy Bypass -File tools/install-service.ps1
 The service is pre-configured to run as a Windows service (`AddWindowsService`) when published and installed with WiX (see [`docs/plan.md`](docs/plan.md)).
 
 ## Key URLs
-- `/` – Admin SPA
+- `/` – Admin Web UI
 - `/health` – JSON health report
 - `/metrics` – Prometheus metrics
 - `/mcp` – MCP base route (streamable HTTP)

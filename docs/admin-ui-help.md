@@ -1,6 +1,6 @@
-# Admin UI Help
+# Admin Web UI Help
 
-Welcome to the Quick Memory Server admin console. This page collects quick tips for each blade.
+Welcome to the Quick Memory Server Admin Web UI. This page collects quick tips for each blade.
 
 ## Overview
 - Shows health status, counts, and per-store metadata.
@@ -57,6 +57,6 @@ Field hints:
 - Codex MCP guide (global config + mcp-proxy examples): `/admin/help/codex-workspace` and `resource://quick-memory/codex-workspace`
 
 Tips:
-- If auth fails, re-enter your API key; sessions persist across refresh.
+- If auth fails, re-enter your API key; the Admin Web UI session typically persists across refresh until logout/expiry.
 - Empty search in Entities shows recent entries; use tags/text for precision.
 - For MCP clients, the base URL is `/mcp` with `X-Api-Key` header.

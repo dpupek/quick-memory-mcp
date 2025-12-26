@@ -14,7 +14,7 @@ Agents should be able to:
   recording lessons, investigations) through `prompts/list`.
 - Request a specific recipe by name with arguments via `prompts/get`
   and receive a ready-to-send message payload.
-- Rely on admins to evolve prompts over time using the existing SPA and
+- Rely on admins to evolve prompts over time using the existing Admin Web UI and
   backup mechanisms, without changing binaries.
 
 ## Success Criteria
@@ -39,7 +39,7 @@ Agents should be able to:
   - Returns a `messages[]` payload that agents can send directly.
 - Documentation:
   - Explains how to author, categorize, and maintain prompt entries in
-    the SPA.
+    the Admin Web UI.
   - Encourages agents to use `prompts/*` instead of copy-pasting
     recipes from static docs.
 

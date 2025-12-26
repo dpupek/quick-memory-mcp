@@ -43,7 +43,7 @@
 - [x] **Task 8.6:** Document MCP command recipes (search, entry checks, project changes) within `docs/agent-usage.md`, including payload examples, canonical/permanent behaviors, and curation tier matrix.
 - [x] **Task 8.7:** Fix Streamable MCP `/mcp` GET route ambiguity that caused SSE disconnects (remove duplicate GET handler; see GitHub #5).
 
-## Phase 9 – Embedded Admin SPA
+## Phase 9 – Embedded Admin Web UI
 - [x] Reload blade content from the server whenever switching tabs (Overview/Projects/Entities/Users/Help/Health) via per-tab view controllers.
 - [x] Ensure the Projects list refreshes immediately after creating, updating, or deleting a project.
 - [x] Persist login across page refreshes using the server-side session-backed `/admin/login` + `/admin/session` flow.
@@ -55,10 +55,10 @@
 - [x] Rename “Endpoint permissions” to “Project permissions” across nav labels, API payloads, and docs to match user vocabulary.
 - [x] Build a dedicated Project-permissions editor: left pane lists projects, right pane shows per-user overrides with dropdown tiers, add/remove user controls, and inherit-shared indicator.
 - [x] Support bulk updates (apply the same tier override to multiple projects) and warn when a project has no Admin tier after edits.
-- [x] Expose GET/PATCH endpoints (`/admin/projects/{key}/permissions`) so the SPA doesn’t rewrite the full TOML on each change.
+- [x] Expose GET/PATCH endpoints (`/admin/projects/{key}/permissions`) so the Admin Web UI doesn’t rewrite the full TOML on each change.
 - [x] Surface an audit trail of permission changes (who/when/what) for future troubleshooting.
-- [x] Move the SPA shell into a Razor view (`Views/Admin/Index.cshtml`) and enable cache-busted static assets via `asp-append-version` for `app.css` and `app.js`.
-- [x] Auto-create the `prompts-repository` project at startup when missing so curated prompt entries are always reachable from the SPA and MCP tools.
+- [x] Move the Admin Web UI shell into a Razor view (`Views/Admin/Index.cshtml`) and enable cache-busted static assets via `asp-append-version` for `app.css` and `app.js`.
+- [x] Auto-create the `prompts-repository` project at startup when missing so curated prompt entries are always reachable from the Admin Web UI and MCP tools.
 - [x] Add a delete button next to each entry row in the Entities table for quick single-entry deletion.
 - [x] Add entry selection checkboxes plus bulk delete actions in the Entities tab (with confirmation and permission checks).
 - [x] Add Entities table paging, sorting, and configurable columns (see GitHub #14).

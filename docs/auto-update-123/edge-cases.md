@@ -12,7 +12,7 @@
 
 - **Network failure**: Remote unreachable or authentication failure to git.
   - Behavior: Update job fails; no binaries changed.
-  - Mitigation: Log, surface message in SPA, allow retry later.
+  - Mitigation: Log, surface message in the Admin Web UI, allow retry later.
 
 ## Build/Test Failures
 
@@ -62,5 +62,4 @@
   - Risk: Build or install failure not surfaced clearly leads to confusion (“update did nothing”).
   - Mitigation:
     - Always log errors with a specific event ID / prefix (`qms_update_*`).
-    - Ensure SPA shows last job result (success/failure + brief reason).
-
+    - Ensure the Admin Web UI shows last job result (success/failure + brief reason).

@@ -34,7 +34,7 @@ The import path should:
   - Parses and validates entries without writing to disk.
   - Returns a summary of accepted, skipped, and invalid entries plus
     error details per line.
-- SPA/CLI:
+- Admin Web UI / CLI:
   - The admin UI or CLI can trigger imports and see dry-run results.
 
 ## Non-Goals
@@ -45,4 +45,3 @@ The import path should:
   batch operations with clear, summarized results.
 - Automated, implicit migrations at startup; imports are explicit,
   operator-driven actions.
-

@@ -7,25 +7,25 @@
 
 ## Workflow 1 – Check for Updates
 
-1. Admin opens the SPA and navigates to the **Config (TOML)** or **Health** tab.
+1. Admin opens the Admin Web UI and navigates to the **Config (TOML)** or **Health** tab.
 2. Admin clicks **Check for updates**.
 3. Server:
    - Reads the configured `updateBranch` (e.g., `release-1.2.x`) from config or a small manifest file.
    - Runs `git fetch origin` in the repo root.
    - Compares the local HEAD of `updateBranch` to `origin/updateBranch`.
-4. SPA displays:
+4. Admin Web UI displays:
    - Current branch and commit (short SHA).
    - Latest remote commit for the branch.
    - A boolean flag: `updateAvailable = true/false`.
 
-## Workflow 2 – Apply Update from SPA
+## Workflow 2 – Apply Update from the Admin Web UI
 
 1. Admin sees `updateAvailable = true` and clicks **Apply update**.
-2. SPA shows a confirmation dialog:
+2. Admin Web UI shows a confirmation dialog:
    - Explains that:
      - Config (`QuickMemoryServer.toml`) and data (`MemoryStores`) will not be touched.
      - The service will briefly restart.
-3. On confirmation, SPA issues `POST /admin/update/apply` with:
+3. On confirmation, the Admin Web UI issues `POST /admin/update/apply` with:
    - `mode = "apply"`.
    - Optional comment (for audit trail).
 4. Server enqueues an update job and immediately returns `202 Accepted` with a job identifier.
@@ -40,7 +40,7 @@
         - Preserve `QuickMemoryServer.toml`.
         - Never touch `MemoryStores`.
       - Start the service again.
-6. SPA polls `GET /admin/update/status` to show:
+6. Admin Web UI polls `GET /admin/update/status` to show:
    - `status`: pending / succeeded / failed.
    - `branch`, `fromCommit`, `toCommit`.
    - Last error message (if any).
@@ -48,11 +48,10 @@
 ## Workflow 3 – Validation-Only Check (Dry Run)
 
 1. Admin selects **Validate update** (or a “dry run” option).
-2. SPA POSTs `mode = "validate"` to `/admin/update/apply`.
+2. Admin Web UI POSTs `mode = "validate"` to `/admin/update/apply`.
 3. Server runs steps:
    - `git fetch/pull`, `dotnet build`, optional `dotnet test`.
    - **Does not** invoke the installer or restart the service.
-4. SPA shows the result:
+4. Admin Web UI shows the result:
    - “Update validated successfully; safe to apply.”
    - Or: “Validation failed: <build/test error>”.
-

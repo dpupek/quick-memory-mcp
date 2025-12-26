@@ -70,7 +70,7 @@ The latest recipes live in `docs/agent-usage.md` (copied alongside the binaries 
         UriTemplate = "resource://quick-memory/end-user-help")]
     public static Task<string> GetEndUserHelpAsync()
     {
-        var header = "# Quick Memory End-User Help\n\nSee the admin SPA Help tab for the rendered version.";
+        var header = "# Quick Memory End-User Help\n\nSee the Admin Web UI Help tab for the rendered version.";
         var path = Path.Combine(AppContext.BaseDirectory, "docs", "end-user-help.md");
         if (File.Exists(path))
         {
@@ -180,7 +180,7 @@ Keep it cross-session useful; never include credentials, tokens, connection stri
         UriTemplate = "resource://quick-memory/codex-workspace")]
     public static Task<string> GetCodexWorkspaceGuideAsync()
     {
-        var fallback = "# Codex Workspace Guide\n\nOpen the admin SPA Help tab to read the rendered version.";
+        var fallback = "# Codex Workspace Guide\n\nOpen the Admin Web UI Help tab to read the rendered version.";
         var path = Path.Combine(AppContext.BaseDirectory, "docs", "codex-workspace-guide.md");
         if (File.Exists(path))
         {

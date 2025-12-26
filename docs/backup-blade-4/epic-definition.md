@@ -1,6 +1,6 @@
 ## Epic: Backup Management Blade (Case #4)
 
-**Big idea**: Provide an admin-only SPA blade to configure backups (target path, schedules, retention) and monitor recent backup activity, reducing failed backups due to misconfiguration and making recovery audits visible.
+**Big idea**: Provide an admin-only Admin Web UI blade to configure backups (target path, schedules, retention) and monitor recent backup activity, reducing failed backups due to misconfiguration and making recovery audits visible.
 
 **Success criteria**
 - Admins can set and save backup target path (including UNC) and cron schedules via UI, with validation and write-probe feedback.

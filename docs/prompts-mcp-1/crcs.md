@@ -5,7 +5,7 @@
 - **Responsibilities**
   - Define a dedicated, system-level endpoint for curated prompts.
   - Ensure the storage path participates in normal backups.
-  - Mark the endpoint as locked/system so the SPA and APIs treat it as
+  - Mark the endpoint as locked/system so the Admin Web UI and APIs treat it as
     read-only for non-admin tiers.
 - **Collaborators**
   - `ServerOptions` / endpoint configuration binding.
@@ -31,7 +31,7 @@
   - `MemoryRouter` / `MemoryStore` for reading prompt entries.
   - `MemoryEntry` model for fields (id, title, body, tags, etc.).
 
-## Admin SPA (Prompts Authoring)
+## Admin Web UI (Prompts Authoring)
 
 - **Responsibilities**
   - Provide a way for admins to view and edit prompt entries in
@@ -41,4 +41,3 @@
 - **Collaborators**
   - Admin endpoints for listing/editing entries.
   - Help docs that describe prompt authoring conventions.
-

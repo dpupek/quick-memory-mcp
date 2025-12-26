@@ -46,7 +46,7 @@
   - `UpdateService`.
   - `ILogger`.
 
-## SPA Update Panel
+## Admin Web UI Update Panel
 
 - **Responsibilities**
   - Provide UI controls:
@@ -57,4 +57,3 @@
 - **Collaborators**
   - Admin update endpoints (`/admin/update/*`).
   - Existing Health/Config blades (for discovery and placement).
-

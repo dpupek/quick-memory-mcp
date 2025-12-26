@@ -125,7 +125,7 @@ args = [
 
 Workflow:
 
-1. Issue a project-limited API key in the SPA Users/Permissions blades.
+1. Issue a project-limited API key in the Admin Web UI (Users / Project Permissions).
 2. Export the key in your shell profile (or use a password manager that
    can inject environment variables):
    
@@ -147,14 +147,14 @@ Workflow:
 - Prefer environment variables for API keys (`${PR1_KEY}`) so the
   global file never needs to contain raw secrets.
 - If you must keep plaintext keys, ensure your workstation disk is
-  encrypted and rotate keys frequently from the SPA.
+  encrypted and rotate keys frequently from the Admin Web UI.
 
 ----------------------------------------------------------------------------
 
 ## 6. Quick checklist
 
 - [ ] Update `~/.codex/config.toml` with either the `mcp-proxy` or  `mcp-remote` block.
-- [ ] Create/rotate project-scoped API keys in the admin SPA.
+- [ ] Create/rotate project-scoped API keys in the Admin Web UI.
 - [ ] Export the API keys as environment variables before launching Codex (or use a credential manager).
 - [ ] Restart Codex so it picks up the new configuration.
 - [ ] Confirm `listProjects` shows only the endpoints your key should access.

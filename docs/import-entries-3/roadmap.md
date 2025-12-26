@@ -27,7 +27,7 @@
 - [x] Add a minimal admin SPI/CLI surface:
   - [x] `POST /admin/import/{endpoint}` HTTP route (Admin-only), or
   - [ ] Documented MCP tool usage for CLI-based imports.
-- [x] Optionally add a simple SPA panel:
+- [x] Optionally add a simple Admin Web UI panel:
   - [x] Text area/editor for content (Monaco-based).
   - [x] Mode + dryRun controls.
   - [x] Result summary display.

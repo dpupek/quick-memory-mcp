@@ -17,7 +17,7 @@
 
 ## Workflow 1 – Admin Curates a New Prompt
 
-1. Admin opens the SPA and navigates to the `qm-prompts` endpoint
+1. Admin opens the Admin Web UI and navigates to the `qm-prompts` endpoint
    (system/locked view).
 2. Creates a new entry with:
    - `kind = "prompt"`.
@@ -63,7 +63,7 @@
 1. Admin issues:
    - A project-scoped API key for normal memory usage (`pr-1-3-X`, etc.).
    - A broader key for operators that can access `qm-prompts` endpoints
-     directly via the SPA.
+     directly via the Admin Web UI.
 2. A normal agent key:
    - Can call `prompts/*` and use the recipes.
    - Cannot list or modify `qm-prompts` entries via `entries/*`.
@@ -71,4 +71,3 @@
    - Can edit prompt entries in `qm-prompts`.
    - Can still only delete them via the admin tier, respecting
      `isPermanent` protections.
-

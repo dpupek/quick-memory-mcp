@@ -32,7 +32,7 @@
 
 1. Admin or power user identifies one or more entries that should serve
    as cold-start recipes (e.g., “How to quickly reorient on PR 1.3.x”).
-2. In the SPA, they:
+2. In the Admin Web UI, they:
    - Edit the entry.
    - Add the tag `category:cold-start`.
    - Ensure `curationTier` is at least `curated`.
@@ -50,4 +50,3 @@
    - Explicitly calls out that no cold-start recipes are defined.
    - Proposes creating a new entry (or prompt) that can be tagged
      `category:cold-start` for future use.
-

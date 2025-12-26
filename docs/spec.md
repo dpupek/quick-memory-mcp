@@ -225,13 +225,13 @@ MemoryStores/
 
 ## Administrative Workflows
 1. **Manual Editing**: Update `entries.jsonl`, save; watchers reload stores, rebuild indexes, and log outcomes.
-2. **Administrative UI**: Backup scheduling, permissions, and endpoint metadata remain exposed through the SPA’s Projects/Users blades and their HTTP helper APIs rather than as MCP tools.
+2. **Administrative UI**: Backup scheduling, permissions, and endpoint metadata remain exposed through the Admin Web UI’s Projects/Users blades and their HTTP helper APIs rather than as MCP tools.
 3. **MCP Mutations**: Use `upsertEntry`/`patchEntry` to manage entity metadata; canonical/permanent guards enforce consistency.
 4. **Deployment**: Publish single-file `win-x64` executable; register via `sc create QuickMemoryServer binPath= "..." start= auto`.
 
 ## Admin Console & Configuration APIs
-- **SPA Shell**: The `/` route now serves a Bootstrap 5 vertical menu SPA that surfaces Overview/Projects/Entities/Users tabs, requires an API key login, and proxies every mutation through the existing MCP surface. The SPA displays `/metrics` links, `/health` snapshots, project metadata, entity search/edit flows, and user/permission management panels without needing an additional backend stack.
-- **Admin APIs**: Behind the SPA there are two lightweight helpers: `GET/POST/DELETE /admin/users` (manage user records and tiers) and `GET/POST /admin/permissions/{endpoint}` (assign endpoint-specific tiers). They persist to `QuickMemoryServer.toml` via `AdminConfigService`, trigger a configuration reload, and respect tier authorization (Admin only).
+- **Admin Web UI Shell**: The `/` route serves a Bootstrap 5 vertical-menu single-page app that surfaces Overview/Projects/Entities/Users tabs, requires an API key login, and proxies every mutation through the existing MCP surface. The Admin Web UI displays `/metrics` links, `/health` snapshots, project metadata, entity search/edit flows, and user/permission management panels without needing an additional backend stack.
+- **Admin APIs**: Behind the Admin Web UI there are two lightweight helpers: `GET/POST/DELETE /admin/users` (manage user records and tiers) and `GET/POST /admin/permissions/{endpoint}` (assign endpoint-specific tiers). They persist to `QuickMemoryServer.toml` via `AdminConfigService`, trigger a configuration reload, and respect tier authorization (Admin only).
 
 ## Non-Functional Considerations
 - **Performance**: Aim for <100 ms median search using cached indexes; async file IO; limit Lucene writer contention via background queue.

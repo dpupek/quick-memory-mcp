@@ -129,10 +129,10 @@ entries, and propose new entries when appropriate.
 | `id` | Stable identifier in the form `project:key`. Used as the primary key in JSONL, search results, relations, and MCP calls. If omitted during `upsertEntry`, the server generates `<project>:<guid>`, then you can use that ID for future updates/links. |
 | `project` | Logical store the entry belongs to (e.g., `projectA`). Must match the endpoint/key you call; the router uses it to pick the correct `MemoryStore` and to filter cross-project results. Defaults to the endpoint if left blank. |
 | `kind` | Category of memory (`note`, `fact`, `procedure`, `conversationTurn`, `timelineEvent`, `codeSnippet`, `decision`, `observation`, `question`, `task`, etc.). Used to drive UI hints and query semantics (e.g., agents can ask “only tasks” or “only timeline events”). |
-| `title` | Short human-readable label. Shown in SPA tables, search results, and graph visualizations; if empty the UI falls back to `id`, which is much harder to scan. |
+| `title` | Short human-readable label. Shown in Admin Web UI tables, search results, and graph visualizations; if empty the UI falls back to `id`, which is much harder to scan. |
 | `body` | The actual content of the memory. Can be plain text or a JSON object. When JSON, try to keep a consistent shape per `kind` (`steps` for procedures, `snippet` for code, etc.) so agents can parse/augment it safely. Changes to `body` drive embedding recomputation and can change search ranking. |
 | `bodyTypeHint` | Optional hint about how to interpret/render `body`. This is not used for validation; it exists to help editors/agents pick a syntax mode. Recommended values: `text`, `json`, `markdown`, `html`, `xml`, `yaml`, `toml`, `csv`. Use `markdown` for human-facing examples (especially code examples) so you can include descriptive text + fenced code blocks; reserve the structured formats (`json`/`xml`/`yaml`/`toml`/`csv`) for actual structured payloads rather than “examples of JSON/XML”. |
-| `tags` | Free-form labels used for faceted search (“only entries tagged `backup`”). The search engine indexes these separately, and the SPA tags editor exposes them directly. Use them for coarse-grained grouping across kinds (`ops`, `design`, `decision`). |
+| `tags` | Free-form labels used for faceted search (“only entries tagged `backup`”). The search engine indexes these separately, and the Admin Web UI tags editor exposes them directly. Use them for coarse-grained grouping across kinds (`ops`, `design`, `decision`). |
 | `keywords` | Optional, usually system- or tool-generated keywords (e.g., extracted phrases). They don’t drive any special logic today beyond search, so agents can ignore or populate them as needed. |
 | `relations` | Array of `{ type, targetId, weight? }` describing graph edges to other entries. `targetId` must be a valid `project:key`. `relatedEntries` and some UI flows use this to hop the knowledge graph (e.g., “see-also”, “dependency”). Use it when you want agents to follow curated connections instead of guessing links from text. |
 | `source` | `{ type, url, path, shard }` metadata pointing back to where this memory came from: HTTP API, local file, shard ID, etc. Useful for audit/troubleshooting (e.g., “regenerate from this path”) and for agents deciding whether a memory is authoritative or derived. |
@@ -211,7 +211,7 @@ Recommended flow for agents:
 - `resource://quick-memory/entry-fields` – MemoryEntry field reference (IDs, kinds, body, tags, relations, source, timestamps, TTL, tiers). The same table appears in `/admin/help/agent`.
 
 ## Tips
-- If auth fails, re-enter the API key; sessions persist in the SPA.
+- If auth fails, re-enter the API key; the Admin Web UI session typically persists across refresh until logout/expiry.
 - Keys/slugs must match `^[A-Za-z0-9_-]+$`; storage defaults to `global.storageBasePath` + key if omitted.
 - Use `listRecentEntries` for cold-start browsing; then `searchEntries` for precision.
 

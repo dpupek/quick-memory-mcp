@@ -472,7 +472,7 @@ public static object ColdStart(
 }
 
 [McpServerTool(Name = "health", Title = "Health report", ReadOnly = true)]
-[McpMeta("description", "Expose stores, uptime, and issue counts that the SPA surfaces.")]
+[McpMeta("description", "Expose stores, uptime, and issue counts that the Admin Web UI surfaces.")]
 [McpMeta("tier", "reader")]
 public static HealthReport GetHealth(HealthReporter healthReporter)
     {

@@ -32,7 +32,7 @@
 - [x] Update `docs/spec.md` to mention the `coldStart` tool and how it
       relates to `listRecentEntries`.
 
-## Phase 3 – SPA & UX (Optional)
+## Phase 3 – Admin Web UI & UX (Optional)
 
 - [ ] Add a small “Cold start preview” to the Entities tab:
   - [ ] A button that calls `coldStart` for the selected project.

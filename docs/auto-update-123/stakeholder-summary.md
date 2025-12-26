@@ -9,7 +9,7 @@
     - `QuickMemoryServer.toml` is preserved.
     - Updates only apply if the new build/test pipeline succeeds.
 - **Usage**
-  - Use the SPA to:
+  - Use the Admin Web UI to:
     - Check whether there is a newer release on the configured `release-x.y.z` branch.
     - Apply an update off-hours with a single click, watching status in the UI.
 
@@ -39,4 +39,3 @@
 - **Value**
   - Lower risk of breaking changes or partially applied updates disrupting MCP usage mid-session.
   - Confidence that updates are deployed in a consistent, tested way.
-

@@ -21,7 +21,7 @@
 - [ ] Add `GET /admin/update/status` that returns the last job result.
 - [ ] Ensure all three endpoints reuse existing Admin authorization logic.
 
-## Phase 3 – SPA Integration
+## Phase 3 – Admin Web UI Integration
 
 - [ ] Add an Update section to either **Config (TOML)** or **Health** tab:
   - [ ] Display current branch/commit and configured `updateBranch`.
@@ -44,4 +44,3 @@
 - [ ] Update `docs/admin-ui-help.md` with a short “Auto-update” section explaining the UI.
 - [ ] Update `docs/spec.md` in the “Admin Console & Configuration APIs” section to describe the update endpoints and constraints (config/data safety).
 - [ ] Optionally add a short blurb in `docs/end-user-help.md` or `resource://quick-memory/help` that explains update behavior for operators.
-
