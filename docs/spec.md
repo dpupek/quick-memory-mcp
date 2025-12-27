@@ -17,7 +17,7 @@
 ## Configuration & Authentication
 - Configuration stored in an INI/TOML file located alongside the service executable (e.g., `QuickMemoryServer.toml`).
 - File structure:
-  - `[global]`: service name, listening URLs, embedding model settings, backup cadence, optional backup target path.
+  - `[global]`: service name, listening URLs, logging level, embedding model settings, backup cadence, optional backup target path.
   - `[endpoint.projectA]`: `slug`, `name`, `description`, `storagePath`, optional shared inheritance flags.
   - `[users.alice]`: `apiKey`, `tier` (e.g., `admin`, `curator`, `reader`).
   - `[permissions.projectA]`: per-user tier overrides; multiple users can point at multiple endpoints.
@@ -181,20 +181,20 @@ MemoryStores/
 ## MCP Command Surface
 | Command | Description | Request Payload | Response Payload | Notes |
 |---------|-------------|-----------------|------------------|-------|
-| `listEntries` | Enumerate entries for a store (paged/filterable). | `{ "endpoint": "projA", "filter": { "tags": [], "tier": "curated" }, "page": { "size": 50, "cursor": null } }` | `{ "items": [MemoryEntrySummary], "nextCursor": null }` | Supports filtering by tags, `curationTier`, `kind`, time range. |
-| `getEntry` | Fetch full entry by ID. | `{ "id": "projA:7f3c..." }` | `{ "entry": MemoryEntry }` | Returns 404 if missing. |
-| `upsertEntry` | Create or update entry (full replacement). | `{ "entry": MemoryEntry }` | `{ "version": "etag", "updated": true }` | Validates schema version; canonical updates logged. |
-| `patchEntry` | Partial update (for curated/permanent toggles). | `{ "id": "...", "patch": { "curationTier": "canonical" } }` | `{ "entry": MemoryEntry }` | Enforces tier enum & bool toggles. |
-| `deleteEntry` | Remove entry (unless permanent). | `{ "id": "...", "force": false }` | `{ "deleted": true }` | Rejects if `isPermanent` true and `force` false. |
-| `searchEntries` | Hybrid keyword/vector search. | `{ "endpoint": "projA", "query": { "text": "...", "embedding": [..], "maxResults": 25, "includeShared": true } }` | `{ "results": [ScoredEntry] }` | Re-ranks with tier/confidence. |
-| `relatedEntries` | Graph traversal for cross references. | `{ "endpoint": "projA", "id": "...", "maxHops": 2 }` | `{ "nodes": [...], "edges": [...] }` | Optionally include shared store neighbors. |
-| `summaries` | Return precomputed or generated summaries. | `{ "endpoint": "projA", "ids": ["..."] }` | `{ "summaries": [{ "id": "...", "summary": "..." }] }` | Uses cached `summaries.json` when available. |
-| `listCurated` | List canonical/curated entries. | `{ "endpoint": "projA", "tier": "canonical" }` | `{ "items": [MemoryEntrySummary] }` | Shortcut building on `listEntries`. |
-| `bulkImport` | Append multiple entries at once. | `{ "endpoint": "projA", "entries": [MemoryEntry] }` | `{ "imported": 5, "skipped": 1 }` | Batches writes for atomicity. |
-| `health` | Report store/server status. | `{}` | `{ "status": "Healthy", "stores": [{ "name": "...", "entries": 1200, "loaded": true }] }` | Used by supervisors. |
-| `describe` | Return catalog of supported commands, required auth tiers, sample payloads. | `{}` | `{ "commands": [ { "name": "searchEntries", "tier": "reader", "requestSchema": {"text": "string"} } ], "kinds": [...], "docUrl": "/docs/agent-usage" }` | First-call hint for autonomous agents. |
-| `getUsageDoc` | Provide Markdown onboarding for agents. | `{ "format": "markdown" }` | `{ "content": "# Quick Memory Server..." }` | Mirrors `docs/agent-usage.md`; cache client-side. |
-| `backupStore` | Queue a differential/full backup for a store. | `{ "mode": "full" }` | `{ "queued": true, "mode": "Full" }` | Admin tier only; routes through `BackupService`. |
+| `listEntries` | Enumerate entries for a store (paged/filterable). | `{ "endpoint": "projA", "filter": { "tags": [], "tier": "curated" }, "page": { "size": 50, "cursor": null } }` | `{ "success": true, "data": { "items": [MemoryEntrySummary], "nextCursor": null }, ... }` | Supports filtering by tags, `curationTier`, `kind`, time range. |
+| `getEntry` | Fetch full entry by ID. | `{ "id": "projA:7f3c..." }` | `{ "success": true, "data": { "entry": MemoryEntry }, ... }` | Returns success=false on missing. |
+| `upsertEntry` | Create or update entry (full replacement). | `{ "entry": MemoryEntry }` | `{ "success": true, "data": { "updated": true, "id": "..." }, ... }` | Validates schema version; canonical updates logged. |
+| `patchEntry` | Partial update (for curated/permanent toggles). | `{ "id": "...", "patch": { "curationTier": "canonical" } }` | `{ "success": true, "data": { "updated": true }, ... }` | Enforces tier enum & bool toggles. |
+| `deleteEntry` | Remove entry (unless permanent). | `{ "id": "...", "force": false }` | `{ "success": true, "data": { "deleted": true }, ... }` | Rejects if `isPermanent` true and `force` false. |
+| `searchEntries` | Hybrid keyword/vector search. | `{ "endpoint": "projA", "query": { "text": "...", "embedding": [..], "maxResults": 25, "includeShared": true } }` | `{ "success": true, "data": { "results": [ScoredEntry] }, ... }` | Re-ranks with tier/confidence. |
+| `relatedEntries` | Graph traversal for cross references. | `{ "endpoint": "projA", "id": "...", "maxHops": 2 }` | `{ "success": true, "data": { "nodes": [...], "edges": [...] }, ... }` | Optionally include shared store neighbors. |
+| `summaries` | Return precomputed or generated summaries. | `{ "endpoint": "projA", "ids": ["..."] }` | `{ "success": true, "data": { "summaries": [{ "id": "...", "summary": "..." }] }, ... }` | Uses cached `summaries.json` when available. |
+| `listCurated` | List canonical/curated entries. | `{ "endpoint": "projA", "tier": "canonical" }` | `{ "success": true, "data": { "items": [MemoryEntrySummary] }, ... }` | Shortcut building on `listEntries`. |
+| `bulkImport` | Append multiple entries at once. | `{ "endpoint": "projA", "entries": [MemoryEntry] }` | `{ "success": true, "data": { "imported": 5, "skipped": 1 }, ... }` | Batches writes for atomicity. |
+| `health` | Report store/server status. | `{}` | `{ "success": true, "data": { "status": "Healthy", "stores": [{ "name": "...", "entries": 1200, "loaded": true }] }, ... }` | Used by supervisors. |
+| `describe` | Return catalog of supported commands, required auth tiers, sample payloads. | `{}` | `{ "success": true, "data": { "commands": [ { "name": "searchEntries", "tier": "reader", "requestSchema": {"text": "string"} } ], "kinds": [...], "docUrl": "/docs/agent-usage" }, ... }` | First-call hint for autonomous agents. |
+| `getUsageDoc` | Provide Markdown onboarding for agents. | `{ "format": "markdown" }` | `{ "success": true, "data": { "content": "# Quick Memory Server..." }, ... }` | Mirrors `docs/agent-usage.md`; cache client-side. |
+| `backupStore` | Queue a differential/full backup for a store. | `{ "mode": "full" }` | `{ "success": true, "data": { "queued": true, "mode": "Full" }, ... }` | Admin tier only; routes through `BackupService`. |
 
 ## CRC Tables
 ### Core Entities

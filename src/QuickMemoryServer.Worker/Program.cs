@@ -52,13 +52,18 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
     var auditDbPath = Path.Combine(logDir, "quick-memory-audit.db");
     Directory.CreateDirectory(logDir);
 
+    var configuredLevel = context.Configuration["global:logLevel"]
+        ?? context.Configuration["Global:LogLevel"];
+    var minimumLevel = ParseLogLevel(configuredLevel);
+
     loggerConfiguration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
+        .MinimumLevel.Is(minimumLevel)
         .WriteTo.Console()
         .WriteTo.File(Path.Combine(logDir, "quick-memory-server-.log"), rollingInterval: RollingInterval.Day,
-            restrictedToMinimumLevel: LogEventLevel.Information,
+            restrictedToMinimumLevel: minimumLevel,
             retainedFileCountLimit: 7);
 
     loggerConfiguration
@@ -228,17 +233,11 @@ builder.Services.AddMcpServer()
             var apiKey = ExtractApiKey(httpContext);
             if (string.IsNullOrWhiteSpace(apiKey))
             {
-                return await Task.FromResult(new CallToolResult
-                {
-                    IsError = true,
-                    Content = new List<ContentBlock>
-                    {
-                        new TextContentBlock
-                        {
-                            Text = "missing-api-key: include X-Api-Key header with a valid Quick Memory key"
-                        }
-                    }
-                });
+                return await Task.FromResult(CreateCallToolError(
+                    "missing-api-key",
+                    "missing-api-key: include X-Api-Key header with a valid Quick Memory key",
+                    "Set the X-Api-Key header to a valid Quick Memory key and retry.",
+                    null));
             }
 
             var toolName = context.Params.Name;
@@ -246,7 +245,11 @@ builder.Services.AddMcpServer()
 
             if (!IsGlobalTool(toolName) && !TryGetEndpoint(context.Params.Arguments, out var endpoint))
             {
-                return CreateCallToolError("missing-endpoint");
+                return CreateCallToolError(
+                    "missing-endpoint",
+                    "missing-endpoint: include endpoint (or project) argument for this tool.",
+                    "Call listProjects to see valid endpoint keys and retry.",
+                    null);
             }
 
             if (IsGlobalTool(toolName))
@@ -273,7 +276,11 @@ builder.Services.AddMcpServer()
 
                 if (authorizedEndpoint is null)
                 {
-                    return CreateCallToolError("unauthorized");
+                    return CreateCallToolError(
+                        "unauthorized",
+                        "unauthorized: api key is not permitted for any endpoint.",
+                        "Verify your X-Api-Key header or ask an Admin to grant access.",
+                        null);
                 }
 
                 context.Items[McpAuthorizationContext.ApiKeyItem] = apiKey;
@@ -286,22 +293,21 @@ builder.Services.AddMcpServer()
 
             if (!TryGetEndpoint(context.Params.Arguments, out var projectEndpoint))
             {
-                return CreateCallToolError("missing-endpoint");
+                return CreateCallToolError(
+                    "missing-endpoint",
+                    "missing-endpoint: include endpoint (or project) argument for this tool.",
+                    "Call listProjects to see valid endpoint keys and retry.",
+                    null);
             }
 
             if (!authorizer.TryAuthorize(apiKey, projectEndpoint, out var userScoped, out var tierScoped))
             {
-                return await Task.FromResult(new CallToolResult
-                {
-                    IsError = true,
-                    Content = new List<ContentBlock>
-                    {
-                        new TextContentBlock
-                        {
-                            Text = $"unauthorized: api key is not permitted for endpoint '{projectEndpoint}'. Verify the X-Api-Key header and confirm your user has access in the Admin Web UI (Projects > permissions). If the endpoint key is unknown, call listProjects with a valid key to confirm it."
-                        }
-                    }
-                });
+                var message = $"unauthorized: api key is not permitted for endpoint '{projectEndpoint}'. Verify the X-Api-Key header and confirm your user has access in the Admin Web UI (Projects > permissions). If the endpoint key is unknown, call listProjects with a valid key to confirm it.";
+                return await Task.FromResult(CreateCallToolError(
+                    "unauthorized",
+                    message,
+                    "Verify the endpoint key and your API key permissions, then retry.",
+                    new { endpoint = projectEndpoint }));
             }
 
             context.Items[McpAuthorizationContext.ApiKeyItem] = apiKey;
@@ -318,6 +324,21 @@ var app = builder.Build();
 var observabilityMetrics = app.Services.GetRequiredService<ObservabilityMetrics>();
 var healthMetricsStore = app.Services.GetRequiredService<HealthMetricsStore>();
 
+var executablePath = Environment.ProcessPath ?? assembly?.Location ?? "unknown";
+DateTimeOffset? executableLastWriteUtc = null;
+if (!string.IsNullOrWhiteSpace(executablePath) && File.Exists(executablePath))
+{
+    executableLastWriteUtc = File.GetLastWriteTimeUtc(executablePath);
+}
+
+Log.Information("QuickMemoryServer startup {Utc} version={Version} httpUrl={HttpUrl} logLevel={LogLevel} exe={ExePath} exeLastWriteUtc={ExeLastWriteUtc}",
+    DateTimeOffset.UtcNow,
+    infoVersion,
+    httpUrl,
+    builder.Configuration["global:logLevel"] ?? builder.Configuration["Global:LogLevel"] ?? "Debug",
+    executablePath,
+    executableLastWriteUtc);
+
 // Startup banner with version info reaches configured Serilog sinks.
 Log.Information("Starting {ServiceName} version {Version} (informational {InfoVersion}) listening at {HttpUrl} (BaseDir: {BaseDir})",
     serviceName, assemblyVersion, infoVersion, httpUrl, AppContext.BaseDirectory);
@@ -325,6 +346,25 @@ Log.Information("Starting {ServiceName} version {Version} (informational {InfoVe
 EnsureBuiltInProjectsAsync(app.Services).GetAwaiter().GetResult();
 
 app.UseSerilogRequestLogging();
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/mcp"))
+    {
+        var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("McpRequest");
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            var (endpoint, command) = ResolveMcpLabels(context.Request.Path);
+            logger.LogDebug("MCP request start {Method} {Path} endpoint={Endpoint} command={Command}",
+                context.Request.Method,
+                context.Request.Path.Value,
+                endpoint,
+                command);
+        }
+    }
+
+    await next();
+});
 app.UseSession();
 app.Use(async (context, next) =>
 {
@@ -2000,19 +2040,46 @@ static (string endpoint, string command) ResolveMcpLabels(PathString remaining)
     return (endpoint, command);
 }
 
-static CallToolResult CreateCallToolError(string message)
+static CallToolResult CreateCallToolError(string code, string message, string? hint = null, object? details = null)
 {
+    var payload = JsonSerializer.Serialize(new
+    {
+        success = false,
+        message,
+        error = new
+        {
+            code,
+            message,
+            hint,
+            details
+        },
+        data = (object?)null,
+        notes = Array.Empty<string>()
+    });
+
     return new CallToolResult
     {
-        IsError = true,
+        IsError = false,
         Content = new List<ContentBlock>
         {
             new TextContentBlock
             {
-                Text = message
+                Text = payload
             }
         }
     };
+}
+
+static LogEventLevel ParseLogLevel(string? value)
+{
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        return LogEventLevel.Debug;
+    }
+
+    return Enum.TryParse<LogEventLevel>(value, ignoreCase: true, out var parsed)
+        ? parsed
+        : LogEventLevel.Debug;
 }
 
 static string? ExtractApiKey(HttpContext? httpContext)

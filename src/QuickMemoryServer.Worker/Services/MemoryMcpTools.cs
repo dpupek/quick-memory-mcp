@@ -41,7 +41,7 @@ public static object SearchEntries(
             : true;
         var includeShared = request.IncludeShared ?? includeSharedDefault;
 
-        if (router.ResolveStore(endpoint) is not MemoryStore primaryStore)
+        if (!router.TryResolveStore(endpoint, out var primaryStore))
         {
             return EndpointNotAvailable(endpoint, optionsMonitor);
         }
@@ -49,7 +49,7 @@ public static object SearchEntries(
         var stores = new List<MemoryStore> { primaryStore };
         if (includeShared && !string.Equals(endpoint, "shared", StringComparison.OrdinalIgnoreCase))
         {
-            if (router.ResolveStore("shared") is MemoryStore sharedStore)
+            if (router.TryResolveStore("shared", out var sharedStore))
             {
                 stores.Add(sharedStore);
             }
@@ -86,7 +86,7 @@ public static object SearchEntries(
             .Cast<SearchEntryResult>()
             .ToList();
 
-        return new SearchEntriesResponse(response);
+        return SuccessResult(new SearchEntriesResponse(response));
     }
 
 [McpServerTool(Name = "relatedEntries", Title = "Find related entries", ReadOnly = true)]
@@ -101,7 +101,7 @@ public static object RelatedEntries(
     {
         if (request is null || string.IsNullOrWhiteSpace(request.Id))
         {
-            return ErrorResult("missing-id");
+            return ErrorResult("missing-id: provide the entry id to resolve related nodes.");
         }
 
         var maxHops = request.MaxHops.GetValueOrDefault(2);
@@ -110,7 +110,7 @@ public static object RelatedEntries(
             maxHops = 1;
         }
 
-        if (router.ResolveStore(endpoint) is not MemoryStore primaryStore)
+        if (!router.TryResolveStore(endpoint, out var primaryStore))
         {
             return EndpointNotAvailable(endpoint, optionsMonitor);
         }
@@ -119,7 +119,7 @@ public static object RelatedEntries(
         var stores = new List<MemoryStore> { primaryStore };
         if (includeShared && !string.Equals(endpoint, "shared", StringComparison.OrdinalIgnoreCase))
         {
-            if (router.ResolveStore("shared") is MemoryStore sharedStore)
+            if (router.TryResolveStore("shared", out var sharedStore))
             {
                 stores.Add(sharedStore);
             }
@@ -142,7 +142,7 @@ public static object RelatedEntries(
 
         var edges = relatedIds.Select(id => new RelatedEntryEdge(request.Id, id)).ToList();
 
-        return new RelatedEntriesResponse(nodes, edges);
+        return SuccessResult(new RelatedEntriesResponse(nodes, edges));
     }
 
 [McpServerTool(Name = "getEntry", Title = "Get entry details", ReadOnly = true)]
@@ -154,7 +154,7 @@ public static object GetEntry(
         MemoryRouter router,
         IOptionsMonitor<ServerOptions> optionsMonitor)
     {
-        if (router.ResolveStore(endpoint) is not MemoryStore store)
+        if (!router.TryResolveStore(endpoint, out var store))
         {
             return EndpointNotAvailable(endpoint, optionsMonitor);
         }
@@ -162,10 +162,10 @@ public static object GetEntry(
         var entry = store.FindEntry(id);
         if (entry is null)
         {
-            return ErrorResult("not-found");
+            return ErrorResult("not-found: entry id was not found in the selected endpoint.");
         }
 
-        return entry;
+        return SuccessResult(entry);
     }
 
 [McpServerTool(Name = "listEntries", Title = "List all entries", ReadOnly = true)]
@@ -176,12 +176,12 @@ public static object ListEntries(
         MemoryRouter router,
         IOptionsMonitor<ServerOptions> optionsMonitor)
     {
-        if (router.ResolveStore(endpoint) is not MemoryStore store)
+        if (!router.TryResolveStore(endpoint, out var store))
         {
             return EndpointNotAvailable(endpoint, optionsMonitor);
         }
 
-        return store.Snapshot();
+        return SuccessResult(store.Snapshot());
     }
 
 [McpServerTool(Name = "listRecentEntries", Title = "List recent entries", ReadOnly = true)]
@@ -193,7 +193,7 @@ public static object ListRecentEntries(
         MemoryRouter router,
         IOptionsMonitor<ServerOptions> optionsMonitor)
     {
-        if (router.ResolveStore(endpoint) is not MemoryStore store)
+        if (!router.TryResolveStore(endpoint, out var store))
         {
             return EndpointNotAvailable(endpoint, optionsMonitor);
         }
@@ -211,7 +211,7 @@ public static object ListRecentEntries(
             })
             .ToArray();
 
-        return new { results = recent };
+        return SuccessResult(new { results = recent });
     }
 
 [McpServerTool(Name = "upsertEntry", Title = "Upsert entry")]
@@ -253,21 +253,16 @@ public static async Task<object> UpsertEntry(
         var tier = McpAuthorizationContext.GetTier(context);
         if (entry.IsPermanent && tier != PermissionTier.Admin)
         {
-            return ErrorResult("permanent entries require admin tier; omit isPermanent or ask an Admin-tier user to create or update this entry.");
+            return ErrorResult("forbidden: permanent entries require admin tier; omit isPermanent or ask an Admin-tier user to create or update this entry.");
         }
 
-        if (router.ResolveStore(endpoint) is not MemoryStore store)
+        if (!router.TryResolveStore(endpoint, out var store))
         {
             return EndpointNotAvailable(endpoint, optionsMonitor);
         }
 
         await store.UpsertAsync(entry, cancellationToken);
-        if (!string.IsNullOrWhiteSpace(projectNote))
-        {
-            return new { updated = true, id = entry.Id, notes = new[] { projectNote } };
-        }
-
-        return new { updated = true, id = entry.Id };
+        return SuccessResult(new { updated = true, id = entry.Id }, notes: string.IsNullOrWhiteSpace(projectNote) ? null : new[] { projectNote });
     }
 
 [McpServerTool(Name = "patchEntry", Title = "Patch entry")]
@@ -282,7 +277,7 @@ public static async Task<object> UpsertEntry(
         RequestContext<CallToolRequestParams> context,
         CancellationToken cancellationToken)
     {
-        if (router.ResolveStore(endpoint) is not MemoryStore store)
+        if (!router.TryResolveStore(endpoint, out var store))
         {
             return EndpointNotAvailable(endpoint, optionsMonitor);
         }
@@ -290,7 +285,7 @@ public static async Task<object> UpsertEntry(
         var existing = store.FindEntry(id);
         if (existing is null)
         {
-            return ErrorResult("not-found");
+            return ErrorResult("not-found: entry id was not found in the selected endpoint.");
         }
 
         var relationsError = ValidateRelations(patch.Relations);
@@ -333,11 +328,11 @@ public static async Task<object> UpsertEntry(
         var tier = McpAuthorizationContext.GetTier(context);
         if (updated.IsPermanent && tier != PermissionTier.Admin)
         {
-            return ErrorResult("permanent entries require admin tier; omit isPermanent or ask an Admin-tier user to update this entry.");
+            return ErrorResult("forbidden: permanent entries require admin tier; omit isPermanent or ask an Admin-tier user to update this entry.");
         }
 
         await store.UpsertAsync(updated, cancellationToken);
-        return new { updated = true };
+        return SuccessResult(new { updated = true });
     }
 
 [McpServerTool(Name = "deleteEntry", Title = "Delete entry")]
@@ -358,7 +353,7 @@ public static async Task<object> DeleteEntry(
             return ErrorResult("prompt-delete-disallowed: prompts in prompts-repository should be retired or edited, not hard-deleted.");
         }
 
-        if (router.ResolveStore(endpoint) is not MemoryStore store)
+        if (!router.TryResolveStore(endpoint, out var store))
         {
             return EndpointNotAvailable(endpoint, optionsMonitor);
         }
@@ -371,10 +366,10 @@ public static async Task<object> DeleteEntry(
             var deleted = await store.DeleteAsync(id, permissionWhenForced, cancellationToken);
             if (!deleted)
             {
-                return ErrorResult("not-found");
+                return ErrorResult("not-found: entry id was not found in the selected endpoint.");
             }
 
-            return new { deleted = true };
+            return SuccessResult(new { deleted = true });
         }
         catch (InvalidOperationException ex)
         {
@@ -396,7 +391,7 @@ public static async Task<object> RequestBackup(
         var tier = McpAuthorizationContext.GetTier(context);
         if (tier != PermissionTier.Admin)
         {
-            return ErrorResult("backup operations require admin tier; ask an Admin-tier user to invoke requestBackup or adjust your tier.");
+            return ErrorResult("forbidden: backup operations require admin tier; ask an Admin-tier user to invoke requestBackup or adjust your tier.");
         }
 
         var mode = Enum.TryParse<BackupMode>(payload.Mode ?? "Differential", true, out var parsed)
@@ -404,13 +399,13 @@ public static async Task<object> RequestBackup(
             : BackupMode.Differential;
 
         await backupService.RequestBackupAsync(endpoint, mode, cancellationToken, McpAuthorizationContext.GetUser(context) ?? "mcp");
-        return new { queued = true, mode = mode.ToString() };
+        return SuccessResult(new { queued = true, mode = mode.ToString() });
     }
 
 [McpServerTool(Name = "listProjects", Title = "List endpoints", ReadOnly = true)]
 [McpMeta("description", "Return metadata for configured endpoints and their storage settings.")]
 [McpMeta("tier", "reader")]
-public static ListProjectsResponse ListProjects(IOptionsMonitor<ServerOptions> optionsMonitor)
+public static object ListProjects(IOptionsMonitor<ServerOptions> optionsMonitor)
     {
         var endpoints = optionsMonitor.CurrentValue.Endpoints.Select(entry =>
             new EndpointSummary(
@@ -423,7 +418,7 @@ public static ListProjectsResponse ListProjects(IOptionsMonitor<ServerOptions> o
                 entry.Value.IncludeInSearchByDefault))
             .ToList();
 
-        return new ListProjectsResponse(endpoints);
+        return SuccessResult(new ListProjectsResponse(endpoints));
     }
 
 [McpServerTool(Name = "coldStart", Title = "Cold start snapshot", ReadOnly = true)]
@@ -435,10 +430,10 @@ public static object ColdStart(
     IOptionsMonitor<ServerOptions> optionsMonitor,
     string? epicSlug = null)
 {
-    if (router.ResolveStore(endpoint) is not MemoryStore store)
-    {
-        return EndpointNotAvailable(endpoint, optionsMonitor);
-    }
+        if (!router.TryResolveStore(endpoint, out var store))
+        {
+            return EndpointNotAvailable(endpoint, optionsMonitor);
+        }
 
     var snapshot = store.Snapshot();
 
@@ -450,7 +445,7 @@ public static object ColdStart(
 
     if (includeShared && !string.Equals(endpoint, "shared", StringComparison.OrdinalIgnoreCase))
     {
-        if (router.ResolveStore("shared") is MemoryStore sharedStore)
+        if (router.TryResolveStore("shared", out var sharedStore))
         {
             coldStartSource = coldStartSource.Concat(sharedStore.Snapshot());
         }
@@ -487,30 +482,30 @@ public static object ColdStart(
         .Take(20)
         .ToArray();
 
-    return new ColdStartResponse(
+    return SuccessResult(new ColdStartResponse(
         Endpoint: endpoint,
         EpicSlug: epicSlug,
         ColdStartEntries: coldStartEntries,
         RecentEntries: recentEntries,
-        RecentAllSlugsLast24hCount: recentAllSlugsLast24hCount);
+        RecentAllSlugsLast24hCount: recentAllSlugsLast24hCount));
 }
 
 [McpServerTool(Name = "health", Title = "Health report", ReadOnly = true)]
 [McpMeta("description", "Expose stores, uptime, and issue counts that the Admin Web UI surfaces.")]
 [McpMeta("tier", "reader")]
-public static HealthReport GetHealth(HealthReporter healthReporter)
+public static object GetHealth(HealthReporter healthReporter)
     {
-        return healthReporter.GetReport();
+        return SuccessResult(healthReporter.GetReport());
     }
 
 [McpServerTool(Name = "listPromptTemplates", Title = "List curated prompt templates", ReadOnly = true)]
 [McpMeta("description", "List curated MCP prompt templates backed by entries in the prompts-repository endpoint.")]
 [McpMeta("tier", "reader")]
-public static PromptListResponse ListPromptTemplates(MemoryRouter router)
+public static object ListPromptTemplates(MemoryRouter router)
 {
-    if (router.ResolveStore(PromptsEndpointKey) is not MemoryStore store)
+    if (!router.TryResolveStore(PromptsEndpointKey, out var store))
     {
-        return new PromptListResponse(Array.Empty<PromptListItem>());
+        return ErrorResult("unknown-endpoint: prompts endpoint is not available.");
     }
 
     var entries = store.Snapshot()
@@ -547,7 +542,7 @@ public static PromptListResponse ListPromptTemplates(MemoryRouter router)
             Arguments: args));
     }
 
-    return new PromptListResponse(prompts);
+    return SuccessResult(new PromptListResponse(prompts));
 }
 
 [McpServerTool(Name = "getPromptTemplate", Title = "Get a curated prompt template", ReadOnly = true)]
@@ -560,12 +555,12 @@ public static object GetPromptTemplate(
 {
     if (string.IsNullOrWhiteSpace(name))
     {
-        return ErrorResult("prompt-name-required");
+        return ErrorResult("prompt-name-required: supply the prompt name.");
     }
 
-    if (router.ResolveStore(PromptsEndpointKey) is not MemoryStore store)
+    if (!router.TryResolveStore(PromptsEndpointKey, out var store))
     {
-        return ErrorResult("prompts-repository-not-configured");
+        return ErrorResult("unknown-endpoint: prompts endpoint is not available.");
     }
 
     var entry = store.Snapshot()
@@ -573,12 +568,12 @@ public static object GetPromptTemplate(
 
     if (entry is null)
     {
-        return ErrorResult("prompt-not-found");
+        return ErrorResult("prompt-not-found: prompt entry was not found.");
     }
 
     if (!TryGetPromptBody(entry, out var text))
     {
-        return ErrorResult("prompt-body-missing");
+        return ErrorResult("prompt-body-missing: prompt entry has no body.");
     }
 
     if (!TryExtractPromptArgs(text, out var args, out var templateBody))
@@ -636,32 +631,57 @@ public static object GetPromptTemplate(
                 })
         });
 
-    return response;
+    return SuccessResult(response);
 }
 
-    private static CallToolResult ErrorResult(string message)
+    private static object SuccessResult(object? data, string? message = null, IEnumerable<string>? notes = null)
     {
-        return new CallToolResult
+        return new
         {
-            IsError = true,
-            Content = new List<ContentBlock>
-            {
-                new TextContentBlock
-                {
-                    Text = message
-                }
-            }
+            success = true,
+            message,
+            error = (object?)null,
+            data,
+            notes = notes?.ToArray() ?? Array.Empty<string>()
         };
     }
 
-    private static CallToolResult EndpointNotAvailable(string endpoint, IOptionsMonitor<ServerOptions> optionsMonitor)
+    private static object ErrorResult(string message, string? hint = null, object? details = null)
+    {
+        var code = ParseErrorCode(message);
+        return ErrorResult(code, message, hint, details);
+    }
+
+    private static object ErrorResult(string code, string message, string? hint, object? details)
+    {
+        return new
+        {
+            success = false,
+            message,
+            error = new
+            {
+                code,
+                message,
+                hint,
+                details
+            },
+            data = (object?)null,
+            notes = Array.Empty<string>()
+        };
+    }
+
+    private static object EndpointNotAvailable(string endpoint, IOptionsMonitor<ServerOptions> optionsMonitor)
     {
         var options = optionsMonitor.CurrentValue;
         var endpoints = options.Endpoints;
 
         if (endpoints.Count == 0)
         {
-            return ErrorResult($"unknown-endpoint: '{endpoint}' is not configured. No endpoints are configured in QuickMemoryServer.toml.");
+            return ErrorResult(
+                "unknown-endpoint",
+                $"unknown-endpoint: '{endpoint}' is not configured. No endpoints are configured in QuickMemoryServer.toml.",
+                "Add endpoints to QuickMemoryServer.toml or call listProjects to confirm available keys.",
+                null);
         }
 
         var match = endpoints
@@ -686,7 +706,27 @@ public static object GetPromptTemplate(
         message += " The tool expects the endpoint key, not the slug or display name.";
         message += " If you expected access to a different endpoint, verify your API key and project permissions in the Admin Web UI.";
 
-        return ErrorResult(message);
+        return ErrorResult(
+            "unknown-endpoint",
+            message,
+            "Call listProjects to confirm the endpoint key and retry.",
+            new { availableKeys = knownKeys });
+    }
+
+    private static string ParseErrorCode(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return "error";
+        }
+
+        var idx = message.IndexOf(':');
+        if (idx <= 0)
+        {
+            return "error";
+        }
+
+        return message[..idx].Trim();
     }
 
     public sealed record SearchEntriesResponse(

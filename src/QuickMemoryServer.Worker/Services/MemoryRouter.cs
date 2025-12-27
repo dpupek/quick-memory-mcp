@@ -20,9 +20,21 @@ public sealed class MemoryRouter
 
     public IMemoryStore ResolveStore(string endpointKey)
     {
+        if (TryResolveStore(endpointKey, out var store))
+        {
+            return store;
+        }
+
+        throw new KeyNotFoundException($"Endpoint '{endpointKey}' is not defined.");
+    }
+
+    public bool TryResolveStore(string endpointKey, out MemoryStore store)
+    {
+        store = null!;
+
         if (string.IsNullOrWhiteSpace(endpointKey))
         {
-            throw new ArgumentException("Endpoint key is required.", nameof(endpointKey));
+            return false;
         }
 
         var options = _optionsMonitor.CurrentValue;
@@ -30,10 +42,11 @@ public sealed class MemoryRouter
         if (options.Endpoints.ContainsKey(endpointKey) ||
             string.Equals(endpointKey, "shared", StringComparison.OrdinalIgnoreCase))
         {
-            return _factory.GetOrCreate(endpointKey);
+            store = (MemoryStore)_factory.GetOrCreate(endpointKey);
+            return true;
         }
 
         _logger.LogWarning("Attempted to resolve unknown endpoint {Endpoint}", endpointKey);
-        throw new KeyNotFoundException($"Endpoint '{endpointKey}' is not defined.");
+        return false;
     }
 }

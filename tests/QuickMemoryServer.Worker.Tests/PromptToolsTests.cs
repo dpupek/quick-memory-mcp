@@ -60,9 +60,7 @@ public sealed class PromptToolsTests : IDisposable
         #endregion
 
         #region Assert
-        var error = Assert.IsType<CallToolResult>(result);
-        Assert.True(error.IsError);
-        Assert.Contains("invalid prompt-args block", error.Content.OfType<TextContentBlock>().First().Text);
+        AssertError(result, "invalid prompt-args block");
         #endregion
     }
 
@@ -85,9 +83,7 @@ public sealed class PromptToolsTests : IDisposable
         #endregion
 
         #region Assert
-        var error = Assert.IsType<CallToolResult>(result);
-        Assert.True(error.IsError);
-        Assert.Contains("missing-arguments", error.Content.OfType<TextContentBlock>().First().Text);
+        AssertError(result, "missing-arguments");
         #endregion
     }
 
@@ -123,15 +119,39 @@ public sealed class PromptToolsTests : IDisposable
         #endregion
 
         #region Assert
-        var error = Assert.IsType<CallToolResult>(result);
-        Assert.True(error.IsError);
-        Assert.Contains("admin tier", error.Content.OfType<TextContentBlock>().First().Text);
+        AssertError(result, "admin tier");
         #endregion
     }
 
     public void Dispose()
     {
         _ctx.Dispose();
+    }
+
+    private static void AssertError(object result, string contains)
+    {
+        Assert.NotNull(result);
+        var type = result.GetType();
+        var successProp = type.GetProperty("success");
+        var errorProp = type.GetProperty("error");
+        var messageProp = type.GetProperty("message");
+
+        Assert.NotNull(successProp);
+        Assert.NotNull(errorProp);
+        Assert.False((bool)(successProp!.GetValue(result) ?? true));
+
+        var messageValue = messageProp?.GetValue(result)?.ToString();
+        if (!string.IsNullOrWhiteSpace(messageValue))
+        {
+            Assert.Contains(contains, messageValue);
+            return;
+        }
+
+        var errorValue = errorProp!.GetValue(result);
+        Assert.NotNull(errorValue);
+        var errorMessageProp = errorValue!.GetType().GetProperty("message");
+        var errorMessage = errorMessageProp?.GetValue(errorValue)?.ToString() ?? string.Empty;
+        Assert.Contains(contains, errorMessage);
     }
 }
 

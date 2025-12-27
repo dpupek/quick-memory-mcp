@@ -64,6 +64,31 @@ time in a repo, use this flow to “prime” it before doing real work:
 > `docs/codex-workspace-guide.md` or
 > `resource://quick-memory/codex-workspace`.
 
+## Response Envelope (All MCP tools)
+Every MCP tool returns the same envelope shape:
+
+```
+{
+  "success": true,
+  "message": null,
+  "error": null,
+  "data": { ...tool payload... },
+  "notes": []
+}
+```
+
+Errors return:
+
+```
+{
+  "success": false,
+  "message": "invalid-entry: ...",
+  "error": { "code": "invalid-entry", "message": "...", "hint": "...", "details": { ... } },
+  "data": null,
+  "notes": []
+}
+```
+
 ## Common Payload Shapes
 - **Relations:** array of `{ "type": "ref", "targetId": "project:key" }`.
 - **Source metadata:** object `{ "type": "api", "url": "https://...", "path": "...", "shard": "..." }`.
@@ -91,7 +116,7 @@ upsertEntry {
   }
 }
 ```
-Notes: `entry.project` is deprecated/ignored; permanent entries require Admin.
+Notes: `entry.project` is deprecated/ignored; permanent entries require Admin. Successful responses appear under `data` in the response envelope.
 
 ### Patch an entry
 `patchEntry { endpoint, id, title?, tags?, curationTier?, relations?, source? }`

@@ -66,6 +66,8 @@ public sealed class GlobalOptions
 
     public string HttpUrl { get; set; } = "http://localhost:5080";
 
+    public string LogLevel { get; set; } = "Debug";
+
     public string EmbeddingModel { get; set; } = "sentence-transformers/all-MiniLM-L6-v2";
 
     public int EmbeddingDims { get; set; } = 384;

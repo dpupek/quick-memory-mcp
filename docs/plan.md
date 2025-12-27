@@ -44,6 +44,7 @@
 - [x] **Task 8.7:** Fix Streamable MCP `/mcp` GET route ambiguity that caused SSE disconnects (remove duplicate GET handler; see GitHub #5).
 - [x] **Task 8.8:** Document direct Codex Streamable HTTP config (rmcp client + headers) and note `mcp-proxy` as optional in user docs.
 - [x] **Task 8.9:** Deprecate `entry.project` (ignored on ingest, not persisted) and return actionable endpoint errors (unknown endpoint + auth guidance).
+- [x] **Task 8.10:** Normalize MCP responses with a standard envelope, add config-driven debug logging for MCP requests, and prevent unknown endpoint exceptions from bubbling out.
 
 ## Phase 9 – Embedded Admin Web UI
 - [x] Reload blade content from the server whenever switching tabs (Overview/Projects/Entities/Users/Help/Health) via per-tab view controllers.

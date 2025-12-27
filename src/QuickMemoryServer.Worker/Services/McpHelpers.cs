@@ -33,16 +33,9 @@ internal static class McpHelpers
         var project = id.Contains(':') ? id.Split(':', 2)[0] : null;
         if (!string.IsNullOrWhiteSpace(project))
         {
-            try
+            if (router.TryResolveStore(project, out var projectStore))
             {
-                if (router.ResolveStore(project) is MemoryStore projectStore)
-                {
-                    return projectStore.FindEntry(id);
-                }
-            }
-            catch
-            {
-                // ignore resolution failures
+                return projectStore.FindEntry(id);
             }
         }
 

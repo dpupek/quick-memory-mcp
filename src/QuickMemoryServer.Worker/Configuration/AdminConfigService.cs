@@ -327,6 +327,7 @@ public sealed class AdminConfigService
         sb.AppendLine("[global]");
         AppendString(sb, "serviceName", global.ServiceName);
         AppendString(sb, "httpUrl", global.HttpUrl);
+        AppendString(sb, "logLevel", global.LogLevel);
         AppendString(sb, "embeddingModel", global.EmbeddingModel);
         AppendInt(sb, "embeddingDims", global.EmbeddingDims);
         AppendString(sb, "summaryModel", global.SummaryModel);
