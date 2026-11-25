@@ -1,5 +1,18 @@
 # Quick Memory Server Implementation Plan
 
+## Active epic - Reliability, retrieval and Codex plugin pilot
+
+[#27](https://github.com/dpupek/quick-memory-mcp/issues/27) builds on the completed foundation and Streamable MCP phases below. The [epic blueprint](reliability-plugin-27/epic-definition.md) captures the baseline and workflows. The [delivery roadmap](reliability-plugin-27/roadmap.md) holds acceptance criteria, dependencies and open decisions.
+
+- [ ] Phase 1 - Enforce project and entry permissions across MCP and HTTP. [#28](https://github.com/dpupek/quick-memory-mcp/issues/28)
+- [ ] Phase 2 - Upgrade the runtime, audited dependencies, and MCP SDK. [#29](https://github.com/dpupek/quick-memory-mcp/issues/29)
+- [ ] Phase 3 - Serialize store commits and make failed writes retryable. [#30](https://github.com/dpupek/quick-memory-mcp/issues/30)
+- [ ] Phase 4 - Measure MCP tool usage and outcomes. [#25](https://github.com/dpupek/quick-memory-mcp/issues/25)
+- [ ] Phase 5 - Deliver compact, case-aware retrieval and measure search quality. [#31](https://github.com/dpupek/quick-memory-mcp/issues/31)
+- [ ] Phase 6 - Pilot the Quick Memory Codex plugin with SysOps and Campus. [#32](https://github.com/dpupek/quick-memory-mcp/issues/32)
+
+Related work includes [structured errors](https://github.com/dpupek/quick-memory-mcp/issues/26), [tags](https://github.com/dpupek/quick-memory-mcp/issues/12), [glossary](https://github.com/dpupek/quick-memory-mcp/issues/13), [bulk import/export](https://github.com/dpupek/quick-memory-mcp/issues/3), and the [Add Project form](https://github.com/dpupek/quick-memory-mcp/issues/7).
+
 ## Completed Phases
 - [x] **Phase 0 – Foundations**
   - **Tasks**: Create repo structure, add the solution/projects, configure .NET 9 global.json, enable nullable/context, and draft the installer layout manifest (`layout.json`).
